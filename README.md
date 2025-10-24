@@ -4,9 +4,7 @@ All in one universal app for Medieval Irish text
 
 Author: Zhou Dejian
 
-=============================
-Project title: Web-based Annotator for Medieval Irish Text
-=============================
+# Project title: Web-based Annotator for Medieval Irish Text
 
 ## Overview
 
