@@ -1,10 +1,7 @@
-const results = [
-    { id: 'r1', label: 'Search result 1', detail: 'Matched lines 120–145' },
-    { id: 'r2', label: 'Search result 2', detail: 'Matched lines 300–318' },
-    { id: 'r3', label: 'Search result 3', detail: 'Matched lines 980–1004' },
-  ]
+import { useSearchStore } from '../../store/searchStore'
 
   export default function BottomPanel() {
+    const results = useSearchStore((state) => state.results)
     return (
       <section className="h-full bg-white">
         <div className="border-b border-gray-200 px-4 py-3">
