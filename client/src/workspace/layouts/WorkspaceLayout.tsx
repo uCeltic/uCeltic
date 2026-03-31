@@ -1,45 +1,29 @@
 import { Group, Panel, Separator } from 'react-resizable-panels'
-import Sidebar from '../panels/Sidebar'
+import StatusBar from '../panels/StatusBar'
 import ManuscriptArea from '../panels/ManuscriptArea'
 import IIIFPanel from '../panels/IIIFPanel'
-import BottomPanel from '../panels/BottomPanel'
-import StatusBar from '../panels/StatusBar'
-
+import ToolBar from '../panels/ToolBar'
 
 
 export default function WorkspaceLayout() {
   return (
-    <div className="flex h-screen flex-col">
-      <Group orientation="horizontal" className="flex-1">
-        {/* left sidebar */}
-        <Panel defaultSize={15} minSize={0} collapsible>
-          <Sidebar />
-        </Panel>
-        <Separator className="w-1 cursor-col-resize bg-gray-200 hover:bg-gray-400" />
+    <div className="flex h-screen flex-col bg-gray-50">
+      <ToolBar />
 
-        {/* middle main area */}
-        <Panel>
-          <Group orientation="vertical">
-            {/* manuscript area */}
-            <Panel>
-              <ManuscriptArea />
-            </Panel>
-            <Separator className="h-1 cursor-row-resize bg-gray-200 hover:bg-gray-400" />
+      <div className="min-h-0 flex-1">
+        <Group orientation="horizontal" className="h-full">
+          <Panel>
+            <ManuscriptArea />
+          </Panel>
 
-            {/* bottom panel */}
-            <Panel defaultSize={25} minSize={0} collapsible>
-              <BottomPanel />
-            </Panel>
-          </Group>
-        </Panel>
+          <Separator className="w-1 cursor-col-resize bg-gray-200 hover:bg-gray-400" />
 
-        {/* right IIIF panel */}
-        <Panel defaultSize={20} minSize={0} collapsible>
-          <IIIFPanel />
-        </Panel>
-      </Group>
+          <Panel defaultSize={24} minSize={16} maxSize={40}>
+            <IIIFPanel />
+          </Panel>
+        </Group>
+      </div>
 
-      {/* status bar */}
       <StatusBar />
     </div>
   )
