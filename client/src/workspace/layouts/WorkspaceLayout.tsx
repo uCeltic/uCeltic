@@ -7,7 +7,7 @@ import ToolBar from '../panels/ToolBar'
 
 export default function WorkspaceLayout() {
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
+    <div className="flex h-screen flex-col bg-[#f5f6ee]">
       <ToolBar />
 
       <div className="min-h-0 flex-1">
