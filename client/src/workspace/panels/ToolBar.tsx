@@ -6,7 +6,7 @@ import {
 } from "../../store/manuscriptStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 
-export default function ToolBar() {
+export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) {
   const addManuscript = useManuscriptStore((state) => state.addManuscript);
   const openManuscripts = useManuscriptStore((state) => state.openManuscripts);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +49,7 @@ export default function ToolBar() {
 
   console.log("addManuscript type:", typeof addManuscript);
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-gray-200 bg-[#f5f6ee] px-4 py-0.5">
+    <header className="flex items-center justify-between gap-4 border-b border-gray-200 bg-[#FAF9F3] px-4 py-0.5">
       {/* Add Manuscript button */}
       <div className="flex items-center gap-3">
         <input
@@ -61,7 +61,8 @@ export default function ToolBar() {
         />
         <button
           type="button"
-          className="rounded-md bg-[#4F7942] px-2.5 py-1.5 text-sm font-medium text-white hover:bg-[#4F7942]"
+          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
+          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
           onClick={handleAddManuscript}
         >
           + Add Manuscript
@@ -79,16 +80,16 @@ export default function ToolBar() {
 
         <button
           type="button"
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700
-  hover:bg-gray-50"
+          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
+          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
         >
           Search
         </button>
 
         <button
           type="button"
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700
-  hover:bg-gray-50"
+          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
+          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
         >
           Advanced
         </button>
@@ -99,27 +100,28 @@ export default function ToolBar() {
         <button
           type="button"
           onClick={decreaseFontSize}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium
-  text-gray-700 hover:bg-gray-50"
+          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
+          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
         >
           A−
         </button>
         <button
           type="button"
           onClick={increaseFontSize}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium
-  text-gray-700 hover:bg-gray-50"
+          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
+          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
         >
           A+
         </button>
 
         <button
-          type="button"
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700
-  hover:bg-gray-50"
-        >
-          Toggle IIIF
-        </button>
+            type="button"
+            onClick={onToggleIIIF}
+            className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
+          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
+          >
+            Toggle IIIF
+          </button>
       </div>
     </header>
   );
