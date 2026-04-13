@@ -8,6 +8,7 @@ interface ManuscriptStore {
   openManuscripts: Manuscript[];
   visibleManuscriptIds: ManuscriptId[];
   activeManuscriptId: ManuscriptId | null;
+  removeManuscript: (id: ManuscriptId) => void
   setOpenManuscripts: (manuscripts: Manuscript[]) => void;
   setVisibleManuscriptIds: (ids: ManuscriptId[]) => void;
   setActiveManuscriptId: (id: ManuscriptId | null) => void;
@@ -37,6 +38,16 @@ export const useManuscriptStore = create<ManuscriptStore>((set) => ({
   setActiveManuscriptId: (id) =>
     set({
       activeManuscriptId: id,
+    }),
+
+  removeManuscript: (id) =>
+    set((state) => {
+      const newOpen = state.openManuscripts.filter((manuscript) => manuscript.id !== id);
+      const newVisible = state.visibleManuscriptIds.filter((visId) => visId !== id);
+      return {
+        openManuscripts: newOpen,
+        visibleManuscriptIds: newVisible,
+      };
     }),
 
   addManuscript: (title, content) =>

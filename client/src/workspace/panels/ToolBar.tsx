@@ -5,6 +5,7 @@ import {
   MAX_OPEN_MANUSCRIPTS,
 } from "../../store/manuscriptStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
+import AdvancedSearchPopover from "./AdvancedSearchPopover";
 
 export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) {
   const addManuscript = useManuscriptStore((state) => state.addManuscript);
@@ -59,14 +60,17 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
           className="hidden"
           onChange={handleFileChange}
         />
-        <button
-          type="button"
-          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-          onClick={handleAddManuscript}
-        >
-          + Add Manuscript
-        </button>
+          <button
+            type="button"
+            className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${
+              openManuscripts.length >= MAX_OPEN_MANUSCRIPTS
+                ? "cursor-not-allowed bg-[#FAF9F3] text-gray-300"
+                : "cursor-pointer bg-[#FAF9F3] text-[#52524F] hover:bg-[#F0EEE6]"
+            }`}
+            onClick={handleAddManuscript}
+          >
+            + Add Manuscript
+          </button>
       </div>
 
       {/* Search input and buttons */}
@@ -86,13 +90,7 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
           Search
         </button>
 
-        <button
-          type="button"
-          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-        >
-          Advanced
-        </button>
+        <AdvancedSearchPopover />
       </div>
 
       {/* Toggle IIIF button and font size buttons*/}
