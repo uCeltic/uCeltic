@@ -1,7 +1,7 @@
 import { useManuscriptStore } from "../../store/manuscriptStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
-
+import { useEffect } from "react";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext,         //   All text viewers are managed here
@@ -109,77 +109,63 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {/* ms content, flex-1 to fill the remaining height, overflow-auto to have its own scrollbar. */}
-        <div className="min-h-0 flex-1 overflow-auto p-4">
-          <pre className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-800" style={{ fontSize }}>
-            {manuscript.content}
-          </pre>
-        </div>
+          {/* result card — fixed below header */}
+          {manuscriptResults.length > 0 ? (
+            <div className="border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="text-sm font-medium text-gray-800">
+                  Result {activeIndex + 1} / {manuscriptResults.length}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>Lines {activeResult?.lineStart}–{activeResult?.lineEnd}</span>
+                  <span>Score: {activeResult?.score !== undefined ? activeResult.score.toFixed(2) : "N/A"}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700
+  hover:bg-gray-100"
+                  >
+                    Jump
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onPrev}
+                    className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm text-gray-700
+  hover:bg-gray-100"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onNext}
+                    className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm text-gray-700
+  hover:bg-gray-100"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+              <div className="px-3 pb-2">
+                <div className="max-h-24 overflow-auto rounded-lg border border-gray-200 bg-white p-2.5 text-sm
+  leading-5 text-gray-700">
+                  {activeResult?.content}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
+              No search results
+            </div>
+          )}
 
-        {/* search result panel */}
-        {manuscriptResults.length > 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
-              {/* display "2 / 5" , activeIndex starts from 0, so add 1 */}
-              <div className="text-sm font-medium text-gray-800">
-                Result {activeIndex + 1} / {manuscriptResults.length}
-              </div>
-              {/* hit position (line range) and related score.
-                  Use ?. because activeResult may be undefined. */}
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>
-                  Lines {activeResult?.lineStart}–{activeResult?.lineEnd}
-                </span>
-                <span>
-                  Score:{" "}
-                  {activeResult?.score !== undefined
-                    ? activeResult.score.toFixed(2)
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                {/* TODO: Jump to the hit position in the ms content */}
-                <button
-                  type="button"
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium
-text-gray-700 hover:bg-gray-100"
-                >
-                  Jump
-                </button>
-                <button
-                  type="button"
-                  onClick={onPrev}
-                  className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm
-text-gray-700 hover:bg-gray-100"
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm
-text-gray-700 hover:bg-gray-100"
-                >
-                  →
-                </button>
-              </div>
-            </div>
-            {/* Preview of search result */}
-            <div className="space-y-2 p-3">
-              <div
-                className="max-h-28 overflow-auto rounded-lg border border-gray-200 bg-white p-2.5
-text-sm leading-5 text-gray-700"
-              >
-                {activeResult?.content}
-              </div>
-            </div>
+          {/* ms text content */}
+          <div className="min-h-0 flex-1 overflow-auto p-4">
+            <pre className="whitespace-pre-wrap break-words leading-6 text-gray-800" style={{ fontSize }}>
+              {manuscript.content}
+            </pre>
           </div>
-        ) : (
-          <div className="text-sm text-gray-500">
-            No search results for {manuscript.title}.
-          </div>
-        )}
-      </div>
+        </div>
     </article>
   );
 }
@@ -194,12 +180,18 @@ export default function ManuscriptArea() {
   const openManuscripts = useManuscriptStore((state) => state.openManuscripts);
   //  Save and update the order of ms text viewers by ms ids
   const visibleManuscriptIds = useManuscriptStore((state) => state.visibleManuscriptIds);
+
+
+
   const setVisibleManuscriptIds = useManuscriptStore((state) => state.setVisibleManuscriptIds);
 
   // search results by ms id, e.g. { "ms-1": [result, result, ...], ... }
   const resultsByManuscript = useSearchStore((state) => state.resultsByManuscript);
   // index of the active result by ms id, e.g. { "ms-1": 0, "ms-2": 1, ... }
   const activeResultIndexByManuscript = useSearchStore((state) => state.activeResultIndexByManuscript);
+
+
+
   const nextResult = useSearchStore((state) => state.nextResult);
   const prevResult = useSearchStore((state) => state.prevResult);
 
@@ -210,6 +202,29 @@ export default function ManuscriptArea() {
     .map((id) => openManuscripts.find((m) => m.id === id))
     .filter((m): m is NonNullable<typeof m> => m !== undefined);
 
+    const mockResults = [
+      { id: "r1", manuscriptId: "", lineStart: 12, lineEnd: 18, score: 0.87, content: "Ocus ba hé sin ingen ríg Gréc, \
+  ocus ba hí ba dech cruth ocus delb..." },
+      { id: "r2", manuscriptId: "", lineStart: 45, lineEnd: 51, score: 0.72, content: "Is and sin ro ráid Cú Chulainn: \
+   Ní thó, ol sé, cid mór do chlú..." },
+      { id: "r3", manuscriptId: "", lineStart: 88, lineEnd: 93, score: 0.61, content: "Batar immorro secht catha la \
+  Coin Culainn i nÓenach Emna..." },
+    ];
+
+
+    const setResultsByManuscript = useSearchStore((state) => state.setResultsByManuscript);
+  useEffect(() => {
+    if (visibleManuscripts.length === 0) return;
+    const mock: Record<string, typeof mockResults> = {};
+    visibleManuscripts.forEach((m) => {
+      if (!resultsByManuscript[m.id]) {
+        mock[m.id] = mockResults.map((r) => ({ ...r, manuscriptId: m.id }));
+      }
+    });
+    if (Object.keys(mock).length > 0) {
+      setResultsByManuscript({ ...resultsByManuscript, ...mock });
+    }
+  }, [visibleManuscripts.length]);
   // register mouse/touch sensor, dnd-kit listens to the start of the drag
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -237,7 +252,8 @@ export default function ManuscriptArea() {
       <SortableContext items={visibleManuscriptIds} strategy={horizontalListSortingStrategy}>
         <section className="flex h-full min-h-0 bg-[#f5f6ee]">
           {visibleManuscripts.map((manuscript, index) => {
-            const manuscriptResults = resultsByManuscript[manuscript.id] ?? [];
+            const manuscriptResults = resultsByManuscript[manuscript.id] ?? mockResults.map(r => ({ ...r,
+              manuscriptId: manuscript.id }));
             const activeIndex = activeResultIndexByManuscript[manuscript.id] ?? 0;
             const activeResult = manuscriptResults[activeIndex];
 
