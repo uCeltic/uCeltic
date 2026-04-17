@@ -1,6 +1,9 @@
 import { useManuscriptStore } from '../../store/manuscriptStore'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 
+/* StatusBar: shows the number of manuscripts open*/
+/* TODO: calculate the total time spent on the search */
+/* TODO: provides button to route to the landing page */
 export default function StatusBar() {
   const statusText = useWorkspaceStore((state) => state.statusText)
   const openManuscripts = useManuscriptStore((state) => state.openManuscripts)

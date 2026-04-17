@@ -69,7 +69,7 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
             }`}
             onClick={handleAddManuscript}
           >
-            + Add Manuscript
+            + Add Text
           </button>
       </div>
 
@@ -118,7 +118,7 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
             className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
           cursor-pointer transition-colors hover:bg-[#F0EEE6]"
           >
-            Toggle IIIF
+            Show Manuscripts
           </button>
       </div>
     </header>
