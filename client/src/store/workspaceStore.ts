@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import type { WorkspaceStatus } from "../types/panel";
 
+export type WorkspaceMode = "search" | "entities" | "personal";
+
+export const MODE_LABELS: Record<WorkspaceMode, string> = {
+  search: "Search",
+  entities: "People & Places",
+  personal: "Personal",
+};
+
 interface WorkspaceStore {
   // status
   status: WorkspaceStatus;
@@ -16,6 +24,12 @@ interface WorkspaceStore {
   // IIIF
   showIIIF: boolean
   toggleIIIF: () => void
+
+  // mode
+  mode: WorkspaceMode;
+  setMode: (mode: WorkspaceMode) => void;
+  selectedWorkIds: string[];
+  setSelectedWorkIds: (ids: string[]) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
@@ -23,6 +37,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   statusText: "Ready",
   fontSize: 14,
   showIIIF: true,
+  mode: "search",
+  selectedWorkIds: [],
 
   setStatus: (status, statusText) =>
     set({
@@ -39,4 +55,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   decreaseFontSize: () =>
     set((state) => ({ fontSize: Math.max(state.fontSize - 2, 10) })),
   toggleIIIF: () => set((state) => ({ showIIIF: !state.showIIIF })),
+  setMode: (mode) => set({ mode }),
+  setSelectedWorkIds: (ids) => set({ selectedWorkIds: ids })
 }));

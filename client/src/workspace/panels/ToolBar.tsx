@@ -6,13 +6,26 @@ import {
 } from "../../store/manuscriptStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
+import ModeButton from "./ModeButton";
+import ScopeButton from "./ScopeButton";
 
-export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) {
+const secondaryBtn =
+  "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-[#52524F] cursor-pointer transition-all hover:bg-[#F0EEE6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
+
+const toggleOnBtn =
+  "rounded-md border border-[#52524F] bg-[#52524F] px-2.5 py-1.5 text-sm font-medium text-white cursor-pointer transition-all hover:bg-[#3F3F3C] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
+
+export default function ToolBar({
+  onToggleIIIF,
+}: {
+  onToggleIIIF: () => void;
+}) {
   const addManuscript = useManuscriptStore((state) => state.addManuscript);
   const openManuscripts = useManuscriptStore((state) => state.openManuscripts);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const increaseFontSize = useWorkspaceStore((state) => state.increaseFontSize);
   const decreaseFontSize = useWorkspaceStore((state) => state.decreaseFontSize);
+  const showIIIF = useWorkspaceStore((state) => state.showIIIF);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -48,9 +61,10 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
     fileInputRef.current?.click();
   };
 
-  console.log("addManuscript type:", typeof addManuscript);
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-gray-200 bg-[#FAF9F3] px-4 py-0.5">
+    <header className="relative z-10 flex items-center justify-between gap-4 border-b border-[#D8D4C3] bg-[#E8E3CE] px-4 py-1 shadow-[0_1px_3px_rgba(82,82,79,0.08)]">
+      <ModeButton />
+      <ScopeButton />
       {/* Add Manuscript button */}
       <div className="flex items-center gap-3">
         <input
@@ -60,17 +74,17 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
           className="hidden"
           onChange={handleFileChange}
         />
-          <button
-            type="button"
-            className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${
-              openManuscripts.length >= MAX_OPEN_MANUSCRIPTS
-                ? "cursor-not-allowed bg-[#FAF9F3] text-gray-300"
-                : "cursor-pointer bg-[#FAF9F3] text-[#52524F] hover:bg-[#F0EEE6]"
-            }`}
-            onClick={handleAddManuscript}
-          >
-            + Add Text
-          </button>
+        <button
+          type="button"
+          className={
+            openManuscripts.length >= MAX_OPEN_MANUSCRIPTS
+              ? "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed"
+              : secondaryBtn
+          }
+          onClick={handleAddManuscript}
+        >
+          + Add Text
+        </button>
       </div>
 
       {/* Search input and buttons */}
@@ -78,15 +92,10 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
         <input
           type="text"
           placeholder="Search manuscripts..."
-          className="w-full max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900
-  outline-none ring-0 placeholder:text-gray-400 focus:border-gray-500"
+          className="w-full max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2 focus:ring-[#52524F]/20 transition-all"
         />
 
-        <button
-          type="button"
-          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-        >
+        <button type="button" className={toggleOnBtn}>
           Search
         </button>
 
@@ -95,31 +104,21 @@ export default function ToolBar({ onToggleIIIF }: { onToggleIIIF: () => void }) 
 
       {/* Toggle IIIF button and font size buttons*/}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={decreaseFontSize}
-          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-        >
+        <button type="button" onClick={decreaseFontSize} className={secondaryBtn}>
           A−
         </button>
-        <button
-          type="button"
-          onClick={increaseFontSize}
-          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-        >
+        <button type="button" onClick={increaseFontSize} className={secondaryBtn}>
           A+
         </button>
 
         <button
-            type="button"
-            onClick={onToggleIIIF}
-            className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F] 
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-          >
-            Show Manuscripts
-          </button>
+          type="button"
+          onClick={onToggleIIIF}
+          className={showIIIF ? toggleOnBtn : secondaryBtn}
+          aria-pressed={showIIIF}
+        >
+          {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
+        </button>
       </div>
     </header>
   );
