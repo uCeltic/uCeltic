@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="en">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Disappearing Text</title>
+        <author>Kevin Murray</author>
+      </titleStmt>
+      <publicationStmt>
+        <publisher>TEI Consortium</publisher>
+        <availability status="free">
+          <p>This template file is freely available and you are
+          hereby authorised to copy, modify, and redistribute it
+          in any way without further reference or permissions.</p>
+          <p>When making such modifications, you are strongly
+          recommended to change the present text to include an
+          accurate statement of the licencing conditions
+          applicable to your modified text.</p>
+        </availability>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Written from scratch.</p>
+      </sourceDesc>
+    </fileDesc><encodingDesc><appInfo><application ident="RomaJS" version="1.3.0" when="2025-11-27T15:40:40.416Z"><desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc></application></appInfo></encodingDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <head>TEI Corpus</head>
+      <p>This TEI customization file includes the minimum TEI modules
+      likely to be needed in the creation of linguistic corpora.</p>
+      <p>Note that the first 4 modules referenced below are the
+      <soCalled>required</soCalled> modules, so called because they
+      contain elements required for TEI conformance.</p>
+      <schemaSpec ident="tei_acallam" start="TEI teiCorpus" prefix="tei_ans" targetLang="en" docLang="en">
+        <moduleRef key="header"/>
+        <moduleRef key="core"/>
+        <moduleRef key="tei"/>
+        <moduleRef key="textstructure"/>
+        <moduleRef key="corpus"/>
+        <moduleRef key="namesdates"/>
+        <moduleRef key="linking"/>
+      <moduleRef key="msdescription" include="typeNote decoNote finalRubric accMat additional additions colophon decoDesc filiation foliation incipit institution locus locusGrp msContents msDesc msFrag msIdentifier msItem msItemStruct msName msPart objectDesc origDate origin origPlace physDesc provenance recordHist repository rubric signatures source summary surrogates typeDesc"/><moduleRef key="transcr" include="handNotes ex addSpan am handShift retrace restore space supplied surplus transpose"/><moduleRef key="tagdocs" include="exemplum remarks schemaSpec"/><moduleRef key="textcrit" include="lem lacunaEnd lacunaStart listApp variantEncoding"/><moduleRef key="analysis" include="c pc s span spanGrp"/><moduleRef key="verse" include="caesura rhyme"/><moduleRef key="gaiji" include="charDecl"/><moduleRef key="drama" include="epilogue prologue"/><moduleRef key="dictionaries" include="etym hyph lang number oRef orth pos"/><moduleRef key="certainty" include="respons"/><moduleRef key="iso-fs" include="string"/></schemaSpec>
+    </body>
+  </text>
+</TEI>
