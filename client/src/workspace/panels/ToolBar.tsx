@@ -8,6 +8,7 @@ import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import ModeButton from "./ModeButton";
 import ScopeButton from "./ScopeButton";
+import TEIPickerDropdown from "./TEIPickerDropdown";
 
 const secondaryBtn =
   "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-[#52524F] cursor-pointer transition-all hover:bg-[#F0EEE6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
@@ -86,6 +87,8 @@ export default function ToolBar({
           + Add Text
         </button>
       </div>
+
+      <TEIPickerDropdown />
 
       {/* Search input and buttons */}
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2">

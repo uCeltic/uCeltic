@@ -2,6 +2,8 @@ import { useManuscriptStore } from "../../store/manuscriptStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { useEffect } from "react";
+import TEIRenderer from "../../tei/TEIRenderer";
+import type { TEIDoc } from "../../types/tei";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -170,12 +172,18 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
 
         {/* ms text content */}
         <div className="min-h-0 flex-1 overflow-auto p-4">
-          <pre
-            className="whitespace-pre-wrap break-words leading-6 text-gray-800"
-            style={{ fontSize }}
-          >
-            {manuscript.content}
-          </pre>
+          {manuscript.format === "tei" ? (
+            <div className="leading-6 text-gray-800" style={{ fontSize }}>
+              <TEIRenderer node={(manuscript.content as TEIDoc).parsed_json} />
+            </div>
+          ) : (
+            <pre
+              className="whitespace-pre-wrap break-words leading-6 text-gray-800"
+              style={{ fontSize }}
+            >
+              {manuscript.content as string}
+            </pre>
+          )}
         </div>
       </div>
     </article>
@@ -207,8 +215,10 @@ export default function ManuscriptArea() {
   const activeResultIndexByManuscript = useSearchStore(
     (state) => state.activeResultIndexByManuscript,
   );
-  
-  const removeManuscript = useManuscriptStore((state) => state.removeManuscript);
+
+  const removeManuscript = useManuscriptStore(
+    (state) => state.removeManuscript,
+  );
 
   const nextResult = useSearchStore((state) => state.nextResult);
   const prevResult = useSearchStore((state) => state.prevResult);
