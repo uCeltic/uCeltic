@@ -13,6 +13,7 @@ interface ManuscriptStore {
   setVisibleManuscriptIds: (ids: ManuscriptId[]) => void;
   setActiveManuscriptId: (id: ManuscriptId | null) => void;
   addManuscript: (title: string, content: string) => void;
+  addTEIManuscript: (doc: TEIDoc) => void;
 }
 
 const initialManuscripts: Manuscript[] = [];
@@ -76,4 +77,27 @@ export const useManuscriptStore = create<ManuscriptStore>((set) => ({
         activeManuscriptId: id,
       };
     }),
+    addTEIManuscript: (doc) =>
+      set((state) => {
+        if (state.openManuscripts.length >= MAX_OPEN_MANUSCRIPTS) {
+          return state;
+        }
+        const id = `ms-tei-${doc.id}`;
+        const newManuscript: Manuscript = {
+          id,
+          title: doc.title,
+          format: "tei",
+          content: doc,
+        };
+        const newOpen = [...state.openManuscripts, newManuscript];
+        const newVisible =
+          state.visibleManuscriptIds.length < MAX_VISIBLE_MANUSCRIPTS
+            ? [...state.visibleManuscriptIds, id]
+            : state.visibleManuscriptIds;
+        return {
+          openManuscripts: newOpen,
+          visibleManuscriptIds: newVisible,
+          activeManuscriptId: id,
+        };
+      }),
 }));

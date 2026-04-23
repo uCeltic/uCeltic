@@ -70,7 +70,7 @@ export default function ToolBar({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.docx"
+          accept=".txt,.docx,.tei"
           className="hidden"
           onChange={handleFileChange}
         />
