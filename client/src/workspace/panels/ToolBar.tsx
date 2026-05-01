@@ -1,9 +1,9 @@
 import React, { useRef } from "react";
 import mammoth from "mammoth";
 import {
-  useManuscriptStore,
-  MAX_OPEN_MANUSCRIPTS,
-} from "../../store/manuscriptStore";
+  useDocumentStore,
+  MAX_OPEN_DOCUMENTS,
+} from "../../store/documentStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import ModeButton from "./ModeButton";
@@ -21,8 +21,8 @@ export default function ToolBar({
 }: {
   onToggleIIIF: () => void;
 }) {
-  const addManuscript = useManuscriptStore((state) => state.addManuscript);
-  const openManuscripts = useManuscriptStore((state) => state.openManuscripts);
+  const addDocument = useDocumentStore((state) => state.addDocument);
+  const openDocuments = useDocumentStore((state) => state.openDocuments);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const increaseFontSize = useWorkspaceStore((state) => state.increaseFontSize);
   const decreaseFontSize = useWorkspaceStore((state) => state.decreaseFontSize);
@@ -38,7 +38,7 @@ export default function ToolBar({
       reader.onload = () => {
         const content = reader.result as string;
         const title = file.name.replace(/\.txt$/, "");
-        addManuscript(title, content);
+        addDocument(title, content);
       };
       reader.readAsText(file);
     } else if (ext === "docx") {
@@ -47,16 +47,16 @@ export default function ToolBar({
         const arrayBuffer = reader.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const title = file.name.replace(/\.docx$/, "");
-        addManuscript(title, result.value);
+        addDocument(title, result.value);
       };
       reader.readAsArrayBuffer(file);
     }
     e.target.value = "";
   };
 
-  const handleAddManuscript = () => {
-    if (openManuscripts.length >= MAX_OPEN_MANUSCRIPTS) {
-      alert("Maximum 8 manuscripts allowed.");
+  const handleAddDocument = () => {
+    if (openDocuments.length >= MAX_OPEN_DOCUMENTS) {
+      alert("Maximum 8 documents allowed.");
       return;
     }
     fileInputRef.current?.click();
@@ -66,7 +66,6 @@ export default function ToolBar({
     <header className="relative z-10 flex items-center justify-between gap-4 border-b border-[#D8D4C3] bg-[#E8E3CE] px-4 py-1 shadow-[0_1px_3px_rgba(82,82,79,0.08)]">
       <ModeButton />
       <ScopeButton />
-      {/* Add Manuscript button */}
       <div className="flex items-center gap-3">
         <input
           ref={fileInputRef}
@@ -78,11 +77,11 @@ export default function ToolBar({
         <button
           type="button"
           className={
-            openManuscripts.length >= MAX_OPEN_MANUSCRIPTS
+            openDocuments.length >= MAX_OPEN_DOCUMENTS
               ? "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed"
               : secondaryBtn
           }
-          onClick={handleAddManuscript}
+          onClick={handleAddDocument}
         >
           + Add Text
         </button>
@@ -94,7 +93,7 @@ export default function ToolBar({
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
         <input
           type="text"
-          placeholder="Search manuscripts..."
+          placeholder="Search documents..."
           className="w-full max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2 focus:ring-[#52524F]/20 transition-all"
         />
 

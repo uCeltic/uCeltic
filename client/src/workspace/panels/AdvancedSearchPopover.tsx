@@ -1,7 +1,15 @@
 import { useRef, useState, useEffect } from "react";
 import { useSearchStore } from "../../store/searchStore";
 
+/* AdvancedSearchPopover: allows the user to adjust the search parameters */
 export default function AdvancedSearchPopover() {
+  /* open: whether the popover is open */
+  /* popoverRef: reference to the popover div, to locate the popover */
+  /* matchLength: the window size on the sliding window                  */
+  /* precision: the step size on the sliding window                      */
+  /* dissimilarityScore: the dissimilarity score of the search */
+  /* topK: the number of top results to return */
+
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -14,6 +22,7 @@ export default function AdvancedSearchPopover() {
   const setDissimilarityScore = useSearchStore((s) => s.setDissimilarityScore);
   const setTopK = useSearchStore((s) => s.setTopK);
 
+  /* useEffect to close the popover if the user clicks outside the popover */
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (

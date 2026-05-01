@@ -1,6 +1,6 @@
 import { Group, Panel, Separator } from "react-resizable-panels";
 import StatusBar from "../panels/StatusBar";
-import ManuscriptArea from "../panels/ManuscriptArea";
+import DocumentArea from "../panels/DocumentArea";
 import IIIFPanel from "../panels/IIIFPanel";
 import ToolBar from "../panels/ToolBar";
 import { useWorkspaceStore } from "../../store/workspaceStore";
@@ -16,8 +16,8 @@ export default function WorkspaceLayout() {
       <div className="min-h-0 flex-1">
         <Group key={showIIIF ? "with-iiif" : "without-iiif"} orientation="horizontal"
 className="h-full">
-          <Panel id="manuscript">
-            <ManuscriptArea />
+          <Panel id="document">
+            <DocumentArea />
           </Panel>
 
           {showIIIF && (

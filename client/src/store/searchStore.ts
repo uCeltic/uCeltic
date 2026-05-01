@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import type { ManuscriptId } from "../types/manuscript";
+import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
 
 interface SearchStore {
   query: string;
-  resultsByManuscript: Record<ManuscriptId, SearchResult[]>;
-  activeResultIndexByManuscript: Record<ManuscriptId, number>;
+  resultsByDocument: Record<DocumentId, SearchResult[]>;
+  activeResultIndexByDocument: Record<DocumentId, number>;
 
   matchLength: number;
   precision: number;
@@ -13,24 +13,24 @@ interface SearchStore {
   topK: number;
 
   setQuery: (query: string) => void;
-  setResultsByManuscript: (
-    results: Record<ManuscriptId, SearchResult[]>,
+  setResultsByDocument: (
+    results: Record<DocumentId, SearchResult[]>,
   ) => void;
-  setActiveResultIndex: (manuscriptId: ManuscriptId, index: number) => void;
+  setActiveResultIndex: (documentId: DocumentId, index: number) => void;
 
   setMatchLength: (v: number) => void;
   setPrecision: (v: number) => void;
   setDissimilarityScore: (v: number) => void;
   setTopK: (v: number) => void;
 
-  nextResult: (manuscriptId: ManuscriptId) => void;
-  prevResult: (manuscriptId: ManuscriptId) => void;
+  nextResult: (documentId: DocumentId) => void;
+  prevResult: (documentId: DocumentId) => void;
 }
 
 export const useSearchStore = create<SearchStore>((set, get) => ({
   query: "",
-  resultsByManuscript: {},
-  activeResultIndexByManuscript: {},
+  resultsByDocument: {},
+  activeResultIndexByDocument: {},
   matchLength: 100,
   precision: 1,
   dissimilarityScore: 0.5,
@@ -40,28 +40,28 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       query,
     }),
 
-  setResultsByManuscript: (results) =>
+  setResultsByDocument: (results) =>
     set({
-      resultsByManuscript: results,
+      resultsByDocument: results,
     }),
 
-  setActiveResultIndex: (manuscriptId, index) =>
+  setActiveResultIndex: (documentId, index) =>
     set((state) => {
-      const manuscriptResults = state.resultsByManuscript[manuscriptId] ?? [];
+      const docResults = state.resultsByDocument[documentId] ?? [];
 
-      if (manuscriptResults.length === 0) {
+      if (docResults.length === 0) {
         return state;
       }
 
       const safeIndex = Math.max(
         0,
-        Math.min(index, manuscriptResults.length - 1),
+        Math.min(index, docResults.length - 1),
       );
 
       return {
-        activeResultIndexByManuscript: {
-          ...state.activeResultIndexByManuscript,
-          [manuscriptId]: safeIndex,
+        activeResultIndexByDocument: {
+          ...state.activeResultIndexByDocument,
+          [documentId]: safeIndex,
         },
       };
     }),
@@ -71,45 +71,45 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   setDissimilarityScore: (v) => set({ dissimilarityScore: v }),
   setTopK: (v) => set({ topK: v }),
 
-  nextResult: (manuscriptId) =>
+  nextResult: (documentId) =>
     set((state) => {
-      const manuscriptResults = state.resultsByManuscript[manuscriptId] ?? [];
+      const docResults = state.resultsByDocument[documentId] ?? [];
       const currentIndex =
-        state.activeResultIndexByManuscript[manuscriptId] ?? 0;
+        state.activeResultIndexByDocument[documentId] ?? 0;
 
-      if (manuscriptResults.length === 0) {
+      if (docResults.length === 0) {
         return state;
       }
 
       const nextIndex =
-        currentIndex < manuscriptResults.length - 1
+        currentIndex < docResults.length - 1
           ? currentIndex + 1
           : currentIndex;
 
       return {
-        activeResultIndexByManuscript: {
-          ...state.activeResultIndexByManuscript,
-          [manuscriptId]: nextIndex,
+        activeResultIndexByDocument: {
+          ...state.activeResultIndexByDocument,
+          [documentId]: nextIndex,
         },
       };
     }),
 
-  prevResult: (manuscriptId) =>
+  prevResult: (documentId) =>
     set((state) => {
-      const manuscriptResults = state.resultsByManuscript[manuscriptId] ?? [];
+      const docResults = state.resultsByDocument[documentId] ?? [];
       const currentIndex =
-        state.activeResultIndexByManuscript[manuscriptId] ?? 0;
+        state.activeResultIndexByDocument[documentId] ?? 0;
 
-      if (manuscriptResults.length === 0) {
+      if (docResults.length === 0) {
         return state;
       }
 
       const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
 
       return {
-        activeResultIndexByManuscript: {
-          ...state.activeResultIndexByManuscript,
-          [manuscriptId]: prevIndex,
+        activeResultIndexByDocument: {
+          ...state.activeResultIndexByDocument,
+          [documentId]: prevIndex,
         },
       };
     }),

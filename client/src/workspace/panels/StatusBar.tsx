@@ -1,18 +1,18 @@
-import { useManuscriptStore } from '../../store/manuscriptStore'
+import { useDocumentStore } from '../../store/documentStore'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 
-/* StatusBar: shows the number of manuscripts open*/
+/* StatusBar: shows the number of documents open*/
 /* TODO: calculate the total time spent on the search */
 /* TODO: provides button to route to the landing page */
 export default function StatusBar() {
   const statusText = useWorkspaceStore((state) => state.statusText)
-  const openManuscripts = useManuscriptStore((state) => state.openManuscripts)
+  const openDocuments = useDocumentStore((state) => state.openDocuments)
 
   return (
     <footer className="flex h-9 items-center justify-between border-t border-gray-200 bg-white px-4 text-xs
 text-gray-600">
       <span>{statusText}</span>
-      <span>{openManuscripts.length} manuscripts open</span>
+      <span>{openDocuments.length} documents open</span>
     </footer>
   )
 }

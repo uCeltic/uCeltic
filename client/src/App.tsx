@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import WorkspacePage from './pages/WorkspacePage'
 
+/* Rounter */
 function App() {
   return (
     <BrowserRouter>

@@ -1,0 +1,151 @@
+import { create } from "zustand";
+import type { Document, DocumentId } from "../types/document";
+import type { TEIDoc } from "../types/tei";
+
+
+export const MAX_OPEN_DOCUMENTS = 8;
+export const MAX_VISIBLE_DOCUMENTS = 8;
+
+// This Zustand store is the shared "document workspace" state.
+// Components use it to answer questions like:
+// - Which documents are currently open?
+// - Which open documents are visible in the viewer area?
+// - Which document tab/panel is currently active?
+// - How do we add, remove, or focus a document?
+interface DocumentStore {
+  // Full list of documents opened in this browser session.
+  openDocuments: Document[];
+
+  // IDs of open documents that should currently be shown in the workspace UI.
+  visibleDocumentIds: DocumentId[];
+
+  // The document the user is selected.
+  activeDocumentId: DocumentId | null;
+
+  // Actions are functions that update the store.
+  removeDocument: (id: DocumentId) => void;
+  setOpenDocuments: (documents: Document[]) => void;
+  setVisibleDocumentIds: (ids: DocumentId[]) => void;
+  setActiveDocumentId: (id: DocumentId | null) => void;
+  addDocument: (title: string, content: string) => void;
+  addTEIDocument: (doc: TEIDoc) => void;
+}
+
+const initialDocuments: Document[] = [];
+
+
+export const useDocumentStore = create<DocumentStore>((set) => ({
+  // Initial state: 
+  openDocuments: initialDocuments,
+  visibleDocumentIds: initialDocuments
+    .slice(0, MAX_VISIBLE_DOCUMENTS)
+    .map((doc) => doc.id),
+  activeDocumentId: initialDocuments[0]?.id ?? null,
+
+
+  // Update the list by replacing the whole list.
+  setOpenDocuments: (documents) =>
+    set({
+      openDocuments: documents,
+    }),
+
+  // Update the list by replacing the whole list.
+  setVisibleDocumentIds: (ids) =>
+    set({
+      visibleDocumentIds: ids,
+    }),
+
+
+  setActiveDocumentId: (id) =>
+    set({
+      activeDocumentId: id,
+    }),
+
+  // Close a document by removing its id from both:
+  // - openDocuments: the actual list of opened documents
+  // - visibleDocumentIds: the list of documents currently shown in the UI
+  removeDocument: (id) =>
+    set((state) => {
+      const newOpen = state.openDocuments.filter((doc) => doc.id !== id);
+      const newVisible = state.visibleDocumentIds.filter(
+        (visId) => visId !== id,
+      );
+      return {
+        openDocuments: newOpen,
+        visibleDocumentIds: newVisible,
+      };
+    }),
+
+  // Add a plain text document to the workspace.
+  // This is separate from addTEIDocument because text documents store content
+  // as a string, while TEI documents store a parsed TEIDoc object.
+  addDocument: (title, content) =>
+    set((state) => {
+
+      if (state.openDocuments.length >= MAX_OPEN_DOCUMENTS) {
+        return state;
+      }
+
+      // Generate a unique id for this document.
+      const id = `doc-${Date.now()}`;
+      const newDoc: Document = {
+        id,
+        title,
+        format: "txt",
+        content,
+      };
+
+      // Add this to the end of the open document list.
+      const newOpen = [...state.openDocuments, newDoc];
+
+      // If there is room in the visible area, show the new document immediately.
+      // If the visible area is full, the document is opened but not added to
+      // visibleDocumentIds.
+      const newVisible =
+        state.visibleDocumentIds.length < MAX_VISIBLE_DOCUMENTS
+          ? [...state.visibleDocumentIds, id]
+          : state.visibleDocumentIds;
+
+      // Make the newly added document the active one.
+      return {
+        openDocuments: newOpen,
+        visibleDocumentIds: newVisible,
+        activeDocumentId: id,
+      };
+    }),
+
+  // Add a TEI document to the workspace.
+  // The TEI picker fetches a complete TEIDoc from the backend, then calls this.
+  addTEIDocument: (doc) =>
+    set((state) => {
+
+      if (state.openDocuments.length >= MAX_OPEN_DOCUMENTS) {
+        return state;
+      }
+
+      // backend return TEIDoc -> Convert to Document type -> Add to document store -> User Interface shows the document from the documentstore.
+      const id = `doc-tei-${doc.id}`;
+      const newDoc: Document = {
+        id,
+        title: doc.title,
+        format: "tei",
+        content: doc,
+      };
+
+      // Add the TEI document to the list of open documents.
+      const newOpen = [...state.openDocuments, newDoc];
+
+      // Show it immediately only if the visible document area still has room.
+      const newVisible =
+        state.visibleDocumentIds.length < MAX_VISIBLE_DOCUMENTS
+          ? [...state.visibleDocumentIds, id]
+          : state.visibleDocumentIds;
+
+      // update active document id.
+      return {
+        openDocuments: newOpen,
+        visibleDocumentIds: newVisible,
+        activeDocumentId: id,
+      };
+    }),
+}));

@@ -18,19 +18,18 @@ export interface TEIMeta {
     pbCount: number;
 }
 
-export interface TEIDoc{
+export interface TEIDoc {
     id: number;
     title: string;
     language: string;
-    parsedJson: TEINode;
-    createdAt: string;
+    parsed_json: TEINode;
+    created_at: string;
     meta: TEIMeta;
+}
 
 export interface TEICatalogEntry {
     id: number;
     title: string;
     language: string;
-    createdAt: string;
-}
-
+    created_at: string;
 }
