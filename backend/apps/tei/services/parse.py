@@ -29,8 +29,6 @@ def _element_to_node(el) -> dict:
         node['attrs'] = attrs
     if children:
         node['children'] = children
-    print("node--------------------------------")
-    print(node)
     return node
 
 def parse_tei(xml_bytes:bytes) -> dict:

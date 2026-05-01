@@ -1,9 +1,6 @@
 from .parse import parse_tei, _element_to_node
 from lxml import etree
 
-from .parse import parse_tei, _element_to_node
-from lxml import etree
-
 def _find_first(node: dict, tag: str) -> dict | None:
     if node.get("tag") == tag:
         return node
