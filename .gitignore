@@ -88,6 +88,10 @@ temp/
 *.run.xml
 *.toc
 
+# Agent skills
+.agents/
+skills-lock.json
+
 # Original gitignore content
 CLAUDE.md
 thesis.tex

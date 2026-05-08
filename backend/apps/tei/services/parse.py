@@ -1,3 +1,5 @@
+# This file is used to parse the TEI XML file into a dictionary.
+# Then the dictionary is converted to a JSON object by the serializer or meta data is extracted by using this dictionary.
 from lxml import etree
 
 
@@ -29,6 +31,7 @@ def _element_to_node(el) -> dict:
         node['attrs'] = attrs
     if children:
         node['children'] = children
+
     return node
 
 def parse_tei(xml_bytes:bytes) -> dict:

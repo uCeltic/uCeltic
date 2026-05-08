@@ -161,6 +161,7 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
 
         {/* document text content */}
         <div className="min-h-0 flex-1 overflow-auto p-4">
+          {/* if the document is a TEI document, hand it to the TEIRenderer, let it render the tei document. */}
           {doc.format === "tei" ? (
             <div className="leading-6 text-gray-800" style={{ fontSize }}>
               <TEIErrorBoundary>

@@ -1,6 +1,8 @@
 from .parse import parse_tei, _element_to_node
 from lxml import etree
 
+
+# find the first 'tag'
 def _find_first(node: dict, tag: str) -> dict | None:
     if node.get("tag") == tag:
         return node
@@ -11,6 +13,7 @@ def _find_first(node: dict, tag: str) -> dict | None:
                 return result
     return None
 
+# extract the plain text of the node
 def _text_of(node:dict) -> str:
     parts = []
     for child in node.get("children", []):
@@ -21,7 +24,8 @@ def _text_of(node:dict) -> str:
                 parts.append(_text_of(child))
     return "".join(parts).strip()
 
-
+#
+# count the number of 'tag' in the node，for example, count the number of 'pagebreak' in the node to determine the number of pages.
 def _count_tag(node:dict, tag:str) -> int:
     count = 1 if node.get("tag") == tag else 0
     for child in node.get("children", []):
@@ -29,6 +33,7 @@ def _count_tag(node:dict, tag:str) -> int:
             count += _count_tag(child, tag)
     return count
 
+# main function to extract the meta data from the tree
 def extract_meta(tree: dict) -> dict:
     header = _find_first(tree, "teiHeader")
     title = ""
