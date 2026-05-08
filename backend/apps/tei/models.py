@@ -9,6 +9,8 @@ class TEIDocument(models.Model):
     xml_file = models.FileField(upload_to='tei/', validators=[FileExtensionValidator(allowed_extensions=['xml','tei'])])
     parsed_json = models.JSONField(blank=True, null=True)
     meta = models.JSONField(blank=True, null=True)
+    plain_text = models.TextField(blank=True, default="")
+    anchors = models.JSONField(blank=True, null=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

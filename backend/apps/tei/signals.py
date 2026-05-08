@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from .models import TEIDocument
 from .services.parse import parse_tei
 from .services.meta_extract import extract_meta
+from .services.text_extract import extract_text_and_anchors
 
 logger = logging.getLogger(__name__)
 @receiver(post_save, sender=TEIDocument)
@@ -11,8 +12,6 @@ def parse_on_save(sender, instance, **kwargs):
     if not instance.xml_file:
         return
     
-    instance.xml_file.seek(0)
-    xml_bytes = instance.xml_file.read()
     try:
         with instance.xml_file.open('rb') as f:
             xml_bytes = f.read()
@@ -22,5 +21,8 @@ def parse_on_save(sender, instance, **kwargs):
         logger.error("TEI parse failed for %s: %s", instance.pk, e)
         return
     
-    TEIDocument.objects.filter(pk=instance.pk).update(parsed_json=tree, meta=meta)
-    
+    plain_text, anchors = extract_text_and_anchors(tree)
+    TEIDocument.objects.filter(pk=instance.pk).update(
+          parsed_json=tree, meta=meta,
+          plain_text=plain_text, anchors=anchors,
+      )
