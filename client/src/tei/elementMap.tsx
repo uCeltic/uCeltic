@@ -9,6 +9,7 @@ import { Choice, Abbr, Expan, Ex, Sic, Corr, App, Lem, Rdg, Note, HandShift } fr
 export interface TEIElementProps {
   node: TEIElementNode;
   children: ReactNode;
+  anchorId: number;
 }
 
 export const elementMap: Record<string, FC<TEIElementProps>> = {

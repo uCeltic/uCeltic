@@ -1,35 +1,35 @@
 import type { TEIElementProps } from "../elementMap";
 
-export function Choice({ children }: TEIElementProps) {
-  return <span data-tei-tag="choice">{children}</span>;
+export function Choice({ children, anchorId }: TEIElementProps) {
+  return <span data-tei-tag="choice" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
-// hidden inside <choice> — expan takes over
-export function Abbr({ node, children }: TEIElementProps) {
+export function Abbr({ node, children, anchorId }: TEIElementProps) {
   return (
-    <abbr className="hidden" title={node.attrs?.type} data-tei-tag="abbr">
+    <abbr className="hidden" title={node.attrs?.type} data-tei-tag="abbr" data-tei-anchor-id={anchorId}>
       {children}
     </abbr>
   );
 }
 
-export function Expan({ children }: TEIElementProps) {
-  return <span data-tei-tag="expan">{children}</span>;
+export function Expan({ children, anchorId }: TEIElementProps) {
+  return <span data-tei-tag="expan" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
-export function Ex({ children }: TEIElementProps) {
+export function Ex({ children, anchorId }: TEIElementProps) {
   return (
-    <span className="italic text-gray-500" data-tei-tag="ex">
+    <span className="italic text-gray-500" data-tei-tag="ex" data-tei-anchor-id={anchorId}>
       {children}
     </span>
   );
 }
 
-export function Sic({ children }: TEIElementProps) {
+export function Sic({ children, anchorId }: TEIElementProps) {
   return (
     <span
       className="underline decoration-red-400 decoration-wavy"
       data-tei-tag="sic"
+      data-tei-anchor-id={anchorId}
       title="sic"
     >
       {children}
@@ -37,31 +37,29 @@ export function Sic({ children }: TEIElementProps) {
   );
 }
 
-export function Corr({ children }: TEIElementProps) {
-  return <span data-tei-tag="corr">{children}</span>;
+export function Corr({ children, anchorId }: TEIElementProps) {
+  return <span data-tei-tag="corr" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
-// critical apparatus — passthrough, lem/rdg handle visibility
-export function App({ children }: TEIElementProps) {
-  return <span data-tei-tag="app">{children}</span>;
+export function App({ children, anchorId }: TEIElementProps) {
+  return <span data-tei-tag="app" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
-export function Lem({ children }: TEIElementProps) {
-  return <span data-tei-tag="lem">{children}</span>;
+export function Lem({ children, anchorId }: TEIElementProps) {
+  return <span data-tei-tag="lem" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
-// variant reading — hidden by default
-export function Rdg({ node, children }: TEIElementProps) {
+export function Rdg({ node, children, anchorId }: TEIElementProps) {
   return (
-    <span className="hidden" data-tei-tag="rdg" data-tei-wit={node.attrs?.wit}>
+    <span className="hidden" data-tei-tag="rdg" data-tei-anchor-id={anchorId} data-tei-wit={node.attrs?.wit}>
       {children}
     </span>
   );
 }
 
-export function Note({ children }: TEIElementProps) {
+export function Note({ children, anchorId }: TEIElementProps) {
   return (
-    <span className="group relative inline-block" data-tei-tag="note">
+    <span className="group relative inline-block" data-tei-tag="note" data-tei-anchor-id={anchorId}>
       <sup className="cursor-help select-none text-xs text-blue-500">*</sup>
       <span
         className="pointer-events-none absolute bottom-full left-0 z-10 hidden w-48 rounded

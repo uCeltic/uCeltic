@@ -1,10 +1,9 @@
-import type { TEIElementNode } from "../types/tei";
+import type { TEIElementProps } from "./elementMap";
 
-interface props {
-    node: TEIElementNode;
-    children: React.ReactNode;
-}
-
-export default function PassThrough({ node, children }: props) {
-    return <span data-tei-tag={node.tag}>{children}</span>;
-}
+export default function PassThrough({ node, children, anchorId }: TEIElementProps) {
+    return (
+      <span data-tei-tag={node.tag} data-tei-anchor-id={anchorId}>
+        {children}
+      </span>
+    );
+  }
