@@ -47,9 +47,11 @@ class TextExtractTestCase(TestCase):
         ids = [a['id'] for a in anchors]
 
         self.assertEqual(ids, list(range(len(anchors))))
-
+    
+    
+    # black box
     def test_offset_correctness(self):
-      """anchor 的 text_start/text_end 切片必须覆盖该元素的文本内容"""
+      """anchor's text_start/text_end slice must cover the text content of the element"""
       xml = b"""<?xml version="1.0"?>
   <TEI>
     <text>
@@ -68,16 +70,16 @@ class TextExtractTestCase(TestCase):
       p_anchors = [a for a in anchors if a["tag"] == "p"]
       self.assertEqual(len(p_anchors), 2)
 
-      # 第一个 <p> 的切片必须包含 "Hello world"
+      # First <p> should contain "Hello world"
       a0 = p_anchors[0]
       slice0 = plain_text[a0["text_start"]:a0["text_end"]]
       self.assertIn("Hello world", slice0)
 
-      # 第二个 <p> 的切片必须包含 "foo bar"
+      # Second <p> should contain "foo bar"
       a1 = p_anchors[1]
       slice1 = plain_text[a1["text_start"]:a1["text_end"]]
       self.assertIn("foo bar", slice1)
 
-      # 两个切片不能互相包含对方的文字
+      # Two slices should not contain each other's text
       self.assertNotIn("foo bar", slice0)
       self.assertNotIn("Hello world", slice1)

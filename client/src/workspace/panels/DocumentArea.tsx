@@ -1,10 +1,10 @@
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
-import { useEffect } from "react";
 import TEIRenderer from "../../tei/TEIRenderer";
 import TEIErrorBoundary from "../../tei/ErrorBoundary";
 import type { TEIDoc } from "../../types/tei";
+import type { SearchResult } from "../../types/search";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -29,18 +29,36 @@ interface SortableDocumentColumnProps {
   >["openDocuments"][number];
   index: number;
   totalCount: number;
-  docResults: ReturnType<
-    typeof useSearchStore.getState
-  >["resultsByDocument"][string];
-  activeIndex: number;
-  activeResult:
-    | ReturnType<
-        typeof useSearchStore.getState
-      >["resultsByDocument"][string][number]
-    | undefined;
+  docResults: SearchResult[];
+  activeResult: SearchResult | undefined;
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+}
+
+
+function handleJump(docId: string, result: SearchResult) {
+  if (result.anchor_id == null) return;
+  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
+  if (!columnEl) return;
+
+  // Clear any previous highlight in this column before applying a new one.
+  for (const el of columnEl.querySelectorAll<HTMLElement>(".bg-amber-100")) {
+    el.classList.remove("bg-amber-100", "transition-colors", "duration-300");
+  }
+
+  const ids = result.highlight_anchor_ids?.length
+    ? result.highlight_anchor_ids
+    : [result.anchor_id];
+  const targets = ids
+    .map((id) => columnEl.querySelector(`[data-tei-anchor-id="${id}"]`) as HTMLElement | null)
+    .filter((el): el is HTMLElement => el !== null);
+  if (targets.length === 0) return;
+
+  targets[0].scrollIntoView({ behavior: "smooth", block: "center" });
+  for (const el of targets) {
+    el.classList.add("bg-amber-100", "transition-colors", "duration-300");
+  }
 }
 
 // Render a single text viewer column: top title bar, main content, and bottom search result panel.
@@ -72,6 +90,7 @@ function SortableDocumentColumn({
   const fontSize = useWorkspaceStore((state) => state.fontSize);
   return (
     <article
+      data-doc-column-id={doc.id}
       ref={setNodeRef}
       style={style}
       className={`flex min-w-0 flex-1 flex-col bg-[#f5f6ee] ${
@@ -109,7 +128,8 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>
-                  Lines {activeResult?.lineStart}–{activeResult?.lineEnd}
+                {activeResult?.line_no && <span>Line
+                  {activeResult.line_no}</span>}
                 </span>
                 <span>
                   Score:{" "}
@@ -121,8 +141,8 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700
-  hover:bg-gray-100"
+                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  onClick={() => activeResult && handleJump(doc.id, activeResult)}
                 >
                   Jump
                 </button>
@@ -149,7 +169,7 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
                 className="max-h-24 overflow-auto rounded-lg border border-gray-200 bg-white p-2.5 text-sm
   leading-5 text-gray-700"
               >
-                {activeResult?.content}
+                {activeResult?.snippet}
               </div>
             </div>
           </div>
@@ -214,55 +234,7 @@ export default function DocumentArea() {
     .map((id) => openDocuments.find((d) => d.id === id))
     .filter((d): d is NonNullable<typeof d> => d !== undefined);
 
-  const mockResults = [
-    {
-      id: "r1",
-      documentId: "",
-      lineStart: 12,
-      lineEnd: 18,
-      score: 0.87,
-      content:
-        "Ocus ba hé sin ingen ríg Gréc, \
-  ocus ba hí ba dech cruth ocus delb...",
-    },
-    {
-      id: "r2",
-      documentId: "",
-      lineStart: 45,
-      lineEnd: 51,
-      score: 0.72,
-      content:
-        "Is and sin ro ráid Cú Chulainn: \
-   Ní thó, ol sé, cid mór do chlú...",
-    },
-    {
-      id: "r3",
-      documentId: "",
-      lineStart: 88,
-      lineEnd: 93,
-      score: 0.61,
-      content:
-        "Batar immorro secht catha la \
-  Coin Culainn i nÓenach Emna...",
-    },
-  ];
-
-  const setResultsByDocument = useSearchStore(
-    (state) => state.setResultsByDocument,
-  );
-  useEffect(() => {
-    if (visibleDocuments.length === 0) return;
-    const mock: Record<string, typeof mockResults> = {};
-    visibleDocuments.forEach((d) => {
-      if (!resultsByDocument[d.id]) {
-        mock[d.id] = mockResults.map((r) => ({ ...r, documentId: d.id }));
-      }
-    });
-    if (Object.keys(mock).length > 0) {
-      setResultsByDocument({ ...resultsByDocument, ...mock });
-    }
-  }, [visibleDocuments.length]);
-
+  
   const sensors = useSensors(useSensor(PointerSensor));
 
   function handleDragEnd(event: DragEndEvent) {
@@ -287,9 +259,8 @@ export default function DocumentArea() {
       >
         <section className="flex h-full min-h-0 bg-[#f5f6ee]">
           {visibleDocuments.map((doc, index) => {
-            const docResults =
-              resultsByDocument[doc.id] ??
-              mockResults.map((r) => ({ ...r, documentId: doc.id }));
+            const docResults = resultsByDocument[doc.id] ?? [];
+
             const activeIndex =
               activeResultIndexByDocument[doc.id] ?? 0;
             const activeResult = docResults[activeIndex];
@@ -303,8 +274,21 @@ export default function DocumentArea() {
                 docResults={docResults}
                 activeIndex={activeIndex}
                 activeResult={activeResult}
-                onPrev={() => prevResult(doc.id)}
-                onNext={() => nextResult(doc.id)}
+                onPrev={() => {
+                  const next = activeIndex > 0 ? activeIndex - 1 : activeIndex;
+                  prevResult(doc.id);
+                  const r = docResults[next];
+                  if (r) handleJump(doc.id, r);
+                }}
+                onNext={() => {
+                  const next =
+                    activeIndex < docResults.length - 1
+                      ? activeIndex + 1
+                      : activeIndex;
+                  nextResult(doc.id);
+                  const r = docResults[next];
+                  if (r) handleJump(doc.id, r);
+                }}
                 onClose={() => {
                   if (window.confirm(`Close "${doc.title}"?`)) {
                     removeDocument(doc.id);

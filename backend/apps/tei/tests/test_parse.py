@@ -19,16 +19,18 @@ SIMPLE_TEI = b"""<?xml version="1.0" encoding="UTF-8"?>
 
 
 class ParseTEITest(TestCase):
+
     def test_root_tag(self):
         tree = parse_tei(SIMPLE_TEI)
 
         self.assertEqual(tree["tag"], "TEI")
-
+  
     def test_has_children(self):
         tree = parse_tei(SIMPLE_TEI)
 
         self.assertIn("children", tree)
 
+    # black box
     def test_text_node(self):
         tree = parse_tei(SIMPLE_TEI)
 
@@ -39,7 +41,7 @@ class ParseTEITest(TestCase):
         first_child = body["children"][0]
         self.assertEqual(first_child["type"], "text")
         self.assertIn("Hello", first_child["text"])
-
+    # black box
     def test_wrong_root_raises(self):
         with self.assertRaises(ValueError):
             parse_tei(b"<foo><bar/></foo>")

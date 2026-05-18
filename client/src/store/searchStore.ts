@@ -23,6 +23,9 @@ interface SearchStore {
   setDissimilarityScore: (v: number) => void;
   setTopK: (v: number) => void;
 
+  isSearching: boolean;
+  runSearch: (docId: number, clientDocId: string) => Promise<void>;
+
   nextResult: (documentId: DocumentId) => void;
   prevResult: (documentId: DocumentId) => void;
 }
@@ -35,6 +38,31 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   precision: 1,
   dissimilarityScore: 0.5,
   topK: 10,
+  isSearching: false,
+    runSearch: async (docId, clientDocId) => {
+      const { query, dissimilarityScore, topK, matchLength, precision } = get();
+      if (!query.trim()) return;
+      set({ isSearching: true });
+      try {
+        const { searchDocument } = await import("../api/search");
+        const results = await searchDocument({
+          docId,
+          query,
+          topK,
+          dissimilarityThreshold: dissimilarityScore,
+          windowSizeRatio: matchLength / 100,
+          stepSize: precision,
+        });
+        set((s) => ({
+          resultsByDocument: { ...s.resultsByDocument, [clientDocId]: results },
+          activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
+          isSearching: false,
+        }));
+      } catch (e) {
+        console.error(e);
+        set({ isSearching: false });
+      }
+    },
   setQuery: (query) =>
     set({
       query,

@@ -1,0 +1,932 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="tei_acallam.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="ga">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Franciscan A 4 — Acallam na Senórach, ll. 2390–3520</title>
+        <editor>Nina Cnockaert-Guillou</editor>
+        <respStmt>
+          <resp>Automated person/place tagging (requires human review)</resp>
+          <name>build_tei.py</name>
+        </respStmt>
+      </titleStmt>
+      <publicationStmt>
+        <p>Generated from semi-diplomatic edition by Nina Cnockaert-Guillou.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <bibl>University College Dublin, MS Franciscan A 4.</bibl>
+      </sourceDesc>
+    </fileDesc>
+    <profileDesc>
+      <langUsage>
+        <language ident="ga">Middle / Early Modern Irish</language>
+      </langUsage>
+    </profileDesc>
+  </teiHeader>
+  <standOff>
+    <listPerson>
+      <person xml:id="fionn">
+        <persName type="canonical">Find mac Cumaill</persName>
+        <persName type="variant">Find mac Cumaill</persName>
+        <persName type="variant">Fionn mac Cumhaill</persName>
+        <persName type="variant">Finn mac Cumaill</persName>
+        <persName type="variant">Find</persName>
+        <persName type="variant">Finn</persName>
+        <persName type="variant">Fionn</persName>
+        <persName type="variant">Ḟinn</persName>
+        <persName type="variant">Ḟin</persName>
+        <persName type="variant">Ḟind</persName>
+        <persName type="variant">Fhinn</persName>
+        <persName type="variant">Fhin</persName>
+        <persName type="variant">Fhionn</persName>
+      </person>
+      <person xml:id="cailte">
+        <persName type="canonical">Caílte mac Rónáin</persName>
+        <persName type="variant">Chaílte</persName>
+        <persName type="variant">Chaīlti</persName>
+        <persName type="variant">Chaīlte</persName>
+        <persName type="variant">Chaoilte</persName>
+        <persName type="variant">Caílte</persName>
+        <persName type="variant">Caīlte</persName>
+        <persName type="variant">Caoilte</persName>
+        <persName type="variant">Caílti</persName>
+        <persName type="variant">Caīlti</persName>
+      </person>
+      <person xml:id="oisin">
+        <persName type="canonical">Oisín</persName>
+        <persName type="variant">Oisīn</persName>
+        <persName type="variant">Oissīn</persName>
+        <persName type="variant">Oisín</persName>
+      </person>
+      <person xml:id="eochaid_lethderg">
+        <persName type="canonical">Eochaid Lethderg</persName>
+        <persName type="variant">Eochaid Lethderg</persName>
+        <persName type="variant">Eochaid Leithderg</persName>
+        <persName type="variant">Eogaid lethdherg</persName>
+        <persName type="variant">Eochaidh</persName>
+        <persName type="variant">Eochaid</persName>
+        <persName type="variant">Eogaid</persName>
+      </person>
+      <person xml:id="mes_gegra">
+        <persName type="canonical">Mes Gegra</persName>
+        <persName type="variant">Mess Geghra</persName>
+        <persName type="variant">Meis Gheagre</persName>
+        <persName type="variant">Mes Gradha</persName>
+        <persName type="variant">Mess Gegra</persName>
+      </person>
+      <person xml:id="patrick">
+        <persName type="canonical">Pátraic / an Tálcend</persName>
+        <persName type="variant">Pātraic</persName>
+        <persName type="variant">Pátraic</persName>
+        <persName type="variant">Patraic</persName>
+        <persName type="variant">Tāilgin</persName>
+        <persName type="variant">Tāilgenn</persName>
+        <persName type="variant">Tāilgean</persName>
+        <persName type="variant">Tāilgeann</persName>
+        <persName type="variant">Táilgeann</persName>
+        <persName type="variant">Tálcend</persName>
+      </person>
+      <person xml:id="uaine">
+        <persName type="canonical">Úaine ingen Modhairn</persName>
+        <persName type="variant">Ūaine</persName>
+        <persName type="variant">Úaine</persName>
+      </person>
+      <person xml:id="modhairn">
+        <persName type="canonical">Modhairn</persName>
+        <persName type="variant">Moduirnd</persName>
+        <persName type="variant">Mhodhairn</persName>
+        <persName type="variant">Modhairn</persName>
+        <persName type="variant">Mornda</persName>
+      </person>
+      <person xml:id="cumall">
+        <persName type="canonical">Cumall</persName>
+        <persName type="variant">Cumhaill</persName>
+        <persName type="variant">Cumaill</persName>
+        <persName type="variant">Cumhall</persName>
+        <persName type="variant">Cumall</persName>
+      </person>
+      <person xml:id="aed_bec">
+        <persName type="canonical">Áed Bec</persName>
+        <persName type="variant">Aodh Bec</persName>
+        <persName type="variant">Aodh Beag</persName>
+        <persName type="variant">Áed Bec</persName>
+        <persName type="variant">Aed Bec</persName>
+      </person>
+      <person xml:id="illan">
+        <persName type="canonical">Illan Faebarderg</persName>
+        <persName type="variant">Illan Faoburderc</persName>
+        <persName type="variant">Illan Faeburderg</persName>
+        <persName type="variant">Illan Faebarderg</persName>
+      </person>
+      <person xml:id="aine">
+        <persName type="canonical">Áine</persName>
+        <persName type="variant">Áine</persName>
+      </person>
+      <person xml:id="mac_lugach">
+        <persName type="canonical">Mac Lugach</persName>
+        <persName type="variant">Mac Lugach</persName>
+        <persName type="variant">Meic Lugach</persName>
+        <persName type="variant">Meic Lughach</persName>
+      </person>
+      <person xml:id="conall">
+        <persName type="canonical">Conall</persName>
+        <persName type="variant">Conall</persName>
+      </person>
+      <person xml:id="goll">
+        <persName type="canonical">Goll mac Morna</persName>
+        <persName type="variant">Goll</persName>
+      </person>
+      <person xml:id="cormac">
+        <persName type="canonical">Cormac</persName>
+        <persName type="variant">Cormac</persName>
+      </person>
+      <person xml:id="diarmait">
+        <persName type="canonical">Díarmait</persName>
+        <persName type="variant">Dīarmait</persName>
+        <persName type="variant">Diarmait</persName>
+        <persName type="variant">Dīarmaid</persName>
+      </person>
+      <person xml:id="moling">
+        <persName type="canonical">Moling</persName>
+        <persName type="variant">Moling</persName>
+      </person>
+      <person xml:id="maedoc">
+        <persName type="canonical">Máedóc</persName>
+        <persName type="variant">Mædóc</persName>
+        <persName type="variant">Maedóc</persName>
+        <persName type="variant">Máedóc</persName>
+      </person>
+      <person xml:id="colman">
+        <persName type="canonical">Colmán</persName>
+        <persName type="variant">Colmān</persName>
+        <persName type="variant">Colmán</persName>
+      </person>
+      <person xml:id="dagda">
+        <persName type="canonical">An Dagda</persName>
+        <persName type="variant">Dagda</persName>
+      </person>
+      <person xml:id="bodb">
+        <persName type="canonical">Bodb Derg</persName>
+        <persName type="variant">Bodb Derg</persName>
+        <persName type="variant">Buidb Deirg</persName>
+        <persName type="variant">Bodb</persName>
+        <persName type="variant">Buidb</persName>
+      </person>
+      <person xml:id="feradach">
+        <persName type="canonical">Feradach</persName>
+        <persName type="variant">Feradaigh</persName>
+        <persName type="variant">Feradach</persName>
+      </person>
+      <person xml:id="fiachu">
+        <persName type="canonical">Fíachu</persName>
+        <persName type="variant">Fīachu</persName>
+        <persName type="variant">Fíachu</persName>
+      </person>
+      <person xml:id="baiscne">
+        <persName type="canonical">Baíscne</persName>
+        <persName type="variant">Baīscne</persName>
+        <persName type="variant">Baoiscne</persName>
+        <persName type="variant">Baíscne</persName>
+      </person>
+      <person xml:id="niall">
+        <persName type="canonical">Niall</persName>
+        <persName type="variant">Nēill</persName>
+        <persName type="variant">Néill</persName>
+      </person>
+      <person xml:id="eithne">
+        <persName type="canonical">Eithne</persName>
+        <persName type="variant">Eithne</persName>
+      </person>
+      <person xml:id="tamhan">
+        <persName type="canonical">Tamhan</persName>
+        <persName type="variant">Tamhan</persName>
+      </person>
+      <person xml:id="badhna">
+        <persName type="canonical">Badhna</persName>
+        <persName type="variant">Badhna</persName>
+      </person>
+      <person xml:id="cairill">
+        <persName type="canonical">Cairill</persName>
+        <persName type="variant">Cairill</persName>
+      </person>
+      <person xml:id="cithruadh">
+        <persName type="canonical">Cithrúadh</persName>
+        <persName type="variant">Cithrūagh</persName>
+        <persName type="variant">Cithrúadh</persName>
+      </person>
+      <person xml:id="aodha">
+        <persName type="canonical">Aodh</persName>
+        <persName type="variant">Aodha</persName>
+        <persName type="variant">Aodh</persName>
+      </person>
+      <person xml:id="morna">
+        <persName type="canonical">Morna</persName>
+        <persName type="variant">Mornda</persName>
+        <persName type="variant">Morna</persName>
+      </person>
+    </listPerson>
+    <listPlace>
+      <place xml:id="eriu">
+        <placeName type="canonical">Ériu (Ireland)</placeName>
+        <placeName type="variant">Ēirinn</placeName>
+        <placeName type="variant">Éirinn</placeName>
+        <placeName type="variant">Érinn</placeName>
+        <placeName type="variant">Ērinn</placeName>
+        <placeName type="variant">Érind</placeName>
+        <placeName type="variant">Ērend</placeName>
+        <placeName type="variant">Érend</placeName>
+        <placeName type="variant">Ériu</placeName>
+        <placeName type="variant">Ēriu</placeName>
+        <placeName type="variant">Éire</placeName>
+        <placeName type="variant">Ēire</placeName>
+      </place>
+      <place xml:id="laigen">
+        <placeName type="canonical">Laigin (Leinster)</placeName>
+        <placeName type="variant">Laigen</placeName>
+        <placeName type="variant">Laighen</placeName>
+        <placeName type="variant">Laighean</placeName>
+        <placeName type="variant">Laigin</placeName>
+      </place>
+      <place xml:id="ulaid">
+        <placeName type="canonical">Ulaid (Ulster)</placeName>
+        <placeName type="variant">Ulad</placeName>
+        <placeName type="variant">Uladh</placeName>
+        <placeName type="variant">Ulaid</placeName>
+      </place>
+      <place xml:id="mumu">
+        <placeName type="canonical">Mumu (Munster)</placeName>
+        <placeName type="variant">Mumain</placeName>
+        <placeName type="variant">Muman</placeName>
+        <placeName type="variant">Mumhain</placeName>
+        <placeName type="variant">Mumhan</placeName>
+      </place>
+      <place xml:id="glenn_rois_enaigh">
+        <placeName type="canonical">Glenn Rois Enaigh</placeName>
+        <placeName type="variant">Glend Ruis Enaigh</placeName>
+        <placeName type="variant">Glenn Rois Enaigh</placeName>
+        <placeName type="variant">Glinn Rois Eanaigh</placeName>
+        <placeName type="variant">Glend Rois Enaig</placeName>
+        <placeName type="variant">Glenn Rois Enaig</placeName>
+      </place>
+      <place xml:id="banbha">
+        <placeName type="canonical">Banbha</placeName>
+        <placeName type="variant">Banbha</placeName>
+        <placeName type="variant">Banba</placeName>
+      </place>
+      <place xml:id="formail">
+        <placeName type="canonical">Formaíl</placeName>
+        <placeName type="variant">Formaíl</placeName>
+        <placeName type="variant">Formaīl</placeName>
+      </place>
+      <place xml:id="alba">
+        <placeName type="canonical">Alba (Scotland)</placeName>
+        <placeName type="variant">Albain</placeName>
+        <placeName type="variant">Alban</placeName>
+        <placeName type="variant">Alba</placeName>
+      </place>
+      <place xml:id="temair">
+        <placeName type="canonical">Temair (Tara)</placeName>
+        <placeName type="variant">Temair</placeName>
+        <placeName type="variant">Teamair</placeName>
+        <placeName type="variant">Temrach</placeName>
+      </place>
+      <place xml:id="loch_lein">
+        <placeName type="canonical">Loch Léin</placeName>
+        <placeName type="variant">Loch Léin</placeName>
+        <placeName type="variant">Loch Lēin</placeName>
+      </place>
+    </listPlace>
+  </standOff>
+  <text xml:lang="ga">
+    <body>
+      <div type="edition">
+        <p>University College Dublin, MS Franciscan A 4, Acallam na Senórach, pp. 35–46. Corresponding to Stokes, ‘Acallamh na Senórach’, ll. 2,390–3,520.</p>
+        <p>Semi-diplomatic edition by Nina Cnockaert-Guillou, 17 December 2025</p>
+        <p>IS annsin ro fīarfaig <persName ref="#eochaid_lethderg">Eochaid Lethderg</persName> rí <placeName ref="#laigen">Laigen</placeName> do <persName ref="#cailte">Caílte</persName>:</p>
+        <p>‘Crēd fodera d’<persName ref="#fionn">Find</persName> <pb n="35a25"/> can in pēst adbalmór atā acaindi a n<placeName ref="#glenn_rois_enaigh">Glend Ruis Enaigh</placeName> thes do marbad seoch cech n-arracht ele ro dīchuir a h<placeName ref="#eriu">Érind</placeName>?’.</p>
+        <p>‘IS ed fodera sin’, ar <persName ref="#oisin">Oisīn</persName>, ‘in cetramad mír d’incind <persName ref="#mes_gegra">Mess Geghra</persName> hí ⁊ ro sluic in talam ann hí co ndernad pēst adbulmōr di ⁊ ní raibi a ndán di duine da marbad’, ar <persName ref="#oisin">Oisīn</persName>, ‘no co tísad Tāilgend do muintir in clērigh sea atā arin cnuc ⁊ descipul dó hé ⁊ do muintir Rí Nime ⁊ Talman é ⁊ co dísad sē re deired na imsiri ⁊ co tí in brāth adbulmōr do mes ar bííb ⁊ ar marbaib’.</p>
+        <p>‘Cidh fodera’, ar rí Érenn ‘ar feraib ⁊ ar conaib na fēindi cen dul do marbad na pīasta arin loch sin?’.</p>
+        <p>‘Lendán sídhi ro bái oc <persName ref="#fionn">Find</persName>’, ar <persName ref="#oisin">Oisīn</persName>, ‘.i. <persName ref="#uaine">Ūaine</persName> ingen Moghdhuirnd ⁊ tuc <persName ref="#fionn">Find</persName> éra tochmairc uirri ara méd d’illrechtaib a tēighed sí ūair ní raibi bethadhach nach tēighed sī ’na richt ⁊ tāncatar an fīann laithe n-ōen arin carnd os cind an locha ⁊ táinic an fīadh amach arin loch ⁊ ro marbust in pēist dā cét óglach uaind ⁊ dā cét cú ⁊ ro fīarfaig <persName ref="#cailte">Caílte</persName> annsin aroisin d’<persName ref="#fionn">Find</persName>:</p>
+        <p>“Cid duit-siu cen a fis dūindi in lind tuites in pēst úd ⁊ dā mad lind ro tuitfed sí co cuirimais ria ⁊ co ndīghlamais ar muintir uirri?”.</p>
+        <p>⁊ tuc <persName ref="#fionn">Find</persName> a ordain fa déd fis ⁊ ro foillsiged fīr fāistine dó ⁊ ro ceiled gæ fair ann ⁊ it-bert:</p>
+        <p>1. “<placeName ref="#glenn_rois_enaigh">Glend Ruis Enaigh</placeName> bud fír dam</p>
+        <p>bid bind guth cluicc ann biaid tan</p>
+        <p>cē raib fo damaib rūagha</p>
+        <p>bidatt ili ardrūagha.</p>
+        <p>2. Ro gab in doinend duba</p>
+        <p>nī soinend acht ar seala</p>
+        <p>ro gab in talam trochull</p>
+        <p>ro <pb n="35b1"/> gab cochull cenn n-egha.</p>
+        <p>3. Enach fēindi fadb fuiligh</p>
+        <p>im-rulaigh carb rer conaib</p>
+        <p>sīat srotha ellta enaigh</p>
+        <p>rīan trega treghta trogain.</p>
+        <p>4. Trochull fēindi fūath cuirrigh</p>
+        <p>ōs duillib rūaghaib rindib</p>
+        <p>sceo gāithe ceó tar glendaib</p>
+        <p>ōs rengaib lebra ar lindib.</p>
+        <p>5. Coscrach at-cíu-sa in muirbigh</p>
+        <p>rosg dregain brat dar buidnib</p>
+        <p>tǣb ūaine taitinem dædlech</p>
+        <p>bud Cǣmgen ’cā mbīa i cuibrigh.</p>
+        <p>6. Muirbech lond Locha hEnaigh</p>
+        <p>tond ’na degaid ad-raigi</p>
+        <p>sisi ac slaidi na fēindi</p>
+        <p>óig na fēindi ’ca slaidhi.</p>
+        <p>7. Deich mblīadna ar dā mblīadain</p>
+        <p>a n-ocht rīaghail ar raidig</p>
+        <p>ar dā cét déc sēt sairthi</p>
+        <p>cosin aidhci ro g<supplied reason="editorial">ē</supplied>nair.</p>
+        <p>8. Loch nEnaigh fada ela</p>
+        <p>nídat fanda na fīri</p>
+        <p>tāilgenn con-taghsat immi</p>
+        <p>bid bind canfait āilli.</p>
+        <p>9. Loch nEnaigh fada ela</p>
+        <p>dind mbera itir dā brone</p>
+        <p><supplied reason="editorial">e</supplied>nach trogain blaī tēiti</p>
+        <p>odā ’n cēiti co ’raile.</p>
+        <p>10. Glend Enaig itir dā slīab</p>
+        <p>is ē is āille it-condarc rīam</p>
+        <p>aband dā loch ara lár</p>
+        <p>isin lán don leith aníar.</p>
+        <p>11. Bidh adba ailigthrech ūar</p>
+        <p>bud adhba trūagh ⁊ trén</p>
+        <p>bid adnacht rīgh cenn a cenn</p>
+        <p>ticfa Cæmgen isin glend: glend”’.</p>
+        <p>Ní fuil ārim ⁊ ní fétir a faisnés ⁊ ní toillend an uimir in neoch ro indsedar do dēnam dōib fēin do gnīmaib gaile ⁊ gaisced ⁊ do maithib fīand <placeName ref="#eriu">Érend</placeName> re tǣb dindsencais cecha cnuic ⁊ cecha forba ⁊ cecha feraind ro fīarfaigetar .ú. ollcúicid <placeName ref="#eriu">Érend</placeName> uile dīb.</p>
+        <p>IS andsin táinig Tamun Trēntrebair mac Tréin .i. flathbrugaid cétach comrumach do rí <placeName ref="#eriu">Érend</placeName> trī .l. fer mór ⁊ tuigi maīle forro ⁊ faitiurān fīrgorm im cech fer dīb ⁊ fedāna finduma isna brataib ōsa mbruindib ⁊ lenti līcda lāngela umpu ⁊ trī .l. gabal ina lāmaib ⁊ ro bennachadar do rí <placeName ref="#eriu">Érend</placeName> ⁊ frecras in rí īat:</p>
+        <p>‘Do fil fledh mōrcaīn mōradbul acaind duit’.</p>
+        <p>.i. xxx. dabach do midh ⁊ .xxx. dabach do brogóid cona lōrdōthain do biud leo ⁊ tucsat an biad ⁊ in lind do rí <placeName ref="#eriu">Érend</placeName> ⁊ tāncatar dā tighib ara cūlaib.</p>
+        <p>‘Maith a anam a <persName ref="#oisin">Oisīn</persName>’, ar rí <placeName ref="#eriu">Érend</placeName>, ‘in tech n-óla ar leith bias acut-sa ⁊ acut comdalta .i. ac <persName ref="#cailte">Caílte</persName> nō ’na n-éininad ré maithib fer n<placeName ref="#eriu">Érend</placeName> rachai?’.</p>
+        <p>‘Ar cuid bidh ⁊ lenda dūind ar leith’, ar <persName ref="#oisin">Oisīn</persName>, ‘ūair ní lucht comdíne nā comaimsire dūind na daine atā in <placeName ref="#eriu">Érind</placeName> innosa’, ar <persName ref="#oisin">Oisīn</persName>.</p>
+        <p>‘Cā lín atāthai?’ ar rí <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>‘Dā nōnbur’, ar <persName ref="#oisin">Oisīn</persName>, ‘.i. ix. dam-sa ⁊ .ix. dom’ comdalta’.</p>
+        <p>‘.i. do .c. xx. dabach do mídh ⁊ do lind dīb’, ar rī <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>‘Maith a anam a airdrī’, ar <persName ref="#cailte">Caílte</persName>, ‘nā cutrumaigh-siu sind do biud nā do lind caidchi ūair in tan do-bértha-sa .x. ndabcha dam-sa .x. ndabcha .xx. bud cōir do tobairt d’<persName ref="#oisin">Oisīn</persName>’.</p>
+        <p>⁊ ro bātar re hed na haidhchi sin and co táinic lá cona lán soillsi cen uiresbaid bid nā lenda orra ⁊ ba cres a pupall tar rí <placeName ref="#eriu">Érend</placeName> isin tulaigh tond glais ⁊ tāinic <persName ref="#patrick">Pātraic</persName> cona clérchib isin dara leth don pupuill ⁊ táinic rí <placeName ref="#eriu">Érend</placeName> isin leth ele ⁊ nír lēiced acht rīgh nō dam<supplied reason="editorial">…</supplied>na <pb n="36a1"/> rig<note type="editorial">…c…s…cid</note> isin ūt a raibi rí <placeName ref="#eriu">Ērend</placeName> ⁊ nír lēiced acht espoc nō sacart nó mac óighi do Rí Nime ⁊ Talman isin leth i raibi <persName ref="#patrick">Pātraic</persName> don pupuill ⁊ suidhis <persName ref="#oisin">Oisīn</persName> a fīaghnaisi <persName ref="#patrick">Pātraic</persName> ⁊ suidis <persName ref="#cailte">Caílte</persName> a fīaghnaisi rīgh <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>‘Cīa agaib is sine itruibh, a <persName ref="#oisin">Oisīn</persName>’, ar rí <placeName ref="#eriu">Érend</placeName>, ‘.i. tusa nō <persName ref="#cailte">Caílte</persName>?’</p>
+        <p>‘Is sine misi’, ar <persName ref="#cailte">Caílte</persName>, ‘ūair .x. mblīadna .xx. ro ba slán dam-sa a n-ūair rucad <persName ref="#oisin">Oisīn</persName> ⁊ secht mblīadna déc dó im’ lepad-si ⁊ is as mo thigh ro gab féind ⁊ foirend’.</p>
+        <p>IS andsin ro fīarfaig rí <placeName ref="#eriu">Érend</placeName> dīb-siun:</p>
+        <p>‘Cā lín rí do rīgaib <placeName ref="#eriu">Érend</placeName> leis a tucad ferand con féind ⁊ cā rīg fēindigh da tucad?’</p>
+        <p>⁊ frecrus <persName ref="#cailte">Caílte</persName> co comnart in cest sin ūair ro bí a fis aige:</p>
+        <p>‘Ardrī ro gabustar rīgi n<placeName ref="#eriu">Érend</placeName> dar ba comainm <persName ref="#feradach">Feradach</persName> Fechtnach ⁊ bātar dā mac maithi aici .i. Tūathal ⁊ <persName ref="#fiachu">Fīachu</persName> in anmanda ⁊ fūair rí <placeName ref="#eriu">Érend</placeName> bás .i. <persName ref="#feradach">Feradach</persName> Fechtnach ⁊ ro roindset a dā mac <placeName ref="#eriu">Érind</placeName> etarru .i. a seōit ⁊ a maīne ⁊ a hindmusa a brat ⁊ a būar ⁊ a bó táinti a failgi ⁊ a fornasga a dúin ⁊ a dingnada ⁊ a deghbaileda don dara fir. A halla ⁊ a hindbera a mes ⁊ a torad ⁊ a hecneda āilli eocharbrecca ⁊ a tuirc tāebtroma ⁊ a heilti rūaga rōremra ⁊ a daim imdīsciri alltaidi don fir ele’.</p>
+        <p>‘Cāit a ndernsat in roind sin?’ ar rí <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>‘Arin cnuc sa itám inar suidhi do rindset in roind ūd’, ar <persName ref="#cailte">Caílte</persName>.</p>
+        <p>‘Nī hinand in roind sin itir’, ar maithi fer n<placeName ref="#eriu">Érend</placeName>.</p>
+        <p>‘Cā roind dīb is ferr lib-si?’ ar <persName ref="#oisin">Oisīn</persName>, ‘.i. a fleda ⁊ a tāirci ⁊ a tighi isin cét roind dīb? A fedha ⁊ a fāsaighi a selg ⁊ a fīadhach ⁊ a fīand coscur isin roind ele?’</p>
+        <p>‘In roind roba mesa dīb’, ar <persName ref="#cailte">Caílte</persName>, ‘dar lib-si is ī rob ferr lindi dīb’, ar <persName ref="#cailte">Caílte</persName>.</p>
+        <p>‘INdis d’feraib <placeName ref="#eriu">Érend</placeName> súd a anum a <persName ref="#cailte">Caílte</persName>’, ar <persName ref="#oisin">Oisīn</persName>.</p>
+        <p>⁊ do rāidh <persName ref="#cailte">Caílte</persName>:</p>
+        <p>1. Ráidh a <persName ref="#cailte">Caīlti</persName> cid dīa fuil</p>
+        <p>mór d’eólus re fīarfaigi</p>
+        <p>cétroind <placeName ref="#eriu">Érend</placeName> ar cech leth</p>
+        <p>do gab an féind a hUisnech.</p>
+        <p>2. Cīa do-rat ferand don fēind</p>
+        <p>in abraid rim co ro ceill</p>
+        <p>cīa do sgar re gillacht con</p>
+        <p>cīa do ícc a tūarustal.</p>
+        <p>3. Mebair lim in ní da fuil</p>
+        <p>a meic ingine Deirg druin</p>
+        <p>ō ro lesaigh <persName ref="#fiachu">Fīachu</persName> an féind</p>
+        <p>co ro trēicset a Oisēin.</p>
+        <p>4. Deich mblīadna do flaithius maith</p>
+        <p>duit-siu a <persName ref="#oisin">Oisīn</persName> itt’ ardflaith</p>
+        <p>ō ros bréc Fathadh an féind</p>
+        <p>co ro trēicset a Oiséin.</p>
+        <p>5. Degh mac Feradaig dar lim</p>
+        <p>dar ba comainm <persName ref="#fiachu">Fīachu</persName> <persName ref="#fionn">Find</persName></p>
+        <p><persName ref="#eithne">Eithne</persName> ingen Daire Duib</p>
+        <p>ro bī in righan a máthuir.</p>
+        <p>6. <persName ref="#feradach">Feradach</persName> is <persName ref="#fiachu">Fīachu</persName> <persName ref="#fionn">Find</persName></p>
+        <p>ro indset <placeName ref="#eriu">Érind</placeName> cind a cind</p>
+        <p>bātar ar <placeName ref="#eriu">Érind</placeName> can on</p>
+        <p>cen cocadh do commórodh.</p>
+        <p>7. Ruc do roga in mac ba só</p>
+        <p>beith re fēind ní himargó</p>
+        <p>foithri fásaighi fedha</p>
+        <p>aibne is alla is indbera.</p>
+        <p>8. Ro gab <persName ref="#feradach">Feradach</persName> dar lem</p>
+        <p>airdrīgi ar feraib <placeName ref="#eriu">Érend</placeName></p>
+        <p>a fleda a tāircthi a tighi</p>
+        <p>a táinti ’s a trebaire.</p>
+        <p>9. Rīghi <persName ref="#feradach">Feradaigh</persName> ba maith</p>
+        <p>cor toit le Mál in mac flaith</p>
+        <p>robo tāsc rīgh rūamnad gail</p>
+        <p>bás in rīgh in aidchi sin.</p>
+        <p>10. Luid <persName ref="#fiachu">Fīachu</persName> i <placeName ref="#temair">Temair</placeName> co mblad</p>
+        <p>ōn ló it-rochair <persName ref="#feradach">Feradach</persName></p>
+        <p>gabus nert <placeName ref="#eriu">Érend</placeName> uile</p>
+        <p>luid tar muir mac Rocraide.</p>
+        <p>11. Īar sin do rat <persName ref="#fiachu">Fīachu</persName> an féind</p>
+        <p>do <persName ref="#modhairn">Mornda</persName> cosin mōrscéim</p>
+        <p><pb n="36b1"/> cetrar dīb dimne gal</p>
+        <p>ina diaig ro gabsatar.</p>
+        <p>12. <persName ref="#modhairn">Mornda</persName> mac Cairpri co ngus</p>
+        <p>.x. mblīadna dó ’na flaithius</p>
+        <p>.x. mblīadna do Garad and</p>
+        <p>no cor sgarad re cæmcend.</p>
+        <p>13. Daigri mac Garaid co ngus</p>
+        <p>.u. blíadna dó ’na flaithius</p>
+        <p>āirem secht mblīadna cen brath</p>
+        <p>dó Don <persName ref="#modhairn">Mornda</persName> dēighenach.</p>
+        <p>14. <persName ref="#eochaid_lethderg">Eochaid</persName> mac Narcadha anair</p>
+        <p>rí fīand <placeName ref="#eriu">Ērend</placeName> a hUlltaib</p>
+        <p>dā blīadain co leth líne</p>
+        <p>ōsin fēind i n-airdrīghi.</p>
+        <p>15. Cas mac Candain crūaid a nim</p>
+        <p>ænblīadain aici a hUltaib</p>
+        <p>Duban a mac monar ngrind.</p>
+        <p>dā blīadain aigi āirmhim.</p>
+        <p>16. Gabsat a <placeName ref="#mumu">Mumain</placeName> míad celg</p>
+        <p>Líath Lūachra is Labraid Lāmderg</p>
+        <p>.x. mblīadna dó líth nat gand</p>
+        <p>do dā mac athaigh <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>17. Trénmór ūa <persName ref="#baiscne">Baīscne</persName> fa bailc</p>
+        <p>fa hūa do Shétna Sīthbaicc</p>
+        <p>senathair <persName ref="#fionn">Find</persName> ferda a roind</p>
+        <p>atair <persName ref="#cumall">Cumaill</persName> is Cramaill.</p>
+        <p>18. Tarraid Trēnmór trén a báidh</p>
+        <p>fíanda <placeName ref="#eriu">Érend</placeName> a n-éndáil</p>
+        <p>righsatar in rí andes</p>
+        <p>secht mblīadna déc a remes.</p>
+        <p>19. Ro gab <persName ref="#cumall">Cumall</persName> crūaidh a nim</p>
+        <p>a los scéith ⁊ cloighim</p>
+        <p>rīghi fa tuc teóra cath</p>
+        <p>scandlach congolach coctach.</p>
+        <p>20. Ro gab <persName ref="#cumall">Cumall</persName> crūaid a nim</p>
+        <p>i llos scéith ⁊ cloigim</p>
+        <p>.x. mblīadna dó sund ana</p>
+        <p>co torchair a Cath Cnucha.</p>
+        <p>21. ĪAR sin gabsat Meic <persName ref="#modhairn">Mornda</persName></p>
+        <p>ar mbrón is ar mbithdogra</p>
+        <p>.xxx. læch ba mōr a ngal</p>
+        <p>im Daigri im <persName ref="#goll">Goll</persName> im Garadh.</p>
+        <p>22. <persName ref="#goll">Goll</persName> mór fa mílid a cath</p>
+        <p>mac Don <persName ref="#modhairn">Mornda</persName> dēghenach</p>
+        <p>.x. mblīadna dó līth nat gand</p>
+        <p>in airdrīghi fēindi <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>23. ĪAR sin do gab int eó óir</p>
+        <p><persName ref="#fionn">Find mac Cumaill</persName> meic Trēnmóir</p>
+        <p>ar tairbertach sær slūaghach</p>
+        <p>ar saí amra ilbūadach.</p>
+        <p>24. Ar flaith ar séghaind ar saí</p>
+        <p>ar mbreithem ar ndrūth ar ndraí</p>
+        <p>ar cend cumaing ar slicht slóigh</p>
+        <p><persName ref="#fionn">Find mac Cumaill</persName> meic Trēnmóir.</p>
+        <p>25. Dob é <persName ref="#fionn">Find</persName> in cóiciud lǣch</p>
+        <p>ūasal forusta fīrgǣth</p>
+        <p>noch dob ferr delb ⁊ drech</p>
+        <p>dob ferr arm ⁊ édach.</p>
+        <p>26. Dā cét blīadain co mblāithi</p>
+        <p>⁊ xxx. can tláithi</p>
+        <p>sǣgal <persName ref="#fionn">Find</persName> ba fada a ré</p>
+        <p>co torchair ’ca lēim āise.</p>
+        <p>27. Secht rīgh déc lān mebair lem</p>
+        <p>do gab rīghi fīann <placeName ref="#eriu">Érend</placeName></p>
+        <p>ferr <persName ref="#fionn">Find</persName> ināit sin uile</p>
+        <p>cathmílid ard Almuine.</p>
+        <p>28. Cōicer drūagh is ferr táinic</p>
+        <p>a n-íath <placeName ref="#eriu">Érend</placeName> im-áinic</p>
+        <p>is ferr do cuala can acht</p>
+        <p>⁊ do bí re draīgecht.</p>
+        <p>29. Ba dīb Badhgna a Sīd Badgna</p>
+        <p>is Cathfaid in draī deghamra</p>
+        <p><persName ref="#cithruadh">Cithrūagh</persName> mac Fircóicat cāim</p>
+        <p>Mogh Ruith is <persName ref="#fionn">Find</persName> a Formáil.</p>
+        <p>30. Cōicer lega līth n-amra</p>
+        <p>is ferr tarraill īath m<placeName ref="#banbha">Banba</placeName></p>
+        <p>cid cīan atú-sa da n-éis</p>
+        <p>isin éolach ’ca faisnéis.</p>
+        <p>31. Mīach is Oirmed dálaib drécht</p>
+        <p>⁊ in athair Diain Cécht</p>
+        <p>Gabran līaigh tar muir anoir</p>
+        <p><persName ref="#fionn">Find</persName> fēin ūa <persName ref="#baiscne">Baīscne</persName> barr gloin.</p>
+        <p>32. Cōicer filed ūaisle in drem</p>
+        <p>is ferr tarraill īath n<placeName ref="#eriu">Érend</placeName></p>
+        <p>is mebair lium-sa co becht.</p>
+        <p>a faisnēis na filidecht.</p>
+        <p>33. Cairpri fili fūar tar lear</p>
+        <p>a mírghin indsi Gædel</p>
+        <p>Fercertne re Labraid Lorcc</p>
+        <p>Mogh Ruith is <persName ref="#fionn">Find</persName> Fæburnocht.</p>
+        <p>34. Cōicer is gaithi im cēill ngrind</p>
+        <p>ro buí a n-ēntigh i n<placeName ref="#eriu">Érind</placeName></p>
+        <p>Fithel is Flaithrí a mac</p>
+        <p><persName ref="#fionn">Find</persName> ⁊ Aillbi is <persName ref="#cormac">Cormac</persName>.</p>
+        <p>35. IN cest do-nídis tre cēill</p>
+        <p>prap do fūaslaiced <persName ref="#fionn">Find</persName> fēin</p>
+        <p>in ceist do-níth <persName ref="#fionn">Find</persName> na fled</p>
+        <p>nech don cetrar ní cuimged.</p>
+        <p>36. Cōicer læch láitis ferga</p>
+        <p>is ferr taraill īath Elga</p>
+        <p>bud gairgi gnīm ⁊ glond</p>
+        <p>bud gairgi cath is comlond.</p>
+        <p><pb n="37a1"/> 37. Lug mac Cēin meic Cainti anall</p>
+        <p>Cū Culainn ⁊ <persName ref="#conall">Conall</persName></p>
+        <p>Lugaid Lágha lām ar gail</p>
+        <p><persName ref="#fionn">Find</persName> fēin ūa <persName ref="#baiscne">Baīscne</persName> barr glain.</p>
+        <p>38. Cōicer is féili frith rīam</p>
+        <p>bud ferr im lind is im bīad</p>
+        <p>do ciniud na nGædel nglē</p>
+        <p>cin co caithidis maíne.</p>
+        <p>39. Lugh Lāmfada lūath in áigh</p>
+        <p>Cú na cerda crūaid a báidh</p>
+        <p>Conaire cǣm cruth nar clai</p>
+        <p><persName ref="#fionn">Find</persName> is Mac Luchta ar æncái.</p>
+        <p>40. Cōicer flatha is ferr di lem</p>
+        <p>is ferr taraill īath n<placeName ref="#eriu">Ērend</placeName></p>
+        <p>is mebair lem-sa co becht</p>
+        <p>a faisnés na flaithemnacht.</p>
+        <p>41. Eremon mac Míled mōir</p>
+        <p>Ughaine d’ēis Eremoin</p>
+        <p>Ængus Tuirmech trén a goil</p>
+        <p>Cónn Cétcathach <persName ref="#fionn">Finn</persName> fēindigh.</p>
+        <p>42. Lǣch ar gairgi gnīmaib glond</p>
+        <p>⁊ óclach ar comann</p>
+        <p>cléirech ar credim meic Dé</p>
+        <p>⁊ fáidh ar fírinde.</p>
+        <p>43. Nī fedar locht fēindi <persName ref="#fionn">Find</persName></p>
+        <p>dar in rí uil ōs mo chind</p>
+        <p>acht girra a sægail cech tan</p>
+        <p>’s gan Mac Dé do móradhradh.</p>
+        <p>44. Ní mairid in muinter maith</p>
+        <p>ní mairend fēin in fīrflaith</p>
+        <p>ní fuil in cuiri cēilli</p>
+        <p>nā ruirigh ’man rīg féindi.</p>
+        <p>45. Ferr a sreth inā cech sreth</p>
+        <p>ferr cech taīsech a taísech</p>
+        <p>mēd na fer is méd na scīath</p>
+        <p>mēd na lǣch ngasta ngairg líath.</p>
+        <p>46. Ba rí ba fáidh ba filid</p>
+        <p>ba flaith co mēd mōrfíne</p>
+        <p>ar fisigh ar ndrai ar fáidh</p>
+        <p>ba bind lind cech ní ro rāid. Ráid.</p>
+        <p>47. An abraím do testaib <persName ref="#fionn">Find</persName></p>
+        <p>dar in rí uil ōs mo chinn</p>
+        <p>ní canaim a testa trā</p>
+        <p>cid maith ō mbél ní do rád. Ráid.</p>
+        <p>48. Co fa shecht do creid in rí</p>
+        <p><persName ref="#fionn">Find mac Cumaill</persName> Almainí</p>
+        <p>in sechtmad fecht ro bí ar ás</p>
+        <p>is and táinic a tiughbád.</p>
+        <p>49. Leth Mogha ic Eoghan ro baī</p>
+        <p>trénmór is re lāim ro lái</p>
+        <p>mac do <persName ref="#cairill">Cairill</persName> ingen Scáil</p>
+        <p>ba bind leis cech ní ro ráidh. Rāidh’.</p>
+        <p>‘Adrae búaid ⁊ bennachtain a anum a <persName ref="#cailte">Caīlte</persName>’, ar <persName ref="#diarmait">Dīarmaid</persName> mac Cerbaill, ‘⁊ cāit a fuilet sin ⁊ senchaidi fer n<placeName ref="#eriu">Érend</placeName>? Scribtar lib i tāmlorgaib filed ⁊ i mbrīathraib ollaman sūd ⁊ bered cách a cuid leis dā crīch ⁊ da ferand fēin de’.</p>
+        <p>⁊ do scribad oca n-ugdaraib ⁊ oca filedaib ⁊ oca n-ollamnaib in scélaighecht sin ⁊ ruc cách a cuid cum a crīchi ⁊ a coigid leis di.</p>
+        <p>IS andsin ro fīarfaig <persName ref="#fionn">Find</persName> mac Fæbair meic rīg Ō Cinnselaigh:</p>
+        <p>‘Maith a anam a <persName ref="#cailte">Caīlte</persName>’, ar sē, ‘crēd fadera díth selga isin giúsaigh find?’, ar sē.</p>
+        <p>‘Næim ⁊ fīrēoin ac adhradh dhi sech cech inad ele isin crīch ⁊ lubgort selga d’<persName ref="#fionn">Find</persName> í’, ar <persName ref="#oisin">Oisīn</persName>, ‘⁊ in tráth nā faghdais an fīand a cuicid lāimdeirg <placeName ref="#laigen">Laigen</placeName> ō Muigh Febin co Bein Étair an dōthain selga do gebdis isin giusaigh sin find’.</p>
+        <p>‘Maith a anum’, ar <persName ref="#fionn">Find</persName> mac Fæbair, ‘créd ’ma n-abar Áth Fernda risin áth athā ar lār na giūsaighi?’.</p>
+        <p>Fregras <persName ref="#oisin">Oisīn</persName> in ceist sin ūair ro buí a fis aigi .i.</p>
+        <p>‘<persName ref="#goll">Goll</persName> mac <persName ref="#modhairn">Mornda</persName> ro marbustar Fernd mac <persName ref="#cairill">Cairill</persName> ar foghail mac <persName ref="#modhairn">Mornda</persName> ⁊ mac rīgh na nDēisi hé ⁊ ōclach grāda d’<persName ref="#fionn">Find</persName> é ⁊ oca chur fa fochluidib talman, tuc <persName ref="#fionn">Find</persName> a ordain fa dét fis ⁊ ro foillsiged fírindi dó ⁊ ro ceiled goí fair ⁊ it-bert:</p>
+        <p>“Dar mo brēithir am”, ar sé, “a Fernda <pb n="37b1"/> meic <persName ref="#cairill">Cairill</persName>, is mogénar do handlaiced isin inad-sa ūair is mōr do findceōlānaib celebraid ⁊ do findlebraib aifrind ⁊ do idpairt cuirp in coimded ⁊ in dūileman do dēntar and”.</p>
+        <p>⁊ ro baī ic tairngire <persName ref="#maedoc">Mædóc</persName> ann ⁊ it-bert:</p>
+        <p>1. “Āth Fernda</p>
+        <p>āit a mbaī <persName ref="#maedoc">Mædóc</persName> fedba</p>
+        <p>aniú cid imda a cūana</p>
+        <p>bid imda a dūana nemda.</p>
+        <p>2. Áth Fernda</p>
+        <p>na foirndi bid it fedba</p>
+        <p>in fer ’ca mbia da? roiset</p>
+        <p>biaidh a osadh ac Dia.</p>
+        <p>3. Da-ria <persName ref="#maedoc">Mædóc</persName> muinnterrach</p>
+        <p>tar áth findglaisi fīa</p>
+        <p>bid croimcind ros-tairgéba</p>
+        <p>bid roim indlaicthi do Dia.</p>
+        <p>4. Da-ria <persName ref="#maedoc">Mædóc</persName> muinnterrach</p>
+        <p>maisi grēne tar cithu</p>
+        <p>da-ría mac na rētlaindi</p>
+        <p>rētlu būadhach tria bithu.</p>
+        <p>5. Bid é ant inad oirdnigi</p>
+        <p>ní bia fīanda fan fulacht</p>
+        <p>da-ria <persName ref="#maedoc">Mædóc</persName> .muinnterrach.</p>
+        <p>mochin rí dabá rulacht.</p>
+        <p>6. Bid é an torc trén tulchaighi</p>
+        <p>bidh í in lasair borr brātha</p>
+        <p>da-ria Mædoc .muinnterrach.</p>
+        <p>bidh í in tond tar ilar n-átha. Āth”’.</p>
+        <p>‘IS maith ro indisis sin, a <persName ref="#cailte">Caílte</persName>’, ar <persName ref="#fionn">Find</persName> mac Fæbair, ‘⁊ atā ceist ele is āil lium d’fīarfaigid dit’.</p>
+        <p>‘Crēd in ceist?’, ar <persName ref="#cailte">Caílte</persName>.</p>
+        <p>‘Baile atā againdi a coicrīch in dā cōiced .i. comur ollbladach na trī n-uisci, āit a comraicend Siúir ⁊ Beoir ⁊ Berba a n-ēninad ⁊ Ros mBrocc ainm an baile sin. ⁊ rob āil lium a fis ūait-siu cīa aca raibi in dūnad ⁊ in degbaile úd and’.</p>
+        <p>‘Urusa lium-sa a fis sin duit’, ar <persName ref="#cailte">Caīlte</persName>, ‘.i. dā óclach grāda d’<persName ref="#fionn">Find</persName> ro baī and .i. Cellach Brænbile ⁊ <persName ref="#moling">Moling</persName> Lūath do cūiced Gaileon ⁊ do bātar dá .c. ōclach ⁊ dā .c. gilla ⁊ dā .c. cú cechtar díb’.</p>
+        <p>‘⁊ cid īat trī catha na fēindi do shirthea?’.</p>
+        <p>‘Ní raibi and dīas bud ferr lūth na lāmach i n-āit sin ⁊ ro baī maithius oile intib maráen risin, ūair isna tighib ro baī an fīand re blíadain centacha bid na lenda orra risin’.</p>
+        <p>‘INgnad lind’, ar <persName ref="#fionn">Find</persName> mac Fæbair, ‘uisci an baile sin ína ard ⁊ a sruth ina</p>
+        <p>all ⁊ cech æn bīs a ngalar ⁊ a n-eslāinti, īcaid uisci an baile sin é co rob slemain slāncrēchtach da éis’.</p>
+        <p>‘An fetraisi a adbar sin, a <persName ref="#fionn">Find</persName> maic Fæbair?’ ar <persName ref="#cailte">Caílte</persName>.</p>
+        <p>‘Ní fedar’, ar <persName ref="#fionn">Find</persName>.</p>
+        <p>‘As é sin cétuisci ro bendacatar aingil an duileman a n<placeName ref="#eriu">Érinn</placeName> ⁊ is é uisci deighenach bendeochar inti é ⁊ Taidíu ainm in uisci ⁊ na haband. ⁊ do bátar in dā óclach sin and no co ndechatar maic <persName ref="#modhairn">Mornda</persName> ar fogail ⁊ ar dīberg ō <persName ref="#fionn">Find</persName> ⁊ nír rathaighed īat and no cor gabsat anair ⁊ aníar, andess ⁊ atūaigh imonn baile. ⁊ ro bātar re teōra lā ⁊ re teōra aidchi ac cur risin mbaile ⁊ nír fétsat ní dó risin ⁊ in tres trát fūaradar bǣgal tened do cur isin mbaile ⁊ do loisced leo hé ⁊ do rigned a argain leó, cona tērnógh fer indisti scél nā tuillti tūarustail as cen loscud. ⁊ in trāt tairrnic leo in baile do loscud, tāncatar rompu tar scairb Indbir Dubglaisi ⁊ tar Berba bithglais sīar ⁊ in trāt rāncatar tar Berba siar, <pb n="38a1"/> is and rāncamair-ne trī catha na fēindi cum an dūnaid cincur cobair dōib-sin sin ⁊ suidhis <persName ref="#fionn">Find</persName> ac féchain an baile tre thenidh ⁊ ro suighset trī catha na fēindi uime and ⁊ ro cáithset co dīchra, ūair ní dernad riú riam reme na nadegad gnim bud doilgid leó in aingnīm sin. ⁊ tucad longsīthal bānóir docum na flatha <persName ref="#fionn">Find</persName> ⁊ ro indail a lāma ⁊ ro cuir uisci ūaine eochargorm ima gnúis rīgda romōir roisclethain ⁊ fan rosc nglas ngāirechtach ⁊ tuc a ordain fa dét fis ⁊ in tres fírindi is mō ro faillsiged dō riam is andsan ūair sin ro faillsiged dó é.</p>
+        <p>“Cetri fáidhe toghaidi ticfait tarmeisi-sea in <placeName ref="#eriu">Érind</placeName> ⁊ do Rí Nime ⁊ Talman do dēnait a fāistine ⁊ bud andso ticfa in cetrama fer dīb .i. <persName ref="#moling">Moling</persName> mac Fælāin meic <persName ref="#feradach">Feradaigh</persName> <persName ref="#fionn">Find</persName> ⁊ cath cuirfidhter re deired n-aimsiri a n<placeName ref="#eriu">Érind</placeName> .i. Cath Muighi Rath. ⁊ Suibne Geilt tic asin cath, is andsa baile sea muirbfighter ⁊ adlaicfidter é ⁊ ben d’feraib <placeName ref="#mumu">Muman</placeName> matair in clérigh. ⁊ ní lēmaid fir <placeName ref="#mumu">Muman</placeName> olc do dēnam don baile caidhci’.</p>
+        <p>⁊ it-bert in laíd ann:</p>
+        <p>1. ‘Ros mBrocc andíu is conair cūan</p>
+        <p>romúr rūag iter dā all</p>
+        <p>cid cīan gairit no co tí</p>
+        <p><persName ref="#moling">Moling</persName> ainm intí ’sa cell.</p>
+        <p>2. Taīdiu cōrach cæmlindtech</p>
+        <p>ar ūr, cairrgi, cloch is lía</p>
+        <p>do roiset sund sochaidi</p>
+        <p>d’etarguidi ar Dīa.</p>
+        <p>3. Taídiu grīanach gēnter leis</p>
+        <p>beith ara greis bud maith lim</p>
+        <p>trūagh deired in domain dēin</p>
+        <p>sæth lim mé fēin can beith ind.</p>
+        <p>4. Da ria in fer folūaimnech</p>
+        <p>atūaid ō Muig Rath</p>
+        <p>bud gairdiugud don clérech</p>
+        <p>maiden co mét rath.</p>
+        <p>5. Tech <persName ref="#moling">Moling</persName> mac Fælāin</p>
+        <p>meic <persName ref="#feradach">Feradaigh</persName> <persName ref="#fionn">Find</persName></p>
+        <p>uingi d’ór do-béra nech</p>
+        <p>ara tech do lecān ind.</p>
+        <p>6. Bendan <persName ref="#moling">Moling</persName> a Lūachair</p>
+        <p>bentar isna trāthaib</p>
+        <p>ní lémaid lǣich Luimnigh</p>
+        <p>ben Muimnigh a māthair.</p>
+        <p>7. Ticfait fir Cūalan atūaid</p>
+        <p>forba a slūaigh co Tech <persName ref="#moling">Moling</persName></p>
+        <p>ō sin amach co brāth mend</p>
+        <p>ferr isa ferr Tech <persName ref="#moling">Moling</persName>.</p>
+        <p>8. Aderim-sea rit reme</p>
+        <p>bid fīr dam an fāistine</p>
+        <p>bud tarba d’anmain <persName ref="#fionn">Find</persName> fōs</p>
+        <p>do tairngir <persName ref="#moling">Moling</persName> ’sa Ros. Ros.’</p>
+        <p>‘Maith, a anum, a <persName ref="#fionn">Find</persName> meic Fæbair’, ar Cailti, ‘is ī sin in ceist ro fīarfaigis dim’.</p>
+        <p>IS andsin a-dubairt rí <placeName ref="#eriu">Érend</placeName> re <persName ref="#patrick">Pātraic</persName>:</p>
+        <p>‘Is mithid lium-sa dul do <placeName ref="#temair">Temair</placeName> na Rīgh budesta, ⁊ in tectai-si lim, a senōracha’, ar <persName ref="#diarmait">Dīarmait</persName>, ‘don dula-sa?’.</p>
+        <p>‘Ní racum’, ar sīat, ‘co mā slān ar mblīadain’.</p>
+        <p>IS andsin a-dubairt <persName ref="#eochaid_lethderg">Eochaid</persName> lethderg rí <placeName ref="#laigen">Laigen</placeName>:</p>
+        <p>‘Bērat-sa lium, <persName ref="#oisin">Oisīn</persName>’, ar sē, ‘risin mblīadain-sea, co Dūn Lemna Lendcaime ingine Dobrain Dubtaire’.</p>
+        <p>‘Bērat-sa, Cailti, lim’, ar <persName ref="#conall">Conall</persName> mōr mac <persName ref="#niall">Nēill</persName>, ‘co cun na mBarc risin mblīadain-sea’.</p>
+        <p>‘Bērat-sa noem <persName ref="#patrick">Pātraic</persName> lium’, ar <persName ref="#diarmait">Dīarmait</persName> mac Cerbaill, ‘risin mblīadain-sea co <placeName ref="#temair">Temair</placeName> do baisted ⁊ do bennachad fer n<placeName ref="#eriu">Érend</placeName> ina cirt ⁊ ina rīaghlaib bodēin’.</p>
+        <p>⁊ ro scáilset <pb n="38b1"/> fir <placeName ref="#eriu">Érend</placeName> ar sin dā crīch ⁊ dā forba bodēin co ro comraicset fir <placeName ref="#eriu">Érend</placeName> a <placeName ref="#temair">Temair</placeName> tæbglais taitnemaigh toghaidi a cind blīadna doríse. Gurob í Imagallaim na Senōrach ⁊ cech ar’ cansat d’fis ⁊ d’eólus d’feraib <placeName ref="#eriu">Érend</placeName> uile a cin cairthi a mullach Uisnigh conici sin.</p>
+        <p>Dála <persName ref="#cailte">Caīlte</persName>, táinic sin maræn re <persName ref="#conall">Conall</persName> mac <persName ref="#niall">Nēill</persName> co Rait Artraigh i Cenél Conaill. IS annsin ro ērgetar ingena míne macdachta ⁊ meic becca bratūaine ⁊ amais ⁊ ōclaigh ⁊ ro fersat uile fāilti fria <persName ref="#cailte">Caīlte</persName> ⁊ bātar ac ól ⁊ ac āibnius fria hed na haidci sin no cor érigh grīan asa circaill truim tenntighi cor soillsigh alla ⁊ essa ⁊ indbera an talman.</p>
+        <p>INa degaid sin táinic <persName ref="#conall">Conall</persName> co maithib a muintiri ⁊ <persName ref="#cailte">Caílte</persName> arin fert fotmuighi baī ar inchaib an baile ⁊ fīarfaigis <persName ref="#conall">Conall</persName> do <persName ref="#cailte">Caílte</persName>:</p>
+        <p>‘Cid ’ma tucad Rāith Artrach arin rāith sea thūaidh ⁊ crēd ma tucad Lís na nĒiges arin lis sa rind andes ⁊ crēd ’ma tucad Rāith Mongaigh arin rāith sea tūaidh?’.</p>
+        <p>Fregras <persName ref="#cailte">Caílte</persName> sin .i.:</p>
+        <p>‘Trī meic ro bātar ic <persName ref="#bodb">Bodb Derg</persName> mac in <persName ref="#dagda">Dagda</persName> isin Brugh breccsolus .i. Artrach ⁊ Æd Ālaind ⁊ Ængus. IS andsin do rala imresan ⁊ imorrān etturru ⁊ in athair.</p>
+        <p>“Maith a anum, a macu”, ar <persName ref="#bodb">Bodb Derg</persName>, “fácaidh-si dam-sa .t.d.danann ⁊ imtighid cum rīgh <placeName ref="#eriu">Érend</placeName> .i. cum <persName ref="#cormac">Cormac</persName> úa Cuinn ⁊ fuilet adbair ’mana cōir díb .t.d.d. d’fácbail, ūair nocan fuil do maithius maínech mōradbul ic .t.d.d. urdail a fuil acaib-si.Ūair ní fuil d’ferand ic .t.d.d. fulang a fuil do maithius ic Artrach. ⁊ is lía do muinter ac Oengus inā do .t.d.d. uili iter gilla ⁊ ōclach. ⁊ is līa do Æd Ālaind na n-éices inā do clíaraib <placeName ref="#eriu">Érend</placeName> ⁊ Alpan”.</p>
+        <p>⁊ ársin tancatar na trī meic sin cuínn rīgh <placeName ref="#eriu">Érend</placeName>.</p>
+        <p>“Crēd ’ma tāncabair, a ógu?” bar rí <placeName ref="#eriu">Ērend</placeName>.</p>
+        <p>“Ar n-athair fēin”, ar sīat, “.i. <persName ref="#bodb">Bodb Derg</persName> mac in <persName ref="#dagda">Dagda</persName>, dar fūagra a Tūatha .d.d. ⁊ tāncamar cugat-sa do īarracht feraind ort”.</p>
+        <p>“Do-gēbthai-si sin, a ócu”, ar rí <placeName ref="#eriu">Érend</placeName>, “do-bēr-sa cetri trīcha .c. Cenél Conaill dāib”.</p>
+        <p>ET ro buí in mac robo sine dīb .i. Artrach ⁊ tech n-aighedh coitcend ⁊ fāilti treblīadnach do cech nech ticed and. ET ro baī Ængus ⁊ meic rīgh in tíri ⁊ in</p>
+        <p>talman ina farrad ic Rāith Mongaigh ⁊ in fer nā faghadh inad in <placeName ref="#eriu">Érend</placeName> nā in <placeName ref="#alba">Albain</placeName>, do-gēibed aici-sium.</p>
+        <p>Ro buí Æd Éiges ag Lis na nÉices ⁊ clíara <placeName ref="#eriu">Érend</placeName> ina farrad and ⁊ .x. mblīadna .xx. ro caithset do flaithius Cormaic ūa Chuinn no co fūair bás oc Rāith Spelain a mBredhaib. ⁊ tāncadar-sum ar cúla doridisi co Tūatha .d.d. ⁊ robo lis ablach crandcæm in lis-sa co cnōib cendcorcra caille ⁊ co n-ublaib áille odhurbuidhi ⁊ co n-imat toraid ⁊ maithiusa archena’.</p>
+        <p>Cid Rāith Rūagh anúigh hī? <persName ref="#cailte">Caīlte</persName> cecinit:</p>
+        <p>‘IS rūagh aniúgh Rāith Artraigh</p>
+        <p>gér’ bo rāith óg ór ablaigh</p>
+        <p>solus budes is bud tūaidh</p>
+        <p>asin rāith co n-ilar būaid.</p>
+        <p><pb n="39a1"/> An cloc ūt atūaig don lis</p>
+        <p>socaide atā ’na anfis</p>
+        <p>trī .l. uingi fa trí</p>
+        <p>tá fa bruindi a comnaigi.</p>
+        <p>ISin rāith sea rind atūaid</p>
+        <p>si Ráith Mongaigh in mór slūaigh</p>
+        <p>is gairit ūaithe uo dess</p>
+        <p>co Rāith Æda na nÉiceas.</p>
+        <p>X. mblīadna .xx. ba cert</p>
+        <p>co trāth ērghid na mōr meic</p>
+        <p>rīam nochar troitset ria fēin</p>
+        <p>co nach creiti cach ro rēidh. IS ráith’.</p>
+        <p>‘An cloch fā fuil ant ór ⁊ int airget robo maith lind a faghāil, a <persName ref="#cailte">Caílte</persName>’, ar <persName ref="#conall">Conall</persName>.</p>
+        <p>‘Ní hí in cloch is doiligh d’faghbāil itir’, ar <persName ref="#cailte">Caílte</persName>, ‘acht a tabairt a talmain’.</p>
+        <p>‘Ní hed is doilgid’, ar <persName ref="#conall">Conall</persName> Derg mac <persName ref="#niall">Nēill</persName>, ‘acht ērghid cetri .c. fer narmach dā tabairt a talmain’.</p>
+        <p>⁊ is andsin ro fácaib in cloch lésa mōra ara lámaib mar do scarsatar ría ⁊ nír fétsat a becc d’oscuchad cid ō n-uillind d’araile ⁊ tuc <persName ref="#cailte">Caílte</persName> saghud dā sleigh fūithi cor’ tócaib dā háit ⁊ dā hinad hí. ⁊ tuc <persName ref="#cailte">Caílte</persName> a lāim anund fan cloich ⁊ tucustar līa <persName ref="#fionn">Find</persName> meic <persName ref="#cumall">Cumaill</persName> assa raibi trī .l. uingi d’airget ⁊ trī .l. uingi do dergór ⁊ trī .l. slabrad n-órdaighi ⁊ tuc cloigem catha as ⁊ ro íagh <persName ref="#cailte">Caílte</persName> in cloch īarsin.</p>
+        <p>‘Maith a anum, a <persName ref="#cailte">Caīlte</persName>’, ar <persName ref="#conall">Conall</persName>, ‘roind na seōid’.</p>
+        <p>‘Roindfet’, ar <persName ref="#cailte">Caílte</persName>. ‘IN cloigem ⁊ in slabrad duit-siu ⁊ in līa dergóir do næm Pādraic ūair is é lía creidim ⁊ irisi na nGædel’.</p>
+        <p>‘Adraé búaid ⁊ bennachtain a <persName ref="#cailte">Caílte</persName>, is maith in senchus ro indisis dūinn’.</p>
+        <p>IS andsin ro fīarfaig <persName ref="#conall">Conall</persName> Derg mac <persName ref="#niall">Nēill</persName> do <persName ref="#cailte">Caīlte</persName>:</p>
+        <p>‘Filet trī tulca acaind andso ⁊ ní fuil a fis ac sin nō ac sēnoir crēd da filet Lecht na Lǣchraidi ainm tulcha dīb, ⁊ Tulach in Bancuiri ainm tulcha ele, ⁊ Lecht na Macraidi ainm tulcha ele fōs ⁊ tibra asin tres tulaigh dīb ⁊ aband aisti amach ⁊ Glaisi na Fer a hainm sin’.</p>
+        <p>‘Do gébusa a fis sin’, ar <persName ref="#cailte">Caílte</persName>. ‘Cíngob inand in ní dīa tāit .i. ben tucustar <persName ref="#fionn">Find</persName> .i. Sadb ingen <persName ref="#bodb">Buidb Deirg</persName>. ⁊ ro sirestar coibthi anécéillidhi arin flaith ar <persName ref="#fionn">Find</persName> .i. leth feisi ⁊ leth édála do tobairt di, ūair dq sirthea in doman uile ní fuigthea and ben ba ferr inā in ben sin. Ro shir in coibchi ar <persName ref="#fionn">Find mac Cumaill</persName> ūair nír mó nā írna arna leghad a tenidh delb cech mná ina farrad, ūair ní raibi in <placeName ref="#eriu">Érind</placeName> nā in <placeName ref="#alba">Albain</placeName> fer bud ferr inā <persName ref="#fionn">Find</persName>. ⁊ ro snaidmed dó hí ac Sīdh ar Emher risi rāiter Sīdh Ban <persName ref="#fionn">Find</persName> isin tan-sa.</p>
+        <p>⁊ arna snaidmed dó, is andsin do-cuaid <persName ref="#fionn">Find</persName> ar slicht lorg Claindi <persName ref="#modhairn">Mornda</persName> ro bí ar foghail ⁊ ar diberg fair. ⁊ ro bātar blíadain ar foghail air no co tāncatar conice an rāith sea .i. Rāith Artraigh. Ar sin ro gabadh sosad ⁊ longport oc <persName ref="#fionn">Find mac Cumaill</persName> andso. ⁊ is andsin ro ráidh <persName ref="#fionn">Find</persName> re Ferdomon mac <persName ref="#bodb">Buidb</persName> Derg meic in <persName ref="#dagda">Dagda</persName>, fria brathair na hingine:</p>
+        <p>“Bud fada le Saidb ingen <persName ref="#bodb">Buidb Deirg</persName> ⁊ a-déra is éislind tucus-<pb n="s"/>a uirri re blīadain anosa ⁊ fesa ⁊ techta is cōir dam-sa do chur ara cend, a fher <pb n="39b1"/> domain”, ar <persName ref="#fionn">Find</persName>. “⁊ cīa is cōir dam-sa do cur ara cenn, a fer domhain?”.</p>
+        <p>“A cetri derb comdalta fēin atāit annso .i. Conaing ⁊ Cathal dā mac Duib meic Ængusa Tirigh, dā mac rīgh <placeName ref="#mumu">Muman</placeName> ⁊ a dhá domdalta ele .i. Cathal ⁊ Crimthan dā mac Cuindcétaigh, dā mac rīgh <placeName ref="#laigen">Laighen</placeName> ⁊ is īat sin dīas is andsa ⁊ is dile ⁊ is dochu lé in <placeName ref="#eriu">Érind</placeName>”.</p>
+        <p>⁊ in trāth ’na bīdh ben na banchéile a lepaidh <persName ref="#fionn">Find</persName> meic <persName ref="#cumall">Cumaill</persName>, is īat sin ro bí’, ar <persName ref="#cailte">Caīlte</persName>.</p>
+        <p>‘“⁊ cīa ūaib, a firu”, ar <persName ref="#fionn">Find</persName>, “rachus ara cend súd?”.</p>
+        <p>“Rachmait-ne and”, ar sīat, “dā mac rīgh <placeName ref="#mumu">Muman</placeName>, ūair isnar crīch atā ⁊ is ī is dile ⁊ is dochu lind do mnaib in domain”.</p>
+        <p>⁊ tāncatar isin rompu cetri .c. con ⁊ cetri .c. gilla ⁊ cetri .c. óclaigh co Sīdh ar Emher risi n-abar Sīdh Ban <persName ref="#fionn">Find</persName> isin tan-sa. ⁊ tāngatar isin sīdh solus mór ⁊ ro ferad fīrchain fāilti rompu cen meirg cen mebail, ⁊ tucad núa cecha bidh ⁊ sen cecha lenda dōib re teora lá ⁊ re teóra aidchi. ⁊ ro tircanatar an āil ⁊ in</p>
+        <p>aithesc risin ingen.</p>
+        <p>“Maith a anum, a ingen”, ar sīat, “is ar do cend-sa tāncamar-ne ō <persName ref="#fionn">Find mac Cumaill</persName>”.</p>
+        <p>“Crēd fuil and?”, ar in ingen, “acht dul andsin”.</p>
+        <p>IS andsin ro gabsat-sum a n-errad ⁊ a n-édach umpu trī .c. ingen rīgh ⁊ rīghan, co soine édaigh cecha datha itir brecc ⁊ glas ⁊ gorm ⁊ corcra ⁊ buidhi ⁊ ūaine. ⁊ do rīachtadar conice in tulaigh tǣb ālaind togaidi sea ⁊ ro scuirit a n-eich ⁊ a n-echrada ⁊ ro cuirit a fidletrenda fosta fūithib cor’ geltadar fér barrglas barrūaine co grian ⁊ co grindell ⁊ co leccoib loma. ⁊ is andsin ro gab tart n-íta an ingen ⁊ an findbandtracht uile a haithle na ndīrma.</p>
+        <p>“Noch n-aithnidh dam uisci a comfocraib annso”, ar Conaing mac Duib meic Ængusa Tírigh ⁊ rīgh líagh cloichi ro bī a mullach na tulcha tondglaisi.</p>
+        <p>⁊ ro ērgetar in lín fer ro bātar ⁊ tucatar a talmain hí ⁊ ro mebaid in lochtobur ngrindi ngloinidi a bun in cairthi anís.</p>
+        <p>“IS feramar ro tócbad ant uisci”, ar an ingen, “⁊ cā ferr ainm da mbia uirri nā Glaisi na Fer?”.</p>
+        <p>⁊ ebait sin a lordothain don uisci ár sin.</p>
+        <p>“ET dāla <persName ref="#fionn">Find</persName>, ro gellsabair annso, a macu”, ar in ingen.</p>
+        <p>“Dar mo brēithir āmh, is annso do gellustar beith”, ar sīat.</p>
+        <p>⁊ do-cuaid a ndegaid Claindi <persName ref="#modhairn">Mornda</persName> a cóiciud ollbādhach <placeName ref="#ulaid">Ulad</placeName> budh tūaidh co Bendaib Boirchi. ⁊ ní himcīan ro bātar and co facatar an lūathgrindi áigh ⁊ irghaile atūaidh cech ndīrech hi raibi ocht .xx. fer óclach.</p>
+        <p>“IN aithintí-si síud?” ar Sadb ingen <persName ref="#bodb">Buidb Deirg</persName>.</p>
+        <p>“Aithnigemait”, ar īat-son, “.i. <persName ref="#goll">Goll</persName> mōrglondach mac <persName ref="#modhairn">Mornda</persName> dār ndīanmarbad-ne in lín atāmait”.</p>
+        <p>⁊ ro ērgetar na fir ⁊ ro hindled a carbait ⁊ ro cuirset Sadb ina carpat.</p>
+        <p>“IN aithinti na firu úd?”, <pb n="40a1"/> ar <persName ref="#goll">Goll</persName> mac <persName ref="#modhairn">Mornda</persName>.</p>
+        <p>“Aithnighemait immorro”, ar Conán, “dā mac Duib meic Ængusa Tírigh, dā mac rīgh <placeName ref="#mumu">Muman</placeName> ⁊ dā derbfer grāda <persName ref="#fionn">Find</persName> meic <persName ref="#cumall">Cumaill</persName> iter <placeName ref="#alba">Albain</placeName> ⁊ <placeName ref="#eriu">Érind</placeName>”.</p>
+        <p>IS annsin tucsat muinter <persName ref="#fionn">Find</persName> glún re gail ⁊ re gaisced do <persName ref="#goll">Goll</persName> mac <persName ref="#modhairn">Mornda</persName> ⁊ ro dībraic cách a céile dīb do soighdib sithgorma ⁊ do beraib birgéra ⁊ do laighnib letanglasa lánmóra. ⁊ do rochratar cetri .c. fer n-armach n-incomlaind do macaib <persName ref="#modhairn">Mornda</persName> le muintir <persName ref="#fionn">Find</persName> meic <persName ref="#cumall">Cumaill</persName> ⁊ do rochratur-sun cen nech n-élōdhach a mbethaid dīb.</p>
+        <p>ET dāla an bancuiri, tucsat in aighthi re talmain ⁊ fūaradar bás ⁊ oighidh do ūathfās and, co rob de atā Tulach an Bancuiri arin tulaigh-sea’, ar <persName ref="#cailte">Caīlti</persName>.</p>
+        <p>‘IS andsin do rīacht <persName ref="#fionn">Find</persName> ⁊ trī catha na fēindi conice seo in lecht laighi ban ⁊ fer arna toitim dā muintir. ⁊ dāla dá mac rīgh <placeName ref="#laigen">Laighen</placeName> .i. Cuind Cédaigh ⁊ Crimtain, tāngatar do lethlāim <persName ref="#fionn">Find</persName> amach ⁊ tucsat a mbeōil risin tulaigh tǣbālaind togaidhi ⁊ fūaradar bás ann do chuma a dā comdalta.</p>
+        <p>⁊ do condaic an flaith <persName ref="#fionn">Find</persName> sin ⁊ ro tuitset a airm asa lāim ⁊ ro tuit a sciath da muin ⁊ a cloigem da braigid ⁊ ro caí <persName ref="#fionn">Finn</persName> ⁊ ro caíetar fīanda <placeName ref="#eriu">Érend</placeName> arcena co falcmur fīrtrūagh.</p>
+        <p>“IS mairg”, ar <persName ref="#fionn">Find</persName>, “ro soised co tech Cuind Cétaigh co Sīdh Lemna Lendcaime ⁊ is olc in scél indestar do Dub mac Ængusa Tirigh do rí <placeName ref="#mumu">Muman</placeName> co Cathair Slēibi Claire. ⁊ is olc in scél ro sīa co <persName ref="#bodb">Bodb Derg</persName> mac in <persName ref="#dagda">Dagda</persName> co Sīd Ban <persName ref="#fionn">Find</persName> uodes .i. bás Ainghine do indisin dó”.</p>
+        <p>Ro érigh <persName ref="#fionn">Find</persName> arsin ⁊ ro cuired na cetri .c. sin do muintir <persName ref="#fionn">Find</persName> fa fochluidib talman ⁊ is amlaid do geibtea cech fer do muintir <persName ref="#fionn">Find</persName> ⁊ fer do macaib <persName ref="#modhairn">Mornda</persName> marb fæ. Ro scrībad in ainm oghaim osa cind ⁊ ro ferad a cluithi cainti ⁊ ro tócbad a lía londerda osa cendaib co rob de sin atā Cnocc na Læchraidi arin cnocsa ⁊ Cnocc in Bancuiri arin cnoc ele seo ⁊ Ard na Macraidi arin cnoc sa tūaidh, do macaib rīgh <placeName ref="#laigen">Laigen</placeName> ro cuired fo talmain and. Co rob ē sin, a Conaill’, ar <persName ref="#cailte">Caílte</persName>, ‘adbar na scél dim’.</p>
+        <p>IS annsin ro fīarfaig <persName ref="#conall">Conall</persName> do <persName ref="#cailte">Caílte</persName>:</p>
+        <p>‘In rabatar gessa ar <persName ref="#fionn">Find mac Cumaill</persName>?”.</p>
+        <p>‘Nírb’ imda air īat’, ar <persName ref="#cailte">Caīlte</persName>, ‘⁊ ní hīat táinig ris ⁊ ro gabustar crith ⁊ uroman in flaith <persName ref="#fionn">Find</persName>’, ar <persName ref="#cailte">Caīlte</persName>, ‘a haithli a muintiri do cur fo talmain. <persName ref="#fionn">Find</persName> cecinit’.</p>
+        <p>1. ‘“IS fūar in gnīm dā mac Duib</p>
+        <p>’s dā mac in rígh a <placeName ref="#mumu">Mumain</placeName></p>
+        <p>.c. gilla ⁊ .c. con</p>
+        <p>.c. fer ara tūarustol.</p>
+        <p>2. IS mōr in scél a Ráith Artraigh</p>
+        <p>imat fer cen beith marthain</p>
+        <p>bās Conaing ⁊ Cathail</p>
+        <p>do beth im cend énachaidh.</p>
+        <p>3. Glaisi na fer</p>
+        <p>bud é in tobur suthain sen</p>
+        <p>bud irdraicc ic cāch in scél</p>
+        <p>méraidh co brāch in bith lén.</p>
+        <p>4. Gan imthecht maitne i mbóin mbred</p>
+        <p>cen teithed re dāim filed</p>
+        <p>cen feis adaigh ac Dún Ræch</p>
+        <p>ngan tūarustal d’óclæch.</p>
+        <p>5. Gan feis re hinghin m<persName ref="#bodb">Buidb</persName> nDeirg</p>
+        <p>fescor is fuidi ar leirg</p>
+        <p>is argain Sīdha ar Emir</p>
+        <p><pb n="40b1"/> re gilla núa ndergtenidh.</p>
+        <p>6. Nochar diúlt re duine rīam</p>
+        <p>dar Mac Muire na mōrgīall</p>
+        <p>d’ulc nā do maith, comall nglē</p>
+        <p><persName ref="#fionn">Find mac Cumaill</persName> Almaine.</p>
+        <p>7. Ro marbad <persName ref="#fionn">Find</persName> na fēindi</p>
+        <p>ac tobairt a læchlēime</p>
+        <p>is ro brís mo craidi ar trī</p>
+        <p>is ro chuir mo nert ar nefní.</p>
+        <p>8. Éc Cathail is Crimthain Cais</p>
+        <p>atāt fan tulaig tondglais</p>
+        <p>ní facus-<supplied reason="editorial">s</supplied>a thess nā tūaigh</p>
+        <p>a comtrūagh sin re hēnūair. IS”’.</p>
+        <p>‘Adrae búaid ⁊ bennachtain a anum, a <persName ref="#cailte">Caīlte</persName>’, ar <persName ref="#conall">Conall</persName>, ‘is mōr in fis ro fásais acaind ⁊ ocar n-ughdaraib re indisin do lucht deridh aimsire’.</p>
+        <p>⁊ tāncatar isin mbaile ⁊ ro bātar ann in aidchi sin.</p>
+        <p>IS andsin ro érigh <persName ref="#cailte">Caílte</persName> ⁊ ro timāin celebrad do <persName ref="#conall">Conall</persName> Derg mac <persName ref="#niall">Nēill</persName> ⁊ do maithib tūaisceirt <placeName ref="#eriu">Érend</placeName> <supplied reason="editorial">…e</supplied>.</p>
+        <p>‘IS mithigh dam-sa imtecht leth naill festa’.</p>
+        <p><supplied reason="editorial">…</supplied> a míc reme sair co Loch Doim Derg a nDáil Araidi an lā sin re fuired n-éll~ na nóna, āit a rabadar dā cruimthir ūaisle do muintir næm <persName ref="#patrick">Pātraic</persName> .i. <persName ref="#colman">Colmān</persName> Eala ⁊ Eoghanān ⁊ sīat oc gabāil na canēine caime coimdeta ⁊ oc etarmolad in Dūileman ⁊ an fīrDīa forōrda and.</p>
+        <p>IS andsin tāncatar trī meic ecalsa da muintir a curach amach do gabāil ēisc ⁊ sīat oc dēnam a trātha mar do-rōnsat na meic ecalsa ele. ⁊ it-condcatar <persName ref="#cailte">Caīlte</persName>. ⁊ it-condaic <persName ref="#cailte">Caílte</persName> īat.</p>
+        <p>‘A fir fīa forōrda’, ar sē, ‘is mór ’n ingnad it-condcus ⁊ ní mō nā pend risi tairised sin’, ar sē.</p>
+        <p>⁊ dordān deghban ⁊ na fēindi it-cluin ind sea andsin ūair ruidb arna roguin ⁊ mná re gúiri lāmna ⁊ mílid maithi menmnacha arna lūath letrada, ro coideoldais risin ceōl do nídís findbandtracht na fēindi and. <persName ref="#cailte">Caīlte</persName> cecinit:</p>
+        <p>‘Ba handum le hó mo cind</p>
+        <p>cloistecht re lēighinn ōs lind</p>
+        <p>ba minca lim ro baī tan</p>
+        <p>ēistecht re dordān deghban.</p>
+        <p>Cid bē nech ’cá tecmad pend</p>
+        <p>fada ro bīa ’ca sgrībenn</p>
+        <p>is trūagh mo marthain i bus</p>
+        <p>mōr d’ingantaib do fūarus.</p>
+        <p>Mall mo turus ō Trāigh Lí</p>
+        <p>fada atú ’ca fhurnaighi</p>
+        <p>libair lēighinn, mōr in mod</p>
+        <p>a n-ēistecht lim ba handum. Ba’.</p>
+        <p>IS andsin táinic <persName ref="#colman">Colmān</persName> Eala amach ⁊ Eoghanān ⁊ it-concatar na fir ⁊ na coin.</p>
+        <p>‘Is fīr’, ar <persName ref="#colman">Colmān</persName>, ‘<persName ref="#cailte">Caīlti</persName> mac Rōnāin siūt do muintir <persName ref="#fionn">Find</persName> meic <persName ref="#cumall">Cumaill</persName> ⁊ do deired na fēindi ⁊ ethar da n-indsaigid’, ar <persName ref="#colman">Colmān</persName>, ‘ūair do muintir næm <persName ref="#patrick">Pātraic</persName> dōib ⁊ tabartar isin oilén dar n-indsaigid īat’.</p>
+        <p>⁊ tucad a tech ndīamair nderrit ndeghdaingen īat ⁊ ro freslad ⁊ ro frithōilad co maith īat ⁊ tucad sen cecha lenda ⁊ nūa cecha bīd dōib ⁊ ō tairrnic dōib a proind ⁊ a tomoltus, ro fīarfaig <persName ref="#colman">Colmān</persName> do <persName ref="#cailte">Caílte</persName>:</p>
+        <p>‘Crēd ’ma tucad Loch Doim Derg arin loch-sa?’.</p>
+        <p>Fregras <persName ref="#cailte">Caīlte</persName> co comnart in ceist sin ōir do bī a fis aigi .i.:</p>
+        <p>‘Dam derg ro buī a lergaib na Lūachra lānbrāenaigh thes ⁊ tēighed do conaib ⁊ d’feraib na fēindi fecht fo trī cecha blīadna ⁊ ro lēnsatar an fīan é blīadain ann ō talergaib na Lūachra conici seo. ⁊ tārthamair-ne cetrar don fēind fair .i. <persName ref="#diarmait">Dīarmait</persName> ūa Duibne ⁊ Mac Lughach lāméchtach <pb n="41a1"/> ⁊ Glas mac Æncerda Berri ⁊ misi ba nesa dō’, ar <persName ref="#cailte">Caílte</persName>, ‘oc tīachtain dochum in locha línidhi lind fūair sea. ⁊ is ann ro dībraic-sium na cetri slegha semnecha slemna so dībraicti a n-ǣnfecht da indsaigid ⁊ do-rochair lind amlaid sin é ⁊ tarrus-<supplied reason="editorial">s</supplied>a in dara congna de ⁊ tarraidh <persName ref="#diarmait">Dīarmait</persName> an congna aile ⁊ ruc leis hé co <placeName ref="#temair">Temair</placeName> Lūachra d’indsaigid <persName ref="#fionn">Find</persName> meic <persName ref="#cumall">Cumaill</persName>. ⁊ tuc <persName ref="#fionn">Find</persName> bun in congna ara</p>
+        <p>troigthib ⁊ an bend ūachtarach de ara baithis ⁊ is ē ōclach ba mó do Gædelaib é ⁊ in congna ele imorro’, ar <persName ref="#cailte">Caílte</persName>, ‘ro facus a cind na hindsi andso ⁊ is dōigh co mbéraind eōlus da indsaigid’.</p>
+        <p>⁊ a-dubairt in laīd ann:</p>
+        <p>‘IS ē seo Loch in Daim Deirg</p>
+        <p>ris tāncamar leirg do leirg</p>
+        <p>bud é a ainm ō sin amach</p>
+        <p>co tí in díne dēighenach.</p>
+        <p>Do-rorithius re féind <persName ref="#fionn">Find</persName></p>
+        <p>ar techt dam a hibar<note type="editorial">gl…d</note></p>
+        <p>ba hainm dam-sa <persName ref="#cailte">Caīlti</persName> Cas</p>
+        <p>rob aithnid dam ōglachas.</p>
+        <p>Mad solus int ésca</p>
+        <p>lethan tar cech tír</p>
+        <p>do-bér-sa d<supplied reason="editorial">āib</supplied> arin lár</p>
+        <p><supplied reason="editorial">…</supplied> congna ⁊ sé imlán.</p>
+        <p>IN cetrar lodmar aníar</p>
+        <p>a crīch <placeName ref="#mumu">Muman</placeName> na mōrgīall</p>
+        <p>ba maith ar lūth ar gach loch</p>
+        <p>no co rāngamar ’sa loch. Is é.’</p>
+        <p>‘Adrae būaid ⁊ bennachtain’, ar <persName ref="#colman">Colmān</persName>, ‘is mōr in fis ⁊ in fīreōlus sin do fācais acaind’.</p>
+        <p>‘⁊ fécha let, a meic ecalsa’, ar <persName ref="#cailte">Caīlte</persName>, ‘nar’ ērigh int ésca ina pupaill ærda fós’.</p>
+        <p>‘Ro érigh’, ar in mac ecalsa, ‘conid solus muir ⁊ tír de’.</p>
+        <p>IS annsin ro érigh <persName ref="#cailte">Caílte</persName> docum na cúile īarturaigh ro baī isin oilén ⁊ tuc a lāim sís isin brūach ⁊ abail a tuc sāthud sétrech sīrcalma iter tul na tuindi tulguirme ⁊ in brūach .c. mblīadna reme sin ⁊ tuc leis anund co lǣchlār in tighi ara bātar na clērigh cor lín ō airidin co hurlár. ⁊ is ē ba rí <placeName ref="#ulaid">Ulad</placeName> in tan sin .i. <persName ref="#eochaid_lethderg">Eochaid</persName> Fæburderg mac Fírglindi ⁊ is and ro baī a dūnad ⁊ a deghbaile ac Tulaigh Arm risi rāiter Madh Rath isin tan-sa.</p>
+        <p>IS andsin ro érigh <persName ref="#colman">Colmān</persName> ⁊ Eoghanān co moch arnamārach seisiur mac n-ecalsa ⁊ rucsat in congna leo dā taispēnad d’<persName ref="#eochaid_lethderg">Eochaid</persName> Fæburderg mac Fírglindi, do rí <placeName ref="#ulaid">Ulad</placeName>. ⁊ is and do bī <placeName ref="#ulaid">Ulaid</placeName>, .xxx. fer óglach ar lár a dūnaidh ⁊ a deghbaile fēin ⁊ tucsat na meic ecalsa in congna do rí <placeName ref="#ulaid">Ulad</placeName> ⁊ do toillfidis .x.c. fer n-armach n-incomloind fæ re dertan ⁊ re doininn.</p>
+        <p>‘Cīa fūair in congna ⁊ cāit a frith?’, ar rí <placeName ref="#ulaid">Ulad</placeName>.</p>
+        <p>‘I lLoch Doim Derg thīar fūair <persName ref="#cailte">Caīlte</persName> mac Rōnāin é’.</p>
+        <p>‘Mochen dam-sa’, ar sē, ‘da toirsed dom’ indsaigid ūair do fuicfed coicrīch cecha feraind ⁊ cecha cnuic ⁊ cecha céti ⁊ iter delugad cecha fine ⁊ cecha tūaithi’.</p>
+        <p>Dāla na clēirech, tāncatar docum a tighi fēin ⁊ ro fācsat in congna oc rí <placeName ref="#ulaid">Ulad</placeName>.</p>
+        <p>‘Maith a anum, a Colmāin’, ar <persName ref="#cailte">Caīlte</persName>, ‘crēd adbar na n-ocht trāth ūd dochum in ērghidh iter lá ⁊ aidhci?’.</p>
+        <p>‘Mōr in āil ⁊ a fātha ⁊ in adbar’, ar in clēirech, ‘.i. ocht caire atā ac lenmain cuirp ⁊ anma cech ēnduine ⁊ dīlait na hocht trātha na hocht caire’.</p>
+        <p><persName ref="#colman">Colmān</persName> cecinit:</p>
+        <p>Na hocht caire Collmāini</p>
+        <p>co ceilid co grīan</p>
+        <p>na hocht trātha toghaidi</p>
+        <p>dā ndīchur co dīan.</p>
+        <p>Prím re crāes nach coimsighi</p>
+        <p>teirt re feirg nā fáth</p>
+        <p>medōn lǣ sūairc soillsighi</p>
+        <p>ūaim re hédradh ngnáth.</p>
+        <p>Nóin i n-aghaid in occobair</p>
+        <p>ar brū talman teind</p>
+        <p>espartu shūairc shocamail</p>
+        <p>ūaind re toirrsi teind.</p>
+        <p>Compléit re snīm sechmallach</p>
+        <p>ūair is comroind cóir</p>
+        <p>īarmērghid trén toghaidi</p>
+        <p>fria maídmighi móir.</p>
+        <p>Maidnín Meic Dé dīlghadaigh</p>
+        <p>fria dīumus ndūr ndocht</p>
+        <p><pb n="41b1"/> corom særa a rīgh brethaigh</p>
+        <p>a Ísa fa ocht. NA.</p>
+        <p>‘Adrae būaid ⁊ bennachtain a anum, a Colmāin Ela’, ar <persName ref="#cailte">Caīlte</persName>, ‘is maith ro fūaslaigis in cest sin ⁊ cid dam-sa’, ar <persName ref="#cailte">Caílte</persName>, ‘gan na hocht trātha sin do ātaigidh ūair do-fuirigh Rí Nime ⁊ Talman mé’, ar sē, ‘a colaind ⁊ a comré ⁊ a comaimsi<supplied reason="editorial">r</supplied> riu?’.</p>
+        <p>IS andsin ro fīarfaig <persName ref="#colman">Colmān</persName> Ela do <persName ref="#cailte">Caílte</persName>:</p>
+        <p>‘Crēd ’ma n-abar Tibra in Bandtrochta risin tibrait sea a cind in locha lind fūair?’.</p>
+        <p>‘Niam ingen Ængusa Tírigh, ingen rīg dā cōiced <placeName ref="#mumu">Muman</placeName> aníar, táinig conige in tibrait sea ⁊ ro bī <persName ref="#oisin">Oisīn</persName> ann ina farrad re cāicīs ar mís ac dēnam tshelga ⁊ fīadaigh coicidh <placeName ref="#ulaid">Ulad</placeName> ann. ⁊ ticed an ingen .xxx. ban cecha maitne do indlad a lām ⁊ do níamaidh a gnūisi asin uisci eochargorm fīrūaine.</p>
+        <p>Dāla immorro Ængusa Tīrigh rīgh <placeName ref="#mumu">Muman</placeName>, ro cuir air co mór a ingen do dul le h<persName ref="#oisin">Oisīn</persName> ar athadh ⁊ ar élógh. ⁊ do rinded tinól dā cōiced <placeName ref="#mumu">Muman</placeName> leis .u. catha com-mōra ⁊ .x.c. ar .xx.c. cecha catha ⁊ tāncatar a n-íarmóracht <persName ref="#fionn">Find</persName> ⁊ na féindi ⁊ <persName ref="#oisin">Oisīn</persName> conici in tibrait sea. ⁊ is sin ǣs ⁊ ūair táinic Níam ingen Ængusa Tírigh docum na tiprat ⁊ ro baī oc indladh a glacc ⁊ ac cur uisci imma gnūis rīghda ruithenta ocin tibrait. ⁊ oc ērgid don ingen ōn tipraith it-condaic na .u. catha arin tulaigh togaidhi taitnemaigh ōsa cind.</p>
+        <p>“Trūagh sin”, ar sī, “⁊ mogēnar do-gébad bás su it-cifed a oidi ⁊ a athair ⁊ a trī brāithri ⁊ maithi dā cóiced <placeName ref="#mumu">Muman</placeName> mé”, ar sī.</p>
+        <p>IS andsin tuc an ingen a gnūis rīgda fri lár ⁊ fūair bās ann in .xxx. findban ro baī ⁊ ro cuirset fuil a craidi tara mbēlaib amach co rob Cnocc in Áir a ainm ō sin anall ⁊ Tibra in Bancuiri ainm na tibrat’.</p>
+        <p><persName ref="#cailte">Caílte</persName> cecinit.</p>
+        <p>‘Atā isin cnuc in rīgan</p>
+        <p>sochaidi leis ar dīghal</p>
+        <p>Cnocc in Áir ō sin alē</p>
+        <p>and buí cāch ’na comnaide’.</p>
+        <p>‘At-condcatar dā cóiced <placeName ref="#mumu">Muman</placeName> bás d’fádhba don ingen amlaid sin.</p>
+        <p>“Is olcc amus <persName ref="#fionn">Find</persName> ⁊ na fēindi ⁊ <persName ref="#oisin">Oisīn</persName> orm-sa”, ar rí <placeName ref="#mumu">Muman</placeName>, “rucsat mh’ingen ūaim ⁊ fūair bás do nāire acco. ⁊ ērgidh-si dam-sa co Slīab Cind Con i Fāil itá <persName ref="#fionn">Find</persName> ⁊ fūacarthar cath ūaim-si air an ícc mh’ingine tucsat leo”.</p>
+        <p>IS andsin a-dubairt Ængus Tīrech rí <placeName ref="#mumu">Muman</placeName> fria banechlaigh dā muintir .i. Moirend ingen Muirisci ⁊ ráinic an banechlach roimpi co Rāith Cind Con a nDāil Araidhi co hairm a raibi <persName ref="#fionn">Find</persName> ⁊ sē oc frasad ⁊ ic fath imbirt na fithcilli ⁊ meic a .i~ca. .i. Osgur mac <persName ref="#oisin">Oisīn</persName>. ⁊ fochtaigh in rí scēla di ⁊ ro indis an echlach a toisc ⁊ at-bert:</p>
+        <p>“Cath ar do selba a <persName ref="#fionn">Find</persName></p>
+        <p>a fir na mbrīathar mbithbind</p>
+        <p>is tidhecht leis co Cenn Con</p>
+        <p>cen athceó cen élechon.</p>
+        <p>Comrac <persName ref="#fionn">Find</persName> is fher <placeName ref="#mumu">Muman</placeName></p>
+        <p>sochaidi ris ba cumain</p>
+        <p>marbaid cach dīb a chéle</p>
+        <p>bud curata a comērghid.</p>
+        <p>A-derim-sea rit reme</p>
+        <p>bud fīr dam in fēistine</p>
+        <p>mine tarda cath co grind</p>
+        <p>cath ar do shelba a <persName ref="#fionn">Find</persName>. Cath”.</p>
+        <p>“Andam leisin féind”, ar <persName ref="#fionn">Find</persName>, “cath d’fogra orra do nech ⁊ ērigh amach, a Garb Cronāin”, ar <persName ref="#fionn">Find</persName>, “⁊ abair risin féin ērghid athlum ænfir docum in catha”.</p>
+        <p>⁊ táinic Garb Cronān amach co longport na fēindi ⁊ ro frecratar an fīan sin ūair tucsat aithne air co raibi mōrsothbifir aigi.</p>
+        <p>IS annsin ro ērghetar an fīann in ndornchuraib a cloigem trom tortbuillech ⁊ a slegh seimnech snasta slemoncrūaid ⁊ acu salaib a scīath mbreccrendach rētlannach. ⁊ ro cōraighed cath fīrālaind fīrétrocht <persName ref="#fionn">Find mac Cumaill</persName> ⁊ ro cōirighed <pb n="41[a"/>a1] amdubach do scīathaib dīsle delighti dondcorcra ina n-urtimcell amuigh anechtair ⁊ fid nemed do sleghaib ūrarda orchrai re gelgūailib dōib ⁊ roba loch ar leithi ⁊ roba catair ar cruindi ⁊ robo dún ditoghlaighi ar daingne in cath sin <persName ref="#fionn">Find mac Cumaill</persName>.</p>
+        <p>“Maith a anum a rīg fēindigh”, ar in fīan, “caidhi adbar in catha-sa?”.</p>
+        <p>⁊ do indis dōib.</p>
+        <p>IS andsin a-dubairt Fergus Finbel filed na fēindi re <persName ref="#fionn">Find</persName>:</p>
+        <p>“Is cath ectaidhi duit-si in cath sa do tobairt do rí <placeName ref="#mumu">Muman</placeName> i falaidh a ingine is marb agut”.</p>
+        <p>IS andsin ro línad lāthair ⁊ ro cenglad comairle ag ocht .xx. fer ōclach do muintir <persName ref="#fionn">Find</persName> ar fót scrútain gāisi risin cath amuich anechtair. IS andsin a-dubairt an flaith <persName ref="#fionn">Find</persName>:</p>
+        <p>“Cāit a fuil Smírgat ingen Athaidh Étūalaing?”</p>
+        <p>“Sunda”, ar sī.</p>
+        <p>“Éridh d’acallam rīgh <placeName ref="#mumu">Muman</placeName>”.</p>
+        <p>⁊ ro gabustar a léne do slemainsída buidi fria cnes ⁊ inar mæthshroill tairrsi anechtair cona uchtclār órdhaigi ann co ngab~ ōn gūalaind co cēile di. ⁊ do luid Smírgat ingen Athaidh Ētūalaing roim co hÆngus Tírech ⁊ co maithibh dā cōiced <placeName ref="#mumu">Muman</placeName> ⁊ it-bert:</p>
+        <p>“Do béra <persName ref="#fionn">Find</persName> breth Cormaic ūa Cuind rīgh <placeName ref="#eriu">Érend</placeName> ⁊ <persName ref="#cithruadh">Cithrūagh</persName> mac Fīrcóicat ⁊ <persName ref="#eithne">Eithne</persName> Ollomda ingen Cathair Móir duit”.</p>
+        <p>“Dā tuctur cur ⁊ tend ⁊ trebaire risin mbreith sin dam-sa”, ar rí <placeName ref="#mumu">Muman</placeName>, “gēbat hí”.</p>
+        <p>“Cīa na cuir conn-aigi?” ar Smīrgat.</p>
+        <p>“Mac an fir do-roine olc rim”, ar rí <placeName ref="#mumu">Muman</placeName>, “.i. Oscur mac <persName ref="#oisin">Oisīn</persName>, ⁊ Ferdoman mac <persName ref="#bodb">Buidb Deirg</persName> meic in <persName ref="#dagda">Dagda</persName> ⁊ <persName ref="#diarmait">Dīarmait</persName> mac Duinn meic Donncada meic Dubain meic Duibaidchi d’feraib <placeName ref="#mumu">Muman</placeName> andes”.</p>
+        <p>IS andsin ro hindised d’<persName ref="#fionn">Find</persName> sin.</p>
+        <p>“Do-bēr-sa sin”, ar <persName ref="#fionn">Find</persName>, “sul do-bertar cath”.</p>
+        <p>⁊ do cūatar an fīan rompu co Temraigh ⁊ rí <placeName ref="#mumu">Muman</placeName> ⁊ tucad breth Cormaic ⁊ <persName ref="#cithruadh">Cithrūagh</persName> ⁊ <persName ref="#eithne">Eithne</persName> dōib ⁊ is ī breth rucsat an ingen: do tobairt asin tulaigh toghaidhi a raibi ⁊ a cur a comtrom ⁊ a comtrom d’ór ⁊ a comtrom d’airget ana haiged ⁊ sin do tobairt an éric a ingine do rí <placeName ref="#mumu">Muman</placeName> ⁊ éric ar leith in cach ingin rīgh ⁊ táisigh do rochair and.</p>
+        <p>IS andsin a-dubairt <persName ref="#fionn">Find</persName>:</p>
+        <p>“Cindus roindfēmait in ēric út a fīana <placeName ref="#eriu">Érend</placeName>?”</p>
+        <p>“Roindfímait”, ar <persName ref="#cormac">Cormac</persName>, “a leth ar Clánnaib <persName ref="#baiscne">Baīscne</persName> ⁊ a leth ara fēind ō sin amach”.</p>
+        <p>Co ro bī sin’, ar sē <persName ref="#cailte">Caílte</persName>, ‘cét éric ro ícustar <persName ref="#fionn">Find</persName> ⁊ an fīann rīam ⁊ is ī sin, a clérigh, an fochaind a ráta Cnoc in Áir arin cnoc ⁊ Tibra in Banntrachta arin tibrait, ⁊ is ē sin in scēl ro shiris orum’.</p>
+        <p>IS andsin ro cuir <persName ref="#eochaid_lethderg">Eochaid</persName> Fæburderg rí <placeName ref="#ulaid">Ulad</placeName> fesa ⁊ techta ar cend <persName ref="#cailte">Caīlte</persName> co Rāith <persName ref="#aine">Áine</persName> i cōiced <placeName ref="#ulaid">Ulad</placeName> ⁊ do rīachtadar na techta sin co Loch Doim Derg ar cend <persName ref="#cailte">Caílte</persName>. Do timain <persName ref="#cailte">Caīlte</persName> celebrad do <persName ref="#colman">Colmān</persName> ⁊ d’Eoganān ⁊ gellsat na clērigh nem dō-sum ⁊ a ēcnairc do gagāil ⁊ Rí Nime do guidi fair. ⁊ dāla <persName ref="#cailte">Caīlte</persName>, do luid a carbat rīg <placeName ref="#ulaid">Ulad</placeName> āit a raibe <persName ref="#eochaid_lethderg">Eochaid</persName> Fæburderg mac Fírglindi ⁊ ba rí ūasal oirdnighi in rí ro baī andsin .i. ní airged duine ⁊ ní boined a bunad cenēl do nech.</p>
+        <p>IS andsin ro bī <persName ref="#eochaid_lethderg">Eochaid</persName> Fæburderg mac Fírglindi ⁊ trī catha commōra a n‑ēninad ⁊ .x.c. ar .xx.c. cecha catha dīb. IS andsin do rīacht <persName ref="#cailte">Caílte</persName> da n-indsaigid ⁊ at-racht rí <placeName ref="#ulaid">Ulad</placeName> ⁊ ferais <pb n="41[a"/>b1] fāilti fris ⁊ fersat <placeName ref="#ulaid">Ulad</placeName> uili.</p>
+        <p>‘Maith a anum a <persName ref="#cailte">Caílte</persName>, cā ferr <supplied reason="editorial">…</supplied> dūind ní da fíarfochamais dít na senchas na rāth<supplied reason="editorial">…</supplied> sa .i. Rāith <persName ref="#aine">Áine</persName>?’.</p>
+        <p>‘Fil acum-sa sin in ní dia tá .i. <persName ref="#aine">Áine</persName> ingen Moghduirnd, ingen rīgh <placeName ref="#alba">Alban</placeName> anall. ⁊ ro bātar fir <placeName ref="#alba">Alban</placeName> aca radha:</p>
+        <p>“Cid duit, a rīghan, cen feis le fe<supplied reason="editorial">r…</supplied> nā le ferchēile?”.</p>
+        <p>“Ní faghaim-sea in <placeName ref="#eriu">Érend</placeName> nā in <placeName ref="#alba">Albain</placeName> fer<supplied reason="editorial">…</supplied> risa dingmála lem feis acht ǣnfer nā má cia<supplied reason="editorial">…</supplied> in fer sin” ar Mogdornd, ar athair na hingine.</p>
+        <p>“<persName ref="#fionn">Find mac Cumaill</persName>”, ar sī, “ant-í oca tá fīana <placeName ref="#eriu">Érend</placeName> ⁊ fīana <placeName ref="#alba">Alban</placeName>”.</p>
+        <p>⁊ it clo<supplied reason="editorial">…</supplied> d’<persName ref="#fionn">Find</persName> sin. IS annsin a-dubairt <persName ref="#fionn">Find</persName> re <persName ref="#fionn">Find</persName> Fer in camp<supplied reason="editorial">…</supplied> ⁊ re Rónan rīgh ōclach .i. dā rīgh fēindi fīann <placeName ref="#alba">Alba</placeName><supplied reason="editorial">n…</supplied>, dola dā togha ⁊ dā tochmarc sin.</p>
+        <p>“Cā coma bud mait línd di?” ar na hōclaigh.</p>
+        <p>“Comus a fuil a nĒrind ⁊ i n<placeName ref="#alba">Albain</placeName> acum-sa di ⁊ gan a lēgōn tria bithu”.</p>
+        <p>“Maith a rīgh fen<supplied reason="editorial">…</supplied>”, ar īat-sum, “dias grāda dot muinter bunaid-si lind cu rob mōidi creitfis in rīgan a togha ⁊ a tochmarc duit”.</p>
+        <p>“Ēirigh-siu a <persName ref="#mac_lugach">Meic Lugach</persName> and sūt ⁊ a <persName ref="#cailte">Caīlti</persName>”, ar <persName ref="#fionn">Find</persName>, “⁊ cid becc mōr gabtai<supplied reason="editorial">s</supplied>-si oraib di, do-bēr-sa di é<supplied reason="editorial">…</supplied>”.</p>
+        <p>IS andsin lodmar romaind in cetrar fer óglach sin conar fīanaib co Dun Mōr Monait<supplied reason="editorial">h…</supplied> i n<placeName ref="#alba">Albain</placeName> ⁊ rucad a tech ndīamar nderrit nded<supplied reason="editorial">…</supplied> daingen sind ⁊ ro freslad ⁊ ro frithoiled co maith sind ann. IS andsin do rīacht Mogdornn rí <placeName ref="#alba">Alban</placeName> ⁊ a ingen dar n-indsaigid .i. <persName ref="#aine">Áine</persName> ⁊ ro fīarfaigetar ar fecht ⁊ ar turus dínd ⁊ ro indsemar ar n-āil ⁊ ar n-aithesc.</p>
+        <p>“At-cluiníd siūt, a ingen”, ar Mogdorn, “at-cluinim aran ingen ⁊ ot-cluinim co rob é siūt fear is ferr a n<placeName ref="#eriu">Érind</placeName> ⁊ i n<placeName ref="#alba">Albain</placeName>”.</p>
+        <p>“Fāifet leis”.</p>
+        <p>INa degaid sin ro snaidmed an ben sin d’<persName ref="#fionn">Find mac Cumaill</persName> ⁊ cech ní ro sīr sī ar <persName ref="#fionn">Find</persName> a tabairt di ⁊ tāncamair-ne ⁊ an ingen lind co n-ilar cecha maitius alé docum na rātha sa itāmait ⁊ do rīacht <persName ref="#fionn">Find</persName> trī catha na fēindi inar coinde ⁊ in comdāil ō <placeName ref="#temair">Temair</placeName> Lūacra conice seo. ⁊ do rigne <persName ref="#fionn">Find</persName> dūnad ⁊ dingnad ⁊ deghbaile ⁊ tigi rindradarcacha ⁊ grīana na gloinidi ⁊ sondaighi sitharda. ⁊ Cid is ī ro baighidhi and is ī robo muinter ar torachtain ūair is ī ro frestail ⁊ do frithōil sind re blīadain trī catha na féindi can uiresbaid bid nā lenda oraind risin ré sin. A cind blīadna immorro, a-dubairt Mac Lughach risin flaith, re <persName ref="#fionn">Find</persName>:</p>
+        <p>“Is lōr let-sa do crīch ⁊ d’forba ⁊ d’ferand .i. <persName ref="#aine">Áine</persName> ingen Mogduirnd”.</p>
+        <p>“Dar mo brēithir āmh, a <persName ref="#mac_lugach">Meic Lughach</persName>”, ar <persName ref="#fionn">Find</persName>, “ní fedar-sa cā ní do shīrsind i n<placeName ref="#eriu">Érind</placeName> nā i n<placeName ref="#alba">Albain</placeName> acht in ní do geibim a tigh <persName ref="#aine">Áine</persName>”.</p>
+        <p>⁊ baī in rīgan co cend .uíí. mbliadain ina degaid sin ac <persName ref="#fionn">Find</persName> ⁊ fa buidech fir Erend ⁊ <placeName ref="#alba">Alban</placeName> di risin ⁊ ruc dā mac d’<persName ref="#fionn">Find</persName> .i. Uillend Fæburderg ⁊ Æd Becc ⁊ marb issi do breith Æda Bicc mac <persName ref="#fionn">Find</persName>’.</p>
+        <p>⁊ a-dubairt <persName ref="#cailte">Caīlte</persName> in laīd and:</p>
+        <p>‘Folum aníugh Rāith <persName ref="#aine">Áine</persName></p>
+        <p>a cuirtis óig ilgāire</p>
+        <p>ba minic slūaigh as graighi</p>
+        <p>ara tǣb co tonnglaine.</p>
+        <p>Trī .c. rīgan isin lis</p>
+        <p>sochaidi ata ’na anfhis</p>
+        <p>is trī .c. gilla ngrāda</p>
+        <p>’s da .c. dalta dingmála.</p>
+        <p>Ferr in ben inā cech ben</p>
+        <p>ro baī d’imat a háighed.</p>
+        <p>marbh sin uile immalle</p>
+        <p>cu rob folum in baile. Folum’.</p>
+        <p><pb n="42a1"/> ‘Et ro cuired fa fochluidib talman í andso’, ar <persName ref="#cailte">Caílte</persName>, ‘⁊ ro tócbad a líagh loinderda ⁊ ro ferad a cluithi caīntech ⁊ ro scrībad a hainm oghaim’.</p>
+        <p>‘Adrae būaid ⁊ bennachtain a anum a <persName ref="#cailte">Caílte</persName>’, ar rí <placeName ref="#ulaid">Ulad</placeName>, ‘is maith in scēl ro indisis dūind ⁊ scrībthar in scēl úd a tāmlorgaib filed ⁊ a mbrīatraib ollaman’.</p>
+      </div>
+    </body>
+  </text>
+</TEI>

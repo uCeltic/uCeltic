@@ -9,6 +9,7 @@ import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import ModeButton from "./ModeButton";
 import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
+import { useSearchStore } from "../../store/searchStore";
 
 const secondaryBtn =
   "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-[#52524F] cursor-pointer transition-all hover:bg-[#F0EEE6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
@@ -27,6 +28,10 @@ export default function ToolBar({
   const increaseFontSize = useWorkspaceStore((state) => state.increaseFontSize);
   const decreaseFontSize = useWorkspaceStore((state) => state.decreaseFontSize);
   const showIIIF = useWorkspaceStore((state) => state.showIIIF);
+  const runSearch = useSearchStore((s) => s.runSearch);
+  const isSearching = useSearchStore((s) => s.isSearching);
+  const setQuery = useSearchStore((s) => s.setQuery);
+  const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -94,22 +99,59 @@ export default function ToolBar({
         <input
           type="text"
           placeholder="Search documents..."
-          className="w-full max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2 focus:ring-[#52524F]/20 transition-all"
+          className="w-full max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm
+  text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2
+  focus:ring-[#52524F]/20 transition-all"
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const docs = visibleDocumentIds
+                .map((id) => openDocuments.find((d) => d.id === id))
+                .filter(
+                  (d): d is NonNullable<typeof d> =>
+                    d !== undefined && d.format === "tei",
+                );
+              for (const doc of docs) {
+                runSearch((doc.content as { id: number }).id, doc.id);
+              }
+            }
+          }}
         />
-
-        <button type="button" className={toggleOnBtn}>
-          Search
-        </button>
-
         <AdvancedSearchPopover />
-      </div>
 
+      <button
+        type="button"
+        className={toggleOnBtn}
+        disabled={isSearching}
+        onClick={() => {
+          const docs = visibleDocumentIds
+            .map((id) => openDocuments.find((d) => d.id === id))
+            .filter(
+              (d): d is NonNullable<typeof d> =>
+                d !== undefined && d.format === "tei",
+            );
+          for (const doc of docs) {
+            runSearch((doc.content as { id: number }).id, doc.id);
+          }
+        }}
+      >
+        {isSearching ? "..." : "Search"}
+      </button>
+      </div>
       {/* Toggle IIIF button and font size buttons*/}
       <div className="flex items-center gap-2">
-        <button type="button" onClick={decreaseFontSize} className={secondaryBtn}>
+        <button
+          type="button"
+          onClick={decreaseFontSize}
+          className={secondaryBtn}
+        >
           A−
         </button>
-        <button type="button" onClick={increaseFontSize} className={secondaryBtn}>
+        <button
+          type="button"
+          onClick={increaseFontSize}
+          className={secondaryBtn}
+        >
           A+
         </button>
 

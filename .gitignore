@@ -91,6 +91,12 @@ temp/
 # Agent skills
 .agents/
 skills-lock.json
+AGENTS.md
+docs/agents/
+
+# Temporary dev scripts
+backend/test_search.py
+backend/repopulate.py
 
 # Original gitignore content
 CLAUDE.md
