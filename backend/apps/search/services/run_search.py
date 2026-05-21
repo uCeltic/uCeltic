@@ -9,7 +9,7 @@ SCROLL_TARGET_TAGS = {
 
 
 def run_search(doc_id: int, query: str, *,
-                window_size_ratio: float = 0.5,
+                window_size_ratio: float = 1.3,
                 step_size: int = 1,
                 dissimilarity_threshold: float = 0.5,
                 top_k: int = 10) -> list[dict]:
@@ -22,7 +22,9 @@ def run_search(doc_id: int, query: str, *,
     if not target_words or not article_tokens:
         return []
 
+    # robustness check for window size: if target_words is 1 and ratio is 0.5, then window_size should be 1
     window_size = max(1, int(len(target_words) * window_size_ratio))
+
     top = moving_window_similarity1(
         target_words, article_tokens, window_size, step_size, top_k,
     )

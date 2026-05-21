@@ -2,12 +2,13 @@ import { create } from "zustand";
 import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
 
+//this store is used to store the search results/handle search operations for a given document
 interface SearchStore {
   query: string;
-  resultsByDocument: Record<DocumentId, SearchResult[]>;
-  activeResultIndexByDocument: Record<DocumentId, number>;
-
-  matchLength: number;
+  resultsByDocument: Record<DocumentId, SearchResult[]>; //store the search results for a document
+  activeResultIndexByDocument: Record<DocumentId, number>; //store the index of the current result
+  //search parameters
+  matchLength: number; 
   precision: number;
   dissimilarityScore: number;
   topK: number;
@@ -23,14 +24,16 @@ interface SearchStore {
   setDissimilarityScore: (v: number) => void;
   setTopK: (v: number) => void;
 
-  isSearching: boolean;
+  isSearching: boolean; //whether the search is in progress
   runSearch: (docId: number, clientDocId: string) => Promise<void>;
 
   nextResult: (documentId: DocumentId) => void;
   prevResult: (documentId: DocumentId) => void;
 }
 
+
 export const useSearchStore = create<SearchStore>((set, get) => ({
+  //initial state
   query: "",
   resultsByDocument: {},
   activeResultIndexByDocument: {},
@@ -39,6 +42,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   dissimilarityScore: 0.5,
   topK: 10,
   isSearching: false,
+  //run the search
     runSearch: async (docId, clientDocId) => {
       const { query, dissimilarityScore, topK, matchLength, precision } = get();
       if (!query.trim()) return;

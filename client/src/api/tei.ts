@@ -1,7 +1,9 @@
 import type { TEIDoc, TEICatalogEntry } from "../types/tei";
 
+
 const BASE = "http://localhost:8000/api/tei/";
 
+//get all the TEI documents from the database
 export async function listTEIDocs(): Promise<TEICatalogEntry[]> {
     const res = await fetch(`${BASE}`);
     if (!res.ok) {
@@ -10,6 +12,7 @@ export async function listTEIDocs(): Promise<TEICatalogEntry[]> {
     return res.json();
 }
 
+//get a single TEI document from the database
 export async function fetchTEIDoc(id: number): Promise<TEIDoc> {
     const res = await fetch(`${BASE}${id}/`);
     if (!res.ok) {

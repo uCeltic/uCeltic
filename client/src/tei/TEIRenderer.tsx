@@ -25,9 +25,13 @@ import PassThrough from "./PassThrough";
 
 const SKIP_TAGS = new Set(["teiHeader"]);
 
-// Pre-compute anchor IDs in a single pre-order DFS pass so the numbering is
-// pure data (immune to React's StrictMode double-rendering) and matches the
-// backend's extract_text_and_anchors traversal exactly.
+
+
+// pre-order DFS traversal to assign anchor ids to the nodes in the tei document
+// skip the teiHeader tag
+// skip the text nodes
+// assign anchor ids to the element nodes
+// continue the traversal until all the nodes have been visited
 function assignAnchorIds(node: TEINode, ids: Map<TEINode, number>, counter: { n: number }) {
   if ("type" in node && node.type === "text") return;
   const el = node as TEIElementNode;

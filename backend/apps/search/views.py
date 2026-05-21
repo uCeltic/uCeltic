@@ -15,11 +15,12 @@ class SearchView(APIView):
                 {"error": "doc_id and query are required"},
                 status=status.HTTP_400_BAD_REQUEST,
                 )
+
         try:
             results = run_search(
                 doc_id=int(doc_id),
                 query= query,
-                window_size_ratio=float(data.get('window_size_ratio', 0.5)),
+                window_size_ratio=float(data.get('window_size_ratio', 1.3)),
                 step_size=int(data.get('step_size', 1)),
                 dissimilarity_threshold=float(data.get('dissimilarity_threshold', 0.5)),
                 top_k=int(data.get('top_k', 10)),

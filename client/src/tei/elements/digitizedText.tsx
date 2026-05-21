@@ -1,5 +1,7 @@
 import type { TEIElementProps } from "../elementMap";
 
+//define how the tei tags are rendered in the html page
+
 export function Pb({ node, anchorId }: TEIElementProps) {
   const n = node.attrs?.n;
   return (
