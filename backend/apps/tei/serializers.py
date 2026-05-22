@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import TEIDocument
 
+
 class TEIDocumentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TEIDocument
@@ -10,4 +11,9 @@ class TEIDocumentListSerializer(serializers.ModelSerializer):
 class TEIDocumentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TEIDocument
-        fields = ["id", "title", "language", "parsed_json", "meta", "created_at"]
+        fields = [
+            "id", "title", "language",
+            "parsed_json", "meta",
+            "anchors", "word_array",      # NEW
+            "created_at",
+        ]

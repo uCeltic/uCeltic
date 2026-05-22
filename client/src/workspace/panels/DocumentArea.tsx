@@ -5,6 +5,7 @@ import TEIRenderer from "../../tei/TEIRenderer";
 import TEIErrorBoundary from "../../tei/ErrorBoundary";
 import type { TEIDoc } from "../../types/tei";
 import type { SearchResult } from "../../types/search";
+import { buildAnchorsById, buildWordToAnchor, buildRangesForWordSpan } from "../../tei/wordRange";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -37,27 +38,43 @@ interface SortableDocumentColumnProps {
 }
 
 
-function handleJump(docId: string, result: SearchResult) {
-  if (result.anchor_id == null) return;
+function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
   const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
   if (!columnEl) return;
 
-  // Clear any previous highlight in this column before applying a new one.
-  for (const el of columnEl.querySelectorAll<HTMLElement>(".bg-amber-100")) {
-    el.classList.remove("bg-amber-100", "transition-colors", "duration-300");
+  const matchHL = window.CSS?.highlights?.get("search-match");
+  const activeHL = window.CSS?.highlights?.get("search-match-active");
+  matchHL?.clear();
+  activeHL?.clear();
+
+  const anchorsById = buildAnchorsById(teiDoc.anchors);
+  const wordToAnchor = buildWordToAnchor(teiDoc.word_array);
+
+  const ranges = buildRangesForWordSpan(
+    columnEl,
+    anchorsById,
+    wordToAnchor,
+    result.word_start,
+    result.word_end,
+  );
+
+  for (const r of ranges) activeHL?.add(r);
+
+  if (result.anchor_id != null) {
+    const scrollEl = columnEl.querySelector(
+      `[data-tei-anchor-id="${result.anchor_id}"]`,
+    );
+    if (scrollEl) {
+      scrollEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
   }
-
-  const ids = result.highlight_anchor_ids?.length
-    ? result.highlight_anchor_ids
-    : [result.anchor_id];
-  const targets = ids
-    .map((id) => columnEl.querySelector(`[data-tei-anchor-id="${id}"]`) as HTMLElement | null)
-    .filter((el): el is HTMLElement => el !== null);
-  if (targets.length === 0) return;
-
-  targets[0].scrollIntoView({ behavior: "smooth", block: "center" });
-  for (const el of targets) {
-    el.classList.add("bg-amber-100", "transition-colors", "duration-300");
+  if (ranges.length > 0) {
+    const rect = ranges[0].getBoundingClientRect();
+    window.scrollTo({
+      top: rect.top + window.scrollY - window.innerHeight / 2,
+      behavior: "smooth",
+    });
   }
 }
 
@@ -142,7 +159,7 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
                 <button
                   type="button"
                   className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  onClick={() => activeResult && handleJump(doc.id, activeResult)}
+                  onClick={() => activeResult && doc.format === "tei" && handleJump(doc.id, activeResult, doc.content as TEIDoc)}
                 >
                   Jump
                 </button>
@@ -278,7 +295,7 @@ export default function DocumentArea() {
                   const next = activeIndex > 0 ? activeIndex - 1 : activeIndex;
                   prevResult(doc.id);
                   const r = docResults[next];
-                  if (r) handleJump(doc.id, r);
+                  if (r && doc.format === "tei") handleJump(doc.id, r, doc.content as TEIDoc);
                 }}
                 onNext={() => {
                   const next =
@@ -287,7 +304,7 @@ export default function DocumentArea() {
                       : activeIndex;
                   nextResult(doc.id);
                   const r = docResults[next];
-                  if (r) handleJump(doc.id, r);
+                  if (r && doc.format === "tei") handleJump(doc.id, r, doc.content as TEIDoc);
                 }}
                 onClose={() => {
                   if (window.confirm(`Close "${doc.title}"?`)) {

@@ -35,7 +35,6 @@ const SKIP_TAGS = new Set(["teiHeader"]);
 function assignAnchorIds(node: TEINode, ids: Map<TEINode, number>, counter: { n: number }) {
   if ("type" in node && node.type === "text") return;
   const el = node as TEIElementNode;
-  if (SKIP_TAGS.has(el.tag)) return;
   ids.set(node, counter.n++);
   for (const child of el.children ?? []) {
     assignAnchorIds(child, ids, counter);
@@ -46,6 +45,7 @@ interface Props {
   node: TEINode;
 }
 
+
 export default function TEIRenderer({ node }: Props) {
   const ids = useMemo(() => {
     const map = new Map<TEINode, number>();
@@ -55,9 +55,10 @@ export default function TEIRenderer({ node }: Props) {
   return <NodeRenderer node={node} ids={ids} />;
 }
 
+//Second DFS traversal to render the tei document
 function NodeRenderer({ node, ids }: { node: TEINode; ids: Map<TEINode, number> }) {
   if ("type" in node && node.type === "text") {
-    return <>{node.text}</>;
+    return <>{node.segments.map((s) => s.text).join("")}</>;
   }
   const el = node as TEIElementNode;
   if (SKIP_TAGS.has(el.tag)) return null;

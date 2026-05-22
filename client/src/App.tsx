@@ -2,6 +2,15 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import WorkspacePage from './pages/WorkspacePage'
 
+if (typeof CSS !== "undefined" && "highlights" in CSS) {
+  if (!CSS.highlights.has("search-match")) {
+    CSS.highlights.set("search-match", new Highlight());
+  }
+  if (!CSS.highlights.has("search-match-active")) {
+    CSS.highlights.set("search-match-active", new Highlight());
+  }
+}
+
 /* Rounter */
 function App() {
   return (

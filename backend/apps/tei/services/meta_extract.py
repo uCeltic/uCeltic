@@ -1,4 +1,4 @@
-from .parse import parse_tei, _element_to_node
+
 from lxml import etree
 
 
@@ -14,12 +14,13 @@ def _find_first(node: dict, tag: str) -> dict | None:
     return None
 
 # extract the plain text of the node
-def _text_of(node:dict) -> str:
+def _text_of(node: dict) -> str:
     parts = []
     for child in node.get("children", []):
         if isinstance(child, dict):
             if child.get("type") == "text":
-                parts.append(child["text"])
+                for seg in child.get("segments", []):
+                    parts.append(seg.get("text", ""))
             else:
                 parts.append(_text_of(child))
     return "".join(parts).strip()

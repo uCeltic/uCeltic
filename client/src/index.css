@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+::highlight(search-match) {
+background-color: #FEF3C7;
+}
+
+::highlight(search-match-active) {
+background-color: #FB923C;
+color: #1f2937;
+}
