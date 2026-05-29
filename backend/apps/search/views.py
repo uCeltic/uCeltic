@@ -5,6 +5,7 @@ from rest_framework import status
 from apps.tei.models import TEIDocument
 from .services.run_search import run_search
 
+# controller for the search api
 class SearchView(APIView):
     def post(self, request):
         data = request.data

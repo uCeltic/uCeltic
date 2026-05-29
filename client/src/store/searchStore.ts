@@ -59,6 +59,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         });
         set((s) => ({
           resultsByDocument: { ...s.resultsByDocument, [clientDocId]: results },
+          // on the documents we've opened, which result should be highlighted and displayed?
           activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
           isSearching: false,
         }));

@@ -1,5 +1,8 @@
-import Levenshtein
+from rapidfuzz.distance import Levenshtein
 
+# Use rapidfuzz instead of python-Levenshtein for faster computation.  
+# rapidfuzz.distance.Levenshtein.normalized_distance(a, b) returns the normalized edit distance between a and b,
+# is equivalent to the old method Levenshtein.distance(a, b) / max(len(a), len(b)), without manual division.
 
 def moving_window_similarity1(target_words, total_words, actual_window_size, step=1,top_k=1):
     if actual_window_size > len(total_words):
@@ -12,8 +15,8 @@ def moving_window_similarity1(target_words, total_words, actual_window_size, ste
         source_words = total_words[i:i + actual_window_size]
         for k in range(len(target_words)):
             for j in range(len(source_words)):
-                score = Levenshtein.distance(target_words[k], source_words[j]) /max(len(target_words[k]), len(source_words[j]))
-                matrix[k][j] = score
+                matrix[k][j] = Levenshtein.normalized_distance(target_words[k], source_words[j])
+                  
         dissimilarity_scores = calculate_dissimilarity_score(matrix, actual_window_size)
         score = sum(dissimilarity_scores) / len(target_words)
         top_results.append((score, i))
@@ -21,6 +24,7 @@ def moving_window_similarity1(target_words, total_words, actual_window_size, ste
 
 
 def calculate_dissimilarity_score(matrix, actual_window_size):
+    # greedy optimal pairing: find the global minimum value in each round, mark the row and column as used.
     results = []
     for _ in range(len(matrix)):
         current_min_val = float("inf")
@@ -34,6 +38,8 @@ def calculate_dissimilarity_score(matrix, actual_window_size):
         if min_row == -1:
             break
         results.append(current_min_val)
+
+        # mark the row and column as used. It will not be used in the subsequent pairing.
         for c in range(actual_window_size):
             matrix[min_row][c] = float('inf')
         for r in range(len(matrix)):

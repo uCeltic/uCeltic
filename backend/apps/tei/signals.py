@@ -9,12 +9,14 @@ from .services.meta_extract import extract_meta
 
 logger = logging.getLogger(__name__)
 
-
+# listener for when a TEI document is saved, it will parse the document and extract the metadata and text.
+# Then update the TEIDocument object with the parsed data.
 @receiver(post_save, sender=TEIDocument)
 def parse_on_save(sender, instance, **kwargs):
+
     if not instance.xml_file:
         return
-
+    # parse tei, extract the metadata and text, and update the TEIDocument object with parsed_json, anchors and word array
     try:
         with instance.xml_file.open('rb') as f:
             xml_bytes = f.read()
@@ -24,6 +26,7 @@ def parse_on_save(sender, instance, **kwargs):
         logger.error("TEI parse failed for %s: %s", instance.pk, e)
         return
 
+    # update the database
     TEIDocument.objects.filter(pk=instance.pk).update(
         parsed_json=tree,
         meta=meta,

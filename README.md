@@ -14,46 +14,21 @@ Celtic Finder is a web-based text annotation tool specifically designed for Medi
 
 ## For Developers
 
-### Prerequisites
-- **Node.js** (version 14 or later)
-- **npm** (comes with Node.js)
-- **Python** (version 3.7 or later) - for search algorithms
+## Stack
+- Frontend: React 19 + TypeScript + Vite + Zustand + Tailwind
+- Backend: Django 6 + Django REST Framework
+- Database: PostgreSQL
 
-### Project Structure
-```
-MsC-CS-FYP-Dejian/
-├── client/          # React frontend application
-├── server/          # Express.js backend server
-│   └── service/     # Python search algorithms and data
-└── README           # This file
-```
+## Getting started
+### Backend
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+# Database env variable
+python manage.py migrate
+python manage.py runserver
 
-### Development Setup
-
-#### 1. Clone and Setup
-```bash
-git clone 
-
-#### 2. Backend Setup
-```bash
-cd server
-npm install
-node index.js
-```
-The backend server will start on `http://localhost:8080`
-
-#### 3. Frontend Setup (Development)
-Open a new terminal:
-```bash
+### Frontend
 cd client
 npm install
-npm start
-```
-The development server will start on `http://localhost:3000` and proxy API requests to the backend on port 8080.
-
-#### 4. Python Dependencies (for search algorithms)
-```bash
-cd server/service
-pip install -r requirements.txt
-```
-
+npm run dev

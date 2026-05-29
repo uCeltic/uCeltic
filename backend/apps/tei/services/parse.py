@@ -53,7 +53,6 @@ def _walk(el, parent_id, state, in_skip=False):
     anchor = {
         "id": anchor_id,
         "tag": tag,
-        "parent_id": parent_id,
         "attrs": attrs,
         "line_no": line_no,
         "word_char_offsets": [],

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import TEIDocument
 
-
+# close to vo/dto, api return what fields to the frontend
 class TEIDocumentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TEIDocument
