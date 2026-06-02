@@ -57,3 +57,14 @@ cd server/service
 pip install -r requirements.txt
 ```
 
+## Testing & Coverage
+
+HTTP-layer integration tests (Django + DRF `APITestCase`).
+
+```bash
+cd backend
+coverage run manage.py test    # requires local Postgres (auto-creates test_uceltic)
+coverage report
+```
+
+Backend coverage: 79% — view layer & core search/parse services ≥ 85%.
