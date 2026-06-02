@@ -37,11 +37,14 @@ interface SortableDocumentColumnProps {
   onClose: () => void;
 }
 
-
+// Highlight and scroll to one TEI search result.
+// Search results use word_start/word_end, so we convert that word range into
+// DOM Ranges before adding them to the browser CSS Highlight API.
 function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
-  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
+  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`); // get the text viewer column element
   if (!columnEl) return;
 
+  // clear the highlight styles for the previous search result
   const matchHL = window.CSS?.highlights?.get("search-match");
   const activeHL = window.CSS?.highlights?.get("search-match-active");
   matchHL?.clear();
@@ -50,6 +53,7 @@ function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
   const anchorsById = buildAnchorsById(teiDoc.anchors);
   const wordToAnchor = buildWordToAnchor(teiDoc.word_array);
 
+  //highlight ranges for the search result
   const ranges = buildRangesForWordSpan(
     columnEl,
     anchorsById,
@@ -59,7 +63,7 @@ function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
   );
 
   for (const r of ranges) activeHL?.add(r);
-
+  // jump to the rendered anchor element
   if (result.anchor_id != null) {
     const scrollEl = columnEl.querySelector(
       `[data-tei-anchor-id="${result.anchor_id}"]`,
@@ -69,6 +73,7 @@ function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
       return;
     }
   }
+  // backup plan: jump to the first range
   if (ranges.length > 0) {
     const rect = ranges[0].getBoundingClientRect();
     window.scrollTo({
