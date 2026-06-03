@@ -32,16 +32,10 @@ python manage.py runserver
 cd client
 npm install
 npm run dev
-```
-The development server will start on `http://localhost:3000` and proxy API requests to the backend on port 8080.
 
-#### 4. Python Dependencies (for search algorithms)
-```bash
-cd server/service
-pip install -r requirements.txt
-```
 
-## Testing & Coverage
+
+### Testing & Coverage
 
 HTTP-layer integration tests (Django + DRF `APITestCase`).
 
