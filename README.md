@@ -31,7 +31,7 @@ python manage.py runserver
 ### Frontend
 cd client
 npm install
-npm start
+npm run dev
 ```
 The development server will start on `http://localhost:3000` and proxy API requests to the backend on port 8080.
 
