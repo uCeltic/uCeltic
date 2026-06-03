@@ -31,4 +31,24 @@ python manage.py runserver
 ### Frontend
 cd client
 npm install
-npm run dev
+npm start
+```
+The development server will start on `http://localhost:3000` and proxy API requests to the backend on port 8080.
+
+#### 4. Python Dependencies (for search algorithms)
+```bash
+cd server/service
+pip install -r requirements.txt
+```
+
+## Testing & Coverage
+
+HTTP-layer integration tests (Django + DRF `APITestCase`).
+
+```bash
+cd backend
+coverage run manage.py test    # requires local Postgres (auto-creates test_uceltic)
+coverage report
+```
+
+Backend coverage: 79% — view layer & core search/parse services ≥ 85%.

@@ -53,6 +53,15 @@ ENV/
 env.bak/
 venv.bak/
 
+# Python test & coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
+# Virtualenv that got tracked by mistake — untrack separately (M0 repo hygiene)
+backend/.venv/
+
 # PyInstaller
 *.manifest
 *.spec

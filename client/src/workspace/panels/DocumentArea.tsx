@@ -37,9 +37,11 @@ interface SortableDocumentColumnProps {
   onClose: () => void;
 }
 
-
+// Highlight and scroll to one TEI search result.
+// Search results use word_start/word_end, so we convert that word range into
+// DOM Ranges before adding them to the browser CSS Highlight API.
 function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
-  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
+  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`); // get the text viewer column element
   if (!columnEl) return;
 
   // clear the highlight styles for the previous search result

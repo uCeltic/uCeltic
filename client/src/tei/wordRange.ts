@@ -2,6 +2,7 @@ import type { TEIAnchor, TEIWordEntry } from "../types/tei";
 
 /**
  * Build a Map<wordIdx, anchorId> from word_array.
+ * Means this is the ith word in the document, and it belongs to this anchor: "anchorId"
  * Compute once per doc; cache in store.
  */
 export function buildWordToAnchor(wordArray: TEIWordEntry[]): Map<number, number> {
@@ -11,7 +12,8 @@ export function buildWordToAnchor(wordArray: TEIWordEntry[]): Map<number, number
 }
 
 /**
- * Build a Map<anchorId, TEIAnchor> for O(1) lookup.
+ * Build a Map<anchorId, complete anchor info> 
+ * Get the complete anchor info from on the anchorId
  */
 export function buildAnchorsById(anchors: TEIAnchor[]): Map<number, TEIAnchor> {
   const m = new Map<number, TEIAnchor>();
@@ -20,20 +22,21 @@ export function buildAnchorsById(anchors: TEIAnchor[]): Map<number, TEIAnchor> {
 }
 
 /**
- * Given a half-open word range [wordStart, wordEnd) inside a column,
+ * Given a word range [wordStart, wordEnd) inside a text viewer column,
  * return one or more DOM Ranges that exactly cover those words.
  *
- * Words may span multiple anchors (e.g. when a query crosses <l> boundaries),
+ * Words may span multiple anchors,
  * so we group by anchor and build one Range per group.
  */
 export function buildRangesForWordSpan(
-  columnEl: Element,
+  columnEl: Element, // means the text viewer column/doc_id
   anchorsById: Map<number, TEIAnchor>,
   wordToAnchor: Map<number, number>,
   wordStart: number,
   wordEnd: number,
 ): Range[] {
   // Group hit word indices by anchor.
+  // Build a byAnchor Map<anchorId, result word indices> for each anchor
   const byAnchor = new Map<number, number[]>();
   for (let i = wordStart; i < wordEnd; i++) {
     const aId = wordToAnchor.get(i);
@@ -47,11 +50,29 @@ export function buildRangesForWordSpan(
   }
 
   const ranges: Range[] = [];
+  // wordIdxs is a list
+  // anchor.word_char_offsets is a list of [word_idx, char_start, char_end]
+  // anchor.word_char_offsets
+  // [
+  //   [8, 0, 4], [wordIdx, charStart, charEnd]
+  //   [9, 5, 9],
+  //   [10, 10, 15],
+  //   [11, 16, 20],
+  //   [12, 21, 25]
+  // ]
 
+  // wantSet = Set { 10, 11 }
+  //after filtering
+  // offsets = [
+  //   [10, 10(charStart), 15],
+  //   [11, 16, 20(charEnd)]
+  // ]
+  // charStart = 10
+  // charEnd = 20
   for (const [anchorId, wordIdxs] of byAnchor) {
     const anchor = anchorsById.get(anchorId);
     if (!anchor) continue;
-
+    // Find the element by the anchorId, this element is the anchor element/tag element
     const elementEl = columnEl.querySelector(
       `[data-tei-anchor-id="${anchorId}"]`,
     );
@@ -59,6 +80,7 @@ export function buildRangesForWordSpan(
 
     // Pick the char-offsets of the hit words in this anchor.
     const wantSet = new Set(wordIdxs);
+
     const offsets = anchor.word_char_offsets.filter(([idx]) => wantSet.has(idx));
     if (offsets.length === 0) continue;
 
@@ -83,10 +105,11 @@ export function buildRangesForWordSpan(
  * TreeWalker.SHOW_TEXT yields text nodes in document order = same thing.
  */
 function rangeFromCharOffsets(
-    el: Element,
+    el: Element, 
     charStart: number,
     charEnd: number,
   ): Range | null {
+    //Something like  a iterator collecting all the nodes that have text.
     const walker = document.createTreeWalker(
       el,
       NodeFilter.SHOW_TEXT,
@@ -98,12 +121,14 @@ function rangeFromCharOffsets(
         },
       },
     );
-
-    let pos = 0;
-    let startNode: Text | null = null;
-    let startOffset = 0;
-    let endNode: Text | null = null;
-    let endOffset = 0;
+    // iterate the text nodes using the walker
+    // basically counting the char to find the charStart and charEnd
+    //startNode and endNode are necessary because we need to know the starting and ending node to create the Range(explorer).
+    let pos = 0; //For counting, currrent idx
+    let startNode: Text | null = null; //result starting node
+    let startOffset = 0;  //result starting offset
+    let endNode: Text | null = null; //result ending node
+    let endOffset = 0; //result ending offset
 
     while (walker.nextNode()) {
       const node = walker.currentNode as Text;

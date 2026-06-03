@@ -21,26 +21,26 @@ SIMPLE_TEI = b"""<?xml version="1.0" encoding="UTF-8"?>
 class ParseTEITest(TestCase):
 
     def test_root_tag(self):
-        tree = parse_tei(SIMPLE_TEI)
-
+        tree, anchors, word_array = parse_tei(SIMPLE_TEI)   # 解包三元组
         self.assertEqual(tree["tag"], "TEI")
   
     def test_has_children(self):
-        tree = parse_tei(SIMPLE_TEI)
+        tree, _, _ = parse_tei(SIMPLE_TEI)
 
         self.assertIn("children", tree)
 
     # black box
     def test_text_node(self):
-        tree = parse_tei(SIMPLE_TEI)
+        tree, _, _ = parse_tei(SIMPLE_TEI)
 
-          
+  
         body = tree["children"][1]["children"][0]["children"][0]
 
         self.assertEqual(body["tag"], "p")
         first_child = body["children"][0]
         self.assertEqual(first_child["type"], "text")
-        self.assertIn("Hello", first_child["text"])
+        words = [s["text"] for s in first_child["segments"]]       # text 改成读 segments
+        self.assertIn("Hello", words)
     # black box
     def test_wrong_root_raises(self):
         with self.assertRaises(ValueError):

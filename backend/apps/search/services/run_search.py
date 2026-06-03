@@ -20,6 +20,11 @@ def run_search(doc_id: int, query: str, *,
     if not query_words or not word_array:
         return []
 
+    # Using the index of the array to represent the global word index in the document
+    # article_words[0] = "Find"  (global word index 0)
+    # article_words[1] = "mac"  (global word index 1)
+    # article_words[2] = "Cumaill"  (global word index 2)
+    # article_words[3] = "Find"  (global word index 3) ← Same word, different index
     article_words = [item["w"] for item in word_array]
     window_size = max(1, int(len(query_words) * window_size_ratio))
 

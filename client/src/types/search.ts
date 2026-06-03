@@ -1,3 +1,4 @@
+// define the search result
 export interface SearchResult {
   score: number;
   snippet: string;

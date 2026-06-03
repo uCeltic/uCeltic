@@ -1,5 +1,8 @@
+import { defaultCoordinates } from "@dnd-kit/core";
 import type { TEIDoc } from "./tei";
 
+
+// define the document id and format
 export type DocumentId = string
 export type DocumentFormat = 'txt'  | 'docx' | 'tei'
 
