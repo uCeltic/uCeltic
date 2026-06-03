@@ -11,9 +11,12 @@ import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
 import { useSearchStore } from "../../store/searchStore";
 
+// button style for add text button/manuscript button/font size buttons
 const secondaryBtn =
   "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-[#52524F] cursor-pointer transition-all hover:bg-[#F0EEE6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
 
+
+//  button style for the "on" state (for search button and manuscript button)
 const toggleOnBtn =
   "rounded-md border border-[#52524F] bg-[#52524F] px-2.5 py-1.5 text-sm font-medium text-white cursor-pointer transition-all hover:bg-[#3F3F3C] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
 
@@ -32,6 +35,8 @@ export default function ToolBar({
   const isSearching = useSearchStore((s) => s.isSearching);
   const setQuery = useSearchStore((s) => s.setQuery);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
+
+  //handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -59,6 +64,7 @@ export default function ToolBar({
     e.target.value = "";
   };
 
+  //check if the maximum number of documents is reached, if so, alert the user.
   const handleAddDocument = () => {
     if (openDocuments.length >= MAX_OPEN_DOCUMENTS) {
       alert("Maximum 8 documents allowed.");
@@ -92,6 +98,7 @@ export default function ToolBar({
         </button>
       </div>
 
+      {/* menu for selecting tei document from the database*/}
       <TEIPickerDropdown />
 
       {/* Search input and buttons */}
@@ -117,6 +124,7 @@ export default function ToolBar({
             }
           }}
         />
+        {/* advanced search parameters popover */}
         <AdvancedSearchPopover />
 
       <button
