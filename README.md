@@ -46,3 +46,17 @@ coverage report
 ```
 
 Backend coverage: 79% — view layer & core search/parse services ≥ 85%.
+
+
+ ### Frontend tests
+
+  Vitest + Testing Library (jsdom). One command runs the whole suite:
+
+  ```bash
+  cd client
+  npm test            # vitest run
+  npm run test:watch  # watch mode
+
+  Covers the Zustand stores (search / document / workspace), the wordRange
+  word-span → DOM Range helper, and one render test that drives the search flow
+  with the API layer mocked.
