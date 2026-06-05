@@ -1,4 +1,3 @@
-import { defaultCoordinates } from "@dnd-kit/core";
 import type { TEIDoc } from "./tei";
 
 

@@ -3,62 +3,62 @@ import OpenSeadragon from "openseadragon";
 
 
 type ManuscriptSource =
-| {
+  | {
     kind: "image-api";
     pageTileUrl: (p: number) => string;
     totalPages: number;
     initialPage: number;
   }
-| {
+  | {
     kind: "manifest";
     manifestUrl: string;
     initialPage: number;
   };
 
 interface ManuscriptConfig {
-id: string;
-label: string;
-source: ManuscriptSource;
+  id: string;
+  label: string;
+  source: ManuscriptSource;
 }
 
 // hardcoded: only displays these three manuscripts
 const MANUSCRIPTS: ManuscriptConfig[] = [
-{
-  id: "book-of-lismore",
-  label: "Book of Lismore (UCC)",
-  source: {
-    kind: "image-api",
-    pageTileUrl: (p) => {
-      const n = String(p).padStart(3, "0");
-      return `https://iiif.isos.dias.ie/iiif/2/UCC%2FUCC_TheBookOfLismore%2F${n}.tif`;
+  {
+    id: "book-of-lismore",
+    label: "Book of Lismore (UCC)",
+    source: {
+      kind: "image-api",
+      pageTileUrl: (p) => {
+        const n = String(p).padStart(3, "0");
+        return `https://iiif.isos.dias.ie/iiif/2/UCC%2FUCC_TheBookOfLismore%2F${n}.tif`;
+      },
+      totalPages: 500,
+      initialPage: 325,
     },
-    totalPages: 500,
-    initialPage: 325,
   },
-},
-{
-  id: "ucd-ms-a-4",
-  label: "UCD MS A 4",
-  source: {
-    kind: "image-api",
-    pageTileUrl: (p) => {
-      const n = String(p).padStart(2, "0");
-      return `https://iiif.isos.dias.ie/iiif/2/UCD%2FUCD_MS_A_4%2F${n}.tif`;
+  {
+    id: "ucd-ms-a-4",
+    label: "UCD MS A 4",
+    source: {
+      kind: "image-api",
+      pageTileUrl: (p) => {
+        const n = String(p).padStart(2, "0");
+        return `https://iiif.isos.dias.ie/iiif/2/UCD%2FUCD_MS_A_4%2F${n}.tif`;
+      },
+      totalPages: 86,
+      initialPage: 3,
     },
-    totalPages: 86,
-    initialPage: 3,
   },
-},
-{
-  id: "bodleian-ms",
-  label: "Bodleian MS Laud Misc. 610",
-  source: {
-    kind: "manifest",
-    manifestUrl:
-      "https://iiif.bodleian.ox.ac.uk/iiif/manifest/cb909a51-5acd-4fee-95ec-51ff09b87676.json",
-    initialPage: 249,
+  {
+    id: "bodleian-ms",
+    label: "Bodleian MS Laud Misc. 610",
+    source: {
+      kind: "manifest",
+      manifestUrl:
+        "https://iiif.bodleian.ox.ac.uk/iiif/manifest/cb909a51-5acd-4fee-95ec-51ff09b87676.json",
+      initialPage: 249,
+    },
   },
-},
 ];
 
 
@@ -114,35 +114,35 @@ export default function IIIFPanel() {
     };
   }, [syncViewerSize]);
 
-  // when manuscript changes: reset page, load manifest if needed
+
+  // when a manifest-backed manuscript is selected, load its canvas image URLs
   useEffect(() => {
-    if (source.kind === "image-api") {
-      setPage(source.initialPage);
-      setCanvases([]);
-    } else {
-      setPage(source.initialPage);
-      setCanvases([]);
-      fetch(source.manifestUrl)
-        .then((r) => r.json())
-        .then((manifest) => {
-          // support IIIF v2 and v3
-          const context: string = manifest["@context"] ?? "";
-          if (context.includes("presentation/3")) {
-            const urls: string[] = manifest.items.map(
-              (canvas: { items: { items: { body: { service: { id: string }[] } }[] }[] }) =>
-                canvas.items[0].items[0].body.service[0].id
-            );
-            setCanvases(urls);
-          } else {
-            const urls: string[] = manifest.sequences[0].canvases.map(
-              (canvas: { images: { resource: { service: { "@id": string } } }[] }) =>
-                canvas.images[0].resource.service["@id"]
-            );
-            setCanvases(urls);
-          }
-        });
-    }
-  }, [selectedId]);
+    if (source.kind === "image-api") return;
+    let cancelled = false;
+    fetch(source.manifestUrl)
+      .then((r) => r.json())
+      .then((manifest) => {
+        if (cancelled) return;
+        // support IIIF v2 and v3
+        const context: string = manifest["@context"] ?? "";
+        if (context.includes("presentation/3")) {
+          const urls: string[] = manifest.items.map(
+            (canvas: { items: { items: { body: { service: { id: string }[] } }[] }[] }) =>
+              canvas.items[0].items[0].body.service[0].id
+          );
+          setCanvases(urls);
+        } else {
+          const urls: string[] = manifest.sequences[0].canvases.map(
+            (canvas: { images: { resource: { service: { "@id": string } } }[] }) =>
+              canvas.images[0].resource.service["@id"]
+          );
+          setCanvases(urls);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
 
   // open OSD tile when page or canvases change
   useEffect(() => {
@@ -161,7 +161,12 @@ export default function IIIFPanel() {
       <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
         <select
           value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
+          onChange={(e) => {
+            const next = MANUSCRIPTS.find((m) => m.id === e.target.value)!;
+            setSelectedId(next.id);
+            setPage(next.source.initialPage);
+            setCanvases([]);
+          }}
           className="min-w-0 flex-1 truncate rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-700
  cursor-pointer"
         >

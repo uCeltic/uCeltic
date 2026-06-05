@@ -31,6 +31,7 @@ interface SortableDocumentColumnProps {
   index: number;
   totalCount: number;
   docResults: SearchResult[];
+  activeIndex: number;
   activeResult: SearchResult | undefined;
   onPrev: () => void;
   onNext: () => void;
