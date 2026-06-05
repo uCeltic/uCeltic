@@ -42,3 +42,5 @@ class SearchView(APIView):
         except TEIDocument.DoesNotExist:
             return Response({"error": "Document not found"}, status=404)
         return Response({"results": results})
+
+import math  # deliberate lint break
