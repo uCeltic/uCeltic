@@ -1,4 +1,8 @@
 # uCeltic
+  
+[![CI](https://github.com/uCeltic/uCeltic/actions/workflows/ci.yml/badge.svg)](https://github.com/uCeltic/uCeltic/actions/workflows/ci.yml)
+
+
 All in one universal app for Medieval Irish text
 
 
@@ -48,15 +52,15 @@ coverage report
 Backend coverage: 79% — view layer & core search/parse services ≥ 85%.
 
 
- ### Frontend tests
+### Frontend tests
 
-  Vitest + Testing Library (jsdom). One command runs the whole suite:
+Vitest + Testing Library (jsdom). One command runs the whole suite:
 
-  ```bash
-  cd client
-  npm test            # vitest run
-  npm run test:watch  # watch mode
+```bash
+cd client
+npm test            # vitest run
+npm run test:watch  # watch mode
 
-  Covers the Zustand stores (search / document / workspace), the wordRange
-  word-span → DOM Range helper, and one render test that drives the search flow
-  with the API layer mocked.
+Covers the Zustand stores (search / document / workspace), the wordRange
+word-span → DOM Range helper, and one render test that drives the search flow
+with the API layer mocked.
