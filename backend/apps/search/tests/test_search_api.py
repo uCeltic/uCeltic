@@ -45,3 +45,14 @@ class SearchEndpointTests(APITestCase):
             "/api/search/", {"doc_id": "abc", "query": "x"}, format="json")
         self.assertGreaterEqual(resp.status_code, 400)
         self.assertLess(resp.status_code, 500)              # 今天这条 RED：返 500 
+
+
+    # return 400 instead of 500 and error message if request with out of range parameter
+    def test_out_of_range_param_returns_400(self):
+          resp = self.client.post(
+              "/api/search/",
+              {"doc_id": self.doc.id, "query": "rex", "top_k": 0},
+              format="json",
+          )
+          self.assertEqual(resp.status_code, 400)
+          self.assertIn("error", resp.data)

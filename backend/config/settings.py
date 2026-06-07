@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.tei",
     "apps.search",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -130,3 +131,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 CORS_ALLOW_ALL_ORIGINS = True # TODO: Remove this in production
+
+
+REST_FRAMEWORK = {
+      "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+  }
+
+SPECTACULAR_SETTINGS = {
+      "TITLE": "uCeltic API",
+      "DESCRIPTION": "Search and TEI document API for the uCeltic manuscript viewer.",
+      "VERSION": "1.0.0",
+      "SERVE_INCLUDE_SCHEMA": False,
+      }
