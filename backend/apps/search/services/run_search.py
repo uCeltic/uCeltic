@@ -11,7 +11,7 @@ def run_search(doc_id: int, query: str, *,
                 step_size: int = 1,
                 dissimilarity_threshold: float = 0.5,
                 top_k: int = 10) -> list[dict]:
-    doc = TEIDocument.objects.get(pk=doc_id)
+    doc = TEIDocument.objects.only("word_array", "anchors").get(pk=doc_id)
     word_array = doc.word_array or []
     anchors = doc.anchors or []
     anchors_by_id = {a["id"]: a for a in anchors}
@@ -30,6 +30,7 @@ def run_search(doc_id: int, query: str, *,
 
     top = moving_window_similarity1(
         query_words, article_words, window_size, step_size, top_k,
+        dissimilarity_threshold=dissimilarity_threshold,
     )
 
     results = []
