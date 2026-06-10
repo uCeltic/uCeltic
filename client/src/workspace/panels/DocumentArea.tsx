@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
@@ -6,6 +7,7 @@ import TEIErrorBoundary from "../../tei/ErrorBoundary";
 import type { TEIDoc } from "../../types/tei";
 import type { SearchResult } from "../../types/search";
 import { buildAnchorsById, buildWordToAnchor, buildRangesForWordSpan } from "../../tei/wordRange";
+import { rebuildHighlights } from "../../tei/highlight";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -31,6 +33,8 @@ interface SortableDocumentColumnProps {
   index: number;
   totalCount: number;
   docResults: SearchResult[];
+  isSearching: boolean;
+  hasError: boolean;
   activeIndex: number;
   activeResult: SearchResult | undefined;
   onPrev: () => void;
@@ -38,32 +42,13 @@ interface SortableDocumentColumnProps {
   onClose: () => void;
 }
 
-// Highlight and scroll to one TEI search result.
-// Search results use word_start/word_end, so we convert that word range into
-// DOM Ranges before adding them to the browser CSS Highlight API.
-function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
+// Scroll a TEI column to a search result. Highlight painting is centralized in
+// the rebuildHighlights effect, so this only scrolls — it never touches the CSS
+// Highlight registry (doing so would wipe every other column's highlights).
+function scrollToResult(docId: string, result: SearchResult, teiDoc: TEIDoc) {
   const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`); // get the text viewer column element
   if (!columnEl) return;
 
-  // clear the highlight styles for the previous search result
-  const matchHL = window.CSS?.highlights?.get("search-match");
-  const activeHL = window.CSS?.highlights?.get("search-match-active");
-  matchHL?.clear();
-  activeHL?.clear();
-
-  const anchorsById = buildAnchorsById(teiDoc.anchors);
-  const wordToAnchor = buildWordToAnchor(teiDoc.word_array);
-
-  //highlight ranges for the search result
-  const ranges = buildRangesForWordSpan(
-    columnEl,
-    anchorsById,
-    wordToAnchor,
-    result.word_start,
-    result.word_end,
-  );
-
-  for (const r of ranges) activeHL?.add(r);
   // jump to the rendered anchor element
   if (result.anchor_id != null) {
     const scrollEl = columnEl.querySelector(
@@ -74,7 +59,16 @@ function handleJump(docId: string, result: SearchResult, teiDoc: TEIDoc) {
       return;
     }
   }
-  // backup plan: jump to the first range
+  // backup plan: jump to the first range of the word span
+  const anchorsById = buildAnchorsById(teiDoc.anchors);
+  const wordToAnchor = buildWordToAnchor(teiDoc.word_array);
+  const ranges = buildRangesForWordSpan(
+    columnEl,
+    anchorsById,
+    wordToAnchor,
+    result.word_start,
+    result.word_end,
+  );
   if (ranges.length > 0) {
     const rect = ranges[0].getBoundingClientRect();
     window.scrollTo({
@@ -90,6 +84,8 @@ function SortableDocumentColumn({
   index,
   totalCount,
   docResults,
+  isSearching,
+  hasError,
   activeIndex,
   activeResult,
   onPrev,
@@ -116,9 +112,8 @@ function SortableDocumentColumn({
       data-doc-column-id={doc.id}
       ref={setNodeRef}
       style={style}
-      className={`flex min-w-0 flex-1 flex-col bg-[#f5f6ee] ${
-        index < totalCount - 1 ? "border-r border-gray-200" : ""
-      }`}
+      className={`flex min-w-0 flex-1 flex-col bg-[#f5f6ee] ${index < totalCount - 1 ? "border-r border-gray-200" : ""
+        }`}
     >
       <header className="flex items-center justify-between border-b border-gray-200 px-4 py-1">
         <button
@@ -143,7 +138,11 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* result card — fixed below header */}
-        {docResults.length > 0 ? (
+        {isSearching ? (
+          <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
+            Searching…
+          </div>
+        ) : docResults.length > 0 ? (
           <div className="border-b border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between px-3 py-2">
               <div className="text-sm font-medium text-gray-800">
@@ -151,8 +150,8 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>
-                {activeResult?.line_no && <span>Line
-                  {activeResult.line_no}</span>}
+                  {activeResult?.line_no && <span>Line
+                    {activeResult.line_no}</span>}
                 </span>
                 <span>
                   Score:{" "}
@@ -165,7 +164,7 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
                 <button
                   type="button"
                   className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  onClick={() => activeResult && doc.format === "tei" && handleJump(doc.id, activeResult, doc.content as TEIDoc)}
+                  onClick={() => activeResult && doc.format === "tei" && scrollToResult(doc.id, activeResult, doc.content as TEIDoc)}
                 >
                   Jump
                 </button>
@@ -195,6 +194,10 @@ font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
                 {activeResult?.snippet}
               </div>
             </div>
+          </div>
+        ) : hasError ? (
+          <div className="border-b border-gray-200 px-3 py-2 text-xs text-red-500">
+            Search failed — retry
           </div>
         ) : (
           <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
@@ -246,6 +249,14 @@ export default function DocumentArea() {
     (state) => state.activeResultIndexByDocument,
   );
 
+  const isSearchingByDocument = useSearchStore(
+    (state) => state.isSearchingByDocument,
+  );
+
+  const searchErrorByDocument = useSearchStore(
+    (state) => state.searchErrorByDocument,
+  );
+
   const removeDocument = useDocumentStore(
     (state) => state.removeDocument,
   );
@@ -257,7 +268,52 @@ export default function DocumentArea() {
     .map((id) => openDocuments.find((d) => d.id === id))
     .filter((d): d is NonNullable<typeof d> => d !== undefined);
 
-  
+  // Repaint BOTH search highlights for every visible TEI column whenever the
+  // results, active indices, or visible columns change. Navigation only updates
+  // the store + scrolls, so painting lives here in one place — one column's
+  // change can never wipe another column's highlights.
+  useEffect(() => {
+    const teiColumns = visibleDocumentIds
+      .map((id) => openDocuments.find((d) => d.id === id))
+      .filter(
+        (d): d is NonNullable<typeof d> =>
+          d !== undefined && d.format === "tei",
+      )
+      .map((d) => ({
+        docId: d.id,
+        teiDoc: d.content as TEIDoc,
+        results: resultsByDocument[d.id] ?? [],
+        activeIndex: activeResultIndexByDocument[d.id] ?? 0,
+      }));
+    rebuildHighlights(teiColumns);
+  }, [
+    visibleDocumentIds,
+    openDocuments,
+    resultsByDocument,
+    activeResultIndexByDocument,
+  ]);
+
+  // Auto-scroll each column to its own first result once results arrive (reset
+  // when its results are cleared, so the next search scrolls again).
+  const scrolledDocsRef = useRef<Record<string, boolean>>({});
+  useEffect(() => {
+    visibleDocumentIds
+      .map((id) => openDocuments.find((d) => d.id === id))
+      .filter(
+        (d): d is NonNullable<typeof d> =>
+          d !== undefined && d.format === "tei",
+      )
+      .forEach((d) => {
+        const results = resultsByDocument[d.id] ?? [];
+        if (results.length > 0 && !scrolledDocsRef.current[d.id]) {
+          scrolledDocsRef.current[d.id] = true;
+          scrollToResult(d.id, results[0], d.content as TEIDoc);
+        } else if (results.length === 0) {
+          scrolledDocsRef.current[d.id] = false;
+        }
+      });
+  }, [visibleDocumentIds, openDocuments, resultsByDocument]);
+
   const sensors = useSensors(useSensor(PointerSensor));
 
   function handleDragEnd(event: DragEndEvent) {
@@ -283,7 +339,7 @@ export default function DocumentArea() {
         <section className="flex h-full min-h-0 bg-[#f5f6ee]">
           {visibleDocuments.map((doc, index) => {
             const docResults = resultsByDocument[doc.id] ?? [];
-
+            const isSearching = isSearchingByDocument[doc.id] ?? false;
             const activeIndex =
               activeResultIndexByDocument[doc.id] ?? 0;
             const activeResult = docResults[activeIndex];
@@ -295,13 +351,15 @@ export default function DocumentArea() {
                 index={index}
                 totalCount={visibleDocuments.length}
                 docResults={docResults}
+                isSearching={isSearching}
+                hasError={searchErrorByDocument[doc.id] ?? false}
                 activeIndex={activeIndex}
                 activeResult={activeResult}
                 onPrev={() => {
                   const next = activeIndex > 0 ? activeIndex - 1 : activeIndex;
                   prevResult(doc.id);
                   const r = docResults[next];
-                  if (r && doc.format === "tei") handleJump(doc.id, r, doc.content as TEIDoc);
+                  if (r && doc.format === "tei") scrollToResult(doc.id, r, doc.content as TEIDoc);
                 }}
                 onNext={() => {
                   const next =
@@ -310,7 +368,7 @@ export default function DocumentArea() {
                       : activeIndex;
                   nextResult(doc.id);
                   const r = docResults[next];
-                  if (r && doc.format === "tei") handleJump(doc.id, r, doc.content as TEIDoc);
+                  if (r && doc.format === "tei") scrollToResult(doc.id, r, doc.content as TEIDoc);
                 }}
                 onClose={() => {
                   if (window.confirm(`Close "${doc.title}"?`)) {

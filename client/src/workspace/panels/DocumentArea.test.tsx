@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import DocumentArea from "./DocumentArea";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { searchDocument } from "../../api/search";
 import type { SearchResult } from "../../types/search";
 import type { Document } from "../../types/document";
+import type { TEIDoc, TEINode } from "../../types/tei";
 
 vi.mock("../../api/search", () => ({ searchDocument: vi.fn() }));
 const mockedSearch = vi.mocked(searchDocument);
@@ -27,6 +28,62 @@ const result: SearchResult = {
     line_no: null,
 };
 
+// A one-paragraph TEI doc. Pre-order DFS ids: body=0, p=1 — so the <p> the two
+// words live in renders with data-tei-anchor-id="1", matching word_array.a=1.
+function twoWordTei(id: number, w0: string, w1: string): TEIDoc {
+    const parsed_json: TEINode = {
+        tag: "body",
+        children: [
+            {
+                tag: "p",
+                children: [
+                    {
+                        type: "text",
+                        segments: [
+                            { kind: "word", text: w0, idx: 0 },
+                            { kind: "sep", text: " " },
+                            { kind: "word", text: w1, idx: 1 },
+                        ],
+                    },
+                ],
+            },
+        ],
+    };
+    return {
+        id,
+        title: `tei-${id}`,
+        language: "ga",
+        parsed_json,
+        created_at: "",
+        meta: { title: "", author: "", language: "", pbCount: 0 },
+        anchors: [
+            {
+                id: 1,
+                tag: "p",
+                word_char_offsets: [
+                    [0, 0, w0.length],
+                    [1, w0.length + 1, w0.length + 1 + w1.length],
+                ],
+            },
+        ],
+        word_array: [
+            { w: w0, a: 1, sep: " " },
+            { w: w1, a: 1, sep: "" },
+        ],
+    };
+}
+const teiDocA: Document = { id: "doc-a", title: "A", format: "tei", content: twoWordTei(1, "hello", "world") };
+const teiDocB: Document = { id: "doc-b", title: "B", format: "tei", content: twoWordTei(2, "foo", "bar") };
+const span = (word_start: number, word_end: number): SearchResult => ({
+    score: 0.1,
+    snippet: "",
+    word_start,
+    word_end,
+    anchor_id: 1, // the <p> anchor — scrollToResult scrolls to it (scrollIntoView)
+    anchor_tag: "p",
+    line_no: null,
+});
+
 beforeEach(() => {
     mockedSearch.mockReset();
     useDocumentStore.setState({
@@ -38,7 +95,8 @@ beforeEach(() => {
         query: "",
         resultsByDocument: {},
         activeResultIndexByDocument: {},
-        isSearching: false,
+        isSearchingByDocument: {},
+        searchErrorByDocument: {},
     });
 });
 
@@ -59,5 +117,86 @@ describe("DocumentArea search flow", () => {
         expect(screen.getByText("the hound of culann")).toBeInTheDocument();
         expect(screen.getByText("Result 1 / 1")).toBeInTheDocument();
         expect(mockedSearch).toHaveBeenCalledOnce();
+    });
+
+    it("shows Searching… and hides Jump/←/→ even when stale results exist", () => {
+        // a column mid-search: it still has old results in the store, but the
+        // searching flag must take precedence over rendering them.
+        useSearchStore.setState({
+            resultsByDocument: { "doc-1": [result] },
+            activeResultIndexByDocument: { "doc-1": 0 },
+            isSearchingByDocument: { "doc-1": true },
+        });
+
+        render(<DocumentArea />);
+
+        expect(screen.getByText("Searching…")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Jump" })).not.toBeInTheDocument();
+        expect(screen.queryByText(result.snippet)).not.toBeInTheDocument();
+    });
+
+    it("shows Search failed — retry when the column's search errored", () => {
+        useSearchStore.setState({
+            searchErrorByDocument: { "doc-1": true },
+        });
+
+        render(<DocumentArea />);
+
+        expect(screen.getByText("Search failed — retry")).toBeInTheDocument();
+        expect(screen.queryByText("No search results")).not.toBeInTheDocument();
+    });
+
+    it("renders columns independently: one Searching… while another shows its result", () => {
+        const doc2: Document = {
+            id: "doc-2",
+            title: "Cattle Raid",
+            format: "txt",
+            content: "the morrigan watches",
+        };
+        useDocumentStore.setState({
+            openDocuments: [doc, doc2],
+            visibleDocumentIds: ["doc-1", "doc-2"],
+            activeDocumentId: "doc-1",
+        });
+        useSearchStore.setState({
+            isSearchingByDocument: { "doc-1": true }, // doc-1 still loading
+            resultsByDocument: { "doc-2": [result] }, // doc-2 already resolved
+            activeResultIndexByDocument: { "doc-2": 0 },
+        });
+
+        render(<DocumentArea />);
+
+        // both states are visible at the same time, each in its own column
+        expect(screen.getByText("Searching…")).toBeInTheDocument();
+        expect(screen.getByText(result.snippet)).toBeInTheDocument();
+        expect(screen.getByText("Result 1 / 1")).toBeInTheDocument();
+    });
+
+    it("highlights all columns at once and navigation never clears another column's highlights", () => {
+        useDocumentStore.setState({
+            openDocuments: [teiDocA, teiDocB],
+            visibleDocumentIds: ["doc-a", "doc-b"],
+            activeDocumentId: "doc-a",
+        });
+        useSearchStore.setState({
+            resultsByDocument: { "doc-a": [span(0, 1), span(1, 2)], "doc-b": [span(0, 1)] },
+            activeResultIndexByDocument: { "doc-a": 0, "doc-b": 0 },
+        });
+
+        render(<DocumentArea />);
+
+        const match = () => [...(CSS.highlights.get("search-match") ?? [])].map((r) => r.toString()).sort();
+        const active = () => [...(CSS.highlights.get("search-match-active") ?? [])].map((r) => r.toString()).sort();
+
+        // each column's CURRENT result is highlighted (orange) — both columns at once
+        expect(active()).toEqual(["foo", "hello"]);
+        expect(match()).toEqual([]); // the all-matches highlight is gone
+
+        // navigate column A forward (→)
+        fireEvent.click(screen.getAllByRole("button", { name: "→" })[0]);
+
+        // A's current moved hello -> world; B's "foo" highlight is untouched
+        expect(active()).toEqual(["foo", "world"]);
+        expect(match()).toEqual([]);
     });
 });
