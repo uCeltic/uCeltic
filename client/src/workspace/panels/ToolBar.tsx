@@ -32,7 +32,9 @@ export default function ToolBar({
   const decreaseFontSize = useWorkspaceStore((state) => state.decreaseFontSize);
   const showIIIF = useWorkspaceStore((state) => state.showIIIF);
   const runSearch = useSearchStore((s) => s.runSearch);
-  const isSearching = useSearchStore((s) => s.isSearching);
+  const isSearchingByDocument = useSearchStore((s) => s.isSearchingByDocument);
+  // disable Search while ANY column is still in flight (replaces the old global flag)
+  const anySearching = Object.values(isSearchingByDocument).some(Boolean);
   const setQuery = useSearchStore((s) => s.setQuery);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
 
@@ -110,27 +112,15 @@ export default function ToolBar({
   text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2
   focus:ring-[#52524F]/20 transition-all"
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const docs = visibleDocumentIds
-                .map((id) => openDocuments.find((d) => d.id === id))
-                .filter(
-                  (d): d is NonNullable<typeof d> =>
-                    d !== undefined && d.format === "tei",
-                );
-              for (const doc of docs) {
-                runSearch((doc.content as { id: number }).id, doc.id);
-              }
-            }
-          }}
         />
         {/* advanced search parameters popover */}
         <AdvancedSearchPopover />
 
       <button
         type="button"
+        aria-label="Search"
         className={toggleOnBtn}
-        disabled={isSearching}
+        disabled={anySearching}
         onClick={() => {
           const docs = visibleDocumentIds
             .map((id) => openDocuments.find((d) => d.id === id))
@@ -143,7 +133,7 @@ export default function ToolBar({
           }
         }}
       >
-        {isSearching ? "..." : "Search"}
+        {anySearching ? "..." : "Search"}
       </button>
       </div>
       {/* Toggle IIIF button and font size buttons*/}

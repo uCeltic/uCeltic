@@ -24,7 +24,8 @@ interface SearchStore {
   setDissimilarityScore: (v: number) => void;
   setTopK: (v: number) => void;
 
-  isSearching: boolean; //whether the search is in progress
+  isSearchingByDocument: Record<DocumentId, boolean>; //per-document loading state
+  searchErrorByDocument: Record<DocumentId, boolean>; //per-document error state
   runSearch: (docId: number, clientDocId: string) => Promise<void>;
 
   nextResult: (documentId: DocumentId) => void;
@@ -41,12 +42,18 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   precision: 1,
   dissimilarityScore: 0.5,
   topK: 10,
-  isSearching: false,
+  isSearchingByDocument: {},
+  searchErrorByDocument: {},
   //run the search
     runSearch: async (docId, clientDocId) => {
       const { query, dissimilarityScore, topK, matchLength, precision } = get();
       if (!query.trim()) return;
-      set({ isSearching: true });
+      set((s) => ({
+        isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: true },
+        resultsByDocument: { ...s.resultsByDocument, [clientDocId]: [] },
+        activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
+        searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: false },
+      }));
       try {
         const { searchDocument } = await import("../api/search");
         const results = await searchDocument({
@@ -61,11 +68,15 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           resultsByDocument: { ...s.resultsByDocument, [clientDocId]: results },
           // on the documents we've opened, which result should be highlighted and displayed?
           activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
-          isSearching: false,
+          isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: false },
+          searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: false },
         }));
       } catch (e) {
         console.error(e);
-        set({ isSearching: false });
+        set((s) => ({
+          isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: false },
+          searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: true },
+        }));
       }
     },
   setQuery: (query) =>

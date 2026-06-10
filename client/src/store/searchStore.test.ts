@@ -27,7 +27,8 @@ beforeEach(() => {
         query: "",
         resultsByDocument: {},
         activeResultIndexByDocument: {},
-        isSearching: false,
+        isSearchingByDocument: {},
+        searchErrorByDocument: {},
     });
 });
 
@@ -43,7 +44,6 @@ describe("searchStore.runSearch", () => {
         const state = useSearchStore.getState();
         expect(state.resultsByDocument["doc-tei-42"]).toEqual([sampleResult]);
         expect(state.activeResultIndexByDocument["doc-tei-42"]).toBe(0);
-        expect(state.isSearching).toBe(false);
         expect(mockedSearch).toHaveBeenCalledOnce();
     });
 
@@ -52,6 +52,82 @@ describe("searchStore.runSearch", () => {
         useSearchStore.getState().setQuery("   ");
         await useSearchStore.getState().runSearch(42, "doc-tei-42");
         expect(mockedSearch).not.toHaveBeenCalled();
+    });
+
+    //Test: the column enters the searching state while the request is in flight
+    it("marks the column as searching while the request is in flight", () => {
+        // a request that never resolves, so we can observe the in-flight state
+        mockedSearch.mockReturnValue(new Promise<SearchResult[]>(() => {}));
+        useSearchStore.getState().setQuery("hound");
+
+        useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+        expect(
+            useSearchStore.getState().isSearchingByDocument["doc-tei-42"],
+        ).toBe(true);
+    });
+
+    //Test: the column exits the searching state when the request is completed//Test: on success the column leaves the searching state
+    it("clears the column's searching flag after the request resolves", async () => {
+        mockedSearch.mockResolvedValue([sampleResult]);
+        useSearchStore.getState().setQuery("hound");
+
+        await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+        expect(
+            useSearchStore.getState().isSearchingByDocument["doc-tei-42"],
+        ).toBe(false);
+    });
+
+    //Test: a failed request surfaces an error state, not empty results
+    it("flags the column as errored when the request fails", async () => {
+        mockedSearch.mockRejectedValue(new Error("network down"));
+        useSearchStore.getState().setQuery("hound");
+
+        await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+        const state = useSearchStore.getState();
+        expect(state.searchErrorByDocument["doc-tei-42"]).toBe(true);
+        expect(state.isSearchingByDocument["doc-tei-42"]).toBe(false);
+    });
+
+    //Test: starting a search immediately clears the column's old results and error
+    it("clears the column's previous results and error the moment a search starts", () => {
+        // pre-existing results/error/active index from an earlier search
+        useSearchStore.setState({
+            resultsByDocument: { "doc-tei-42": [sampleResult] },
+            activeResultIndexByDocument: { "doc-tei-42": 3 },
+            searchErrorByDocument: { "doc-tei-42": true },
+        });
+        // a request that never resolves, so we only observe the synchronous clear
+        mockedSearch.mockReturnValue(new Promise<SearchResult[]>(() => {}));
+        useSearchStore.getState().setQuery("hound");
+
+        useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+        const state = useSearchStore.getState();
+        expect(state.resultsByDocument["doc-tei-42"]).toEqual([]);
+        expect(state.searchErrorByDocument["doc-tei-42"]).toBe(false);
+        expect(state.activeResultIndexByDocument["doc-tei-42"]).toBe(0);
+    });
+
+
+    //Test: columns are independent — resolving one never flips another's flag
+    it("keeps each column's searching flag independent", async () => {
+        // key the mock off docId so call ordering/timing doesn't matter:
+        // doc id 1 (doc-a) resolves, doc id 2 (doc-b) stays pending forever
+        mockedSearch.mockImplementation(({ docId }) =>
+            docId === 1
+                ? Promise.resolve([sampleResult])
+                : new Promise<SearchResult[]>(() => {}),
+        );
+        useSearchStore.getState().setQuery("hound");
+
+        useSearchStore.getState().runSearch(2, "doc-b"); // stays pending
+        await useSearchStore.getState().runSearch(1, "doc-a"); // resolves fully
+
+        expect(useSearchStore.getState().isSearchingByDocument["doc-a"]).toBe(false);
+        expect(useSearchStore.getState().isSearchingByDocument["doc-b"]).toBe(true);
     });
 });
 

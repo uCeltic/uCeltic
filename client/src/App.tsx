@@ -4,9 +4,6 @@ import WorkspacePage from './pages/WorkspacePage'
 
 // highlight the search resutls
 if (typeof CSS !== "undefined" && "highlights" in CSS) {
-  if (!CSS.highlights.has("search-match")) {
-    CSS.highlights.set("search-match", new Highlight());
-  }
   if (!CSS.highlights.has("search-match-active")) {
     CSS.highlights.set("search-match-active", new Highlight());
   }
