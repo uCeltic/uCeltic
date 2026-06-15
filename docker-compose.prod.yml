@@ -1,0 +1,24 @@
+# Production overlay for a self-managed VPS (issue #9). Layer it on top of the base:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# It only adds prod concerns (HTTPS port, restart policy, prod Caddyfile, persisted CA).
+services:
+  db:
+    restart: unless-stopped
+
+  backend:
+    restart: unless-stopped
+
+  web:
+    restart: unless-stopped
+    # Caddy needs SERVER_IP + BASIC_AUTH_HASH at runtime; the base web service has no env_file.
+    env_file: .env
+    ports:
+      # 80 is already published by the base file (Caddy uses it for the HTTP->HTTPS redirect).
+      - "443:443"
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      # Persist the internal CA + cert so reboots/rebuilds don't regenerate them.
+      - caddydata:/data
+
+volumes:
+    caddydata:

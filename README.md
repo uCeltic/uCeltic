@@ -51,6 +51,27 @@ Secrets are read from `.env` only and are never committed (`.env` is gitignored 
 `pgdata`. This layer enforces **no authentication** by design; the access gate is added at
 deploy time.
 
+
+## Private deployment (self-managed VPS)
+
+A running instance is deployed **privately** on a self-managed CentOS VPS, reached
+by raw IP behind a Caddy reverse proxy. There is **no public live-demo link** —
+access requires a shared HTTP Basic Auth credential, and HTTPS uses a self-signed
+certificate (`tls internal`), so the browser shows a one-time warning to accept.
+
+The hosting decision is recorded in
+[docs/adr/0001-private-vps-deployment.md](docs/adr/0001-private-vps-deployment.md).
+
+To reach it: open `https://<server-ip>`, accept the certificate warning, then enter
+the Basic Auth credential (ask the maintainer). Production secrets and the Basic
+Auth hash live only in the VPS `.env` and are never committed.
+
+Operators deploy with the production overlay:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
 ## Getting started
 ### Backend
 cd backend
