@@ -1,0 +1,17 @@
+:80 {
+	encode gzip
+
+	# API, admin, and Django static (WhiteNoise) → backend.
+	# Bare paths included so /admin (no slash) reaches Django's APPEND_SLASH redirect.
+	@backend path /api /api/* /admin /admin/* /static /static/*
+	handle @backend {
+		reverse_proxy backend:8000
+	}
+
+	# Everything else is the React single-page app.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
