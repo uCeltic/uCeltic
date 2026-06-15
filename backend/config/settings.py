@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 
@@ -23,14 +24,20 @@ load_dotenv(BASE_DIR / ".env")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0-f5)91))ttyy9(vm&jn*+-hsxr*xo!fqb$@#qxv6rr77hhm9c'
+# DEBUG defaults off; enable locally with DEBUG=True in the environment / .env
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("1", "true", "yes")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Tests run with DEBUG forced off; don't require production secrets for them.
+_RUNNING_TESTS = "test" in sys.argv
 
-ALLOWED_HOSTS = []
+# SECURITY WARNING: keep the secret key used in production secret
+_DEV_SECRET = "django-insecure-dev-only-change-me"
+SECRET_KEY = os.environ.get("SECRET_KEY", _DEV_SECRET)
+if not DEBUG and not _RUNNING_TESTS and SECRET_KEY == _DEV_SECRET:
+    raise RuntimeError("SECRET_KEY environment variable is required in production")
 
+# Comma-separated, e.g. ALLOWED_HOSTS=1.2.3.4,example.com
+ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 
 # Application definition
 
@@ -82,17 +89,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
+if not DEBUG and not _RUNNING_TESTS and not DB_PASSWORD:
+    raise RuntimeError("DB_PASSWORD environment variable is required in production")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "uceltic",
-        "USER": "postgres",
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "uceltic"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": DB_PASSWORD,
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -130,7 +140,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-CORS_ALLOW_ALL_ORIGINS = True # TODO: Remove this in production
+# Same-origin behind the reverse proxy in prod; CORS only needed for local dev.
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 
 REST_FRAMEWORK = {
