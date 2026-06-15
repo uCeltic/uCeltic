@@ -1,11 +1,11 @@
 import type { TEIDoc, TEICatalogEntry } from "../types/tei";
 
 
-const BASE = "http://localhost:8000/api/tei/";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
 //get all the TEI documents from the database
 export async function listTEIDocs(): Promise<TEICatalogEntry[]> {
-    const res = await fetch(`${BASE}`);
+    const res = await fetch(`${API_BASE}/tei/`);
     if (!res.ok) {
         throw new Error(`Failed to fetch TEI list: ${res.statusText}`);
     }
@@ -14,7 +14,7 @@ export async function listTEIDocs(): Promise<TEICatalogEntry[]> {
 
 //get a single TEI document from the database
 export async function fetchTEIDoc(id: number): Promise<TEIDoc> {
-    const res = await fetch(`${BASE}${id}/`);
+    const res = await fetch(`${API_BASE}/tei/${id}/`);
     if (!res.ok) {
         throw new Error(`Failed to fetch TEI document: ${id}`);
     }
