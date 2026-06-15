@@ -39,6 +39,13 @@ if not DEBUG and not _RUNNING_TESTS and SECRET_KEY == _DEV_SECRET:
 # Comma-separated, e.g. ALLOWED_HOSTS=1.2.3.4,example.com
 ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 
+# Behind Caddy's HTTPS reverse proxy in production: Caddy terminates TLS and forwards
+# over plain HTTP with `X-Forwarded-Proto: https`. Trust that header so request.is_secure()
+# is correct — otherwise the /admin login POST fails Django's CSRF origin check (the browser
+# sends an https:// Origin while Django would otherwise compute http://). Harmless in dev/tests,
+# which never send the header.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # Application definition
 
 INSTALLED_APPS = [
