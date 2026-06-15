@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -135,10 +136,14 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"   # collectstatic target; served by WhiteNoise
+
+# Uploaded TEI files (admin upload) — persisted via a Docker volume.
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Same-origin behind the reverse proxy in prod; CORS only needed for local dev.
 CORS_ALLOW_ALL_ORIGINS = DEBUG
@@ -146,6 +151,11 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 REST_FRAMEWORK = {
       "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+      # Public, anonymous API (auth is added at the proxy layer in #9).
+      # Drop SessionAuthentication so a logged-in admin's cookie doesn't trigger
+      # CSRF enforcement on the SPA's POST /api/search/ requests.
+      "DEFAULT_AUTHENTICATION_CLASSES": [],
+      "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
   }
 
 SPECTACULAR_SETTINGS = {
