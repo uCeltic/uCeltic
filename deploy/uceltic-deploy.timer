@@ -1,0 +1,13 @@
+[Unit]
+Description=Poll GHCR :prod every 2 min and deploy
+
+[Timer]
+OnBootSec=2min
+# Fires 2 min after the service last finished. Because systemd won't run a unit
+# twice at once, a slow deploy simply delays the next tick -> non-overlapping.
+OnUnitActiveSec=2min
+# A box that was off doesn't need to replay missed ticks; the next one suffices.
+Persistent=false
+
+[Install]
+WantedBy=timers.target
