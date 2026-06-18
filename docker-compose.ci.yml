@@ -1,0 +1,9 @@
+# CI overlay (issue #37): run the prebuilt, pushed :sha images instead of
+# building on the runner, so smoke tests the exact artifact that gets blessed to
+# :prod. The release job brings the stack up with `--no-build --pull always`,
+# which ignores the base file's `build:` and pulls these images from GHCR.
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+  web:
+    image: ${CLIENT_IMAGE}
