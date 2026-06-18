@@ -1,6 +1,15 @@
 # Production reverse proxy for the private VPS deploy (issue #9).
 # Mounted over /etc/caddy/Caddyfile by docker-compose.prod.yml.
 # SERVER_IP and BASIC_AUTH_HASH come from the VPS .env (env_file on the web service).
+
+# Global options. Raw-IP clients (browsers, curl) send no SNI when connecting to
+# an IP, and behind docker-proxy Caddy can't see the public IP either. With no SNI
+# to match the site below, Caddy aborts the TLS handshake (ERR_SSL_PROTOCOL_ERROR).
+# default_sni tells Caddy which cert to serve when a client sends no SNI.
+{
+    default_sni {$SERVER_IP}
+}
+
 https://{$SERVER_IP} {
     # Self-signed cert from Caddy's internal CA (raw IP, no domain).
     # Visitors accept a one-time browser warning. Caddy also redirects :80 -> :443.
