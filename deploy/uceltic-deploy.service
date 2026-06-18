@@ -1,0 +1,10 @@
+[Unit]
+Description=uCeltic pull-based deploy (pull blessed :prod, recreate, smoke)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/uceltic
+ExecStart=/opt/uceltic/deploy.sh

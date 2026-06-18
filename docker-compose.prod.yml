@@ -1,14 +1,20 @@
-# Production overlay for a self-managed VPS (issue #9). Layer it on top of the base:
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-# It only adds prod concerns (HTTPS port, restart policy, prod Caddyfile, persisted CA).
+# Production overlay for a self-managed VPS (issue #9, #38). Layer it on the base:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull && \
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# It pulls the blessed registry images (no on-box build) and adds prod concerns
+# (HTTPS port, restart policy, prod Caddyfile, persisted CA).
 services:
   db:
     restart: unless-stopped
 
   backend:
+    # Blessed image from CI (:prod = latest build that passed the smoke gate).
+    image: ghcr.io/uceltic/uceltic/backend:prod
     restart: unless-stopped
 
   web:
+    # Service is `web`, image is `client`.
+    image: ghcr.io/uceltic/uceltic/client:prod
     restart: unless-stopped
     # Caddy needs SERVER_IP + BASIC_AUTH_HASH at runtime; the base web service has no env_file.
     env_file: .env
