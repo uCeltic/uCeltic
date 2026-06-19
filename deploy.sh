@@ -10,7 +10,7 @@
 #
 # Tunables (env):
 #   APP_DIR    repo checkout on the box (default /opt/uceltic)
-#   SMOKE_URL  base url for the post-deploy smoke (default https://localhost)
+#   SMOKE_URL  base url for the post-deploy smoke (default https://$SERVER_IP)
 #   CURL_OPTS  passed through to smoke.sh's curl. Default hits the box over its
 #              self-signed TLS (-k) with Basic Auth; needs BASIC_AUTH_PLAINTEXT
 #              in .env (username "celtic", matching Caddyfile.prod).

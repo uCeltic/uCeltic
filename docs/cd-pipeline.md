@@ -129,20 +129,26 @@ on:
         required: true
 jobs:
   rollback:
+    name: Move :prod back to a prior sha
     runs-on: ubuntu-latest
     permissions: { packages: write }
+    env:
+      SHA_TAG: sha-${{ inputs.sha }}
     steps:
+      # github.repository is uCeltic/uCeltic; GHCR rejects uppercase, so lowercase
+      # the prefix exactly as ci.yml's release job does.
+      - run: echo "IMAGE_PREFIX=ghcr.io/$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: |
-          PREFIX=ghcr.io/${{ github.repository }}
           for img in backend client; do
             docker buildx imagetools create \
-              --tag $PREFIX/$img:prod \
-              $PREFIX/$img:sha-${{ inputs.sha }}
+              --tag "${IMAGE_PREFIX}/${img}:prod" \
+              "${IMAGE_PREFIX}/${img}:${SHA_TAG}"
           done
 ```
 
