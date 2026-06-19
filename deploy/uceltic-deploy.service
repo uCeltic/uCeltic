@@ -6,5 +6,6 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+EnvironmentFile=/opt/uceltic/.env
 WorkingDirectory=/opt/uceltic
 ExecStart=/opt/uceltic/deploy.sh
