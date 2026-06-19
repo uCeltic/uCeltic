@@ -17,7 +17,7 @@
 set -eu
 
 APP_DIR="${APP_DIR:-/opt/uceltic}"
-SMOKE_URL="${SMOKE_URL:-https://localhost}"
+SMOKE_URL="${SMOKE_URL:-https://${SERVER_IP:-localhost}}"
 cd "$APP_DIR"
 
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
