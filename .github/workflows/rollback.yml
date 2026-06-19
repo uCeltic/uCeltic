@@ -1,0 +1,40 @@
+name: Rollback :prod
+# Manual lever (issue #40): move the :prod tag for both images back to a
+# previously-built :sha-<sha> that is known good. Code-only — never touches the
+# VPS; the box picks up the rolled-back :prod on its next ~2-min poll. There is
+# no freeze (ADR-0002): the next push to main re-advances :prod.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "git sha to roll prod back to (the sha-XXXX tag, sha part only)"
+        required: true
+
+jobs:
+  rollback:
+    name: Move :prod back to a prior sha
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      SHA_TAG: sha-${{ inputs.sha }}
+    steps:
+      - name: Compute lowercased GHCR prefix
+        # ${{ github.repository }} is uCeltic/uCeltic; GHCR rejects uppercase, so
+        # lowercase it before any imagetools call (mirrors ci.yml's release job).
+        run: echo "IMAGE_PREFIX=ghcr.io/$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move :prod to the requested sha
+        run: |
+          for img in backend client; do
+            docker buildx imagetools create \
+              --tag "${IMAGE_PREFIX}/${img}:prod" \
+              "${IMAGE_PREFIX}/${img}:${SHA_TAG}"
+          done
