@@ -2,7 +2,6 @@ import { create } from "zustand";
 import type { Document, DocumentId } from "../types/document";
 import type { TEIDoc } from "../types/tei";
 
-
 export const MAX_OPEN_DOCUMENTS = 8;
 export const MAX_VISIBLE_DOCUMENTS = 8;
 
@@ -33,15 +32,13 @@ interface DocumentStore {
 
 const initialDocuments: Document[] = [];
 
-
 export const useDocumentStore = create<DocumentStore>((set) => ({
-  // Initial state: 
+  // Initial state:
   openDocuments: initialDocuments,
   visibleDocumentIds: initialDocuments
     .slice(0, MAX_VISIBLE_DOCUMENTS)
     .map((doc) => doc.id),
   activeDocumentId: initialDocuments[0]?.id ?? null,
-
 
   // Update the list by replacing the whole list.
   setOpenDocuments: (documents) =>
@@ -54,7 +51,6 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
     set({
       visibleDocumentIds: ids,
     }),
-
 
   setActiveDocumentId: (id) =>
     set({
@@ -81,7 +77,6 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
   // as a string, while TEI documents store a parsed TEIDoc object.
   addDocument: (title, content) =>
     set((state) => {
-
       if (state.openDocuments.length >= MAX_OPEN_DOCUMENTS) {
         return state;
       }
@@ -118,13 +113,23 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
   // The TEI picker fetches a complete TEIDoc from the backend, then calls this.
   addTEIDocument: (doc) =>
     set((state) => {
-
+      // backend return TEIDoc -> Convert to Document type -> Add to document store -> UserInterface shows the document from the documentstore.
+      const id = `doc-tei-${doc.id}`;
+      // Open each TEI document at most once. If it is already open, re-focus the
+      // existing column (and make sure it is visible) instead of adding a duplicate.
+      if (state.openDocuments.some((d) => d.id === id)) {
+        return {
+          activeDocumentId: id,
+          visibleDocumentIds: state.visibleDocumentIds.includes(id)
+            ? state.visibleDocumentIds
+            : [...state.visibleDocumentIds, id],
+        };
+      }
       if (state.openDocuments.length >= MAX_OPEN_DOCUMENTS) {
         return state;
       }
 
       // backend return TEIDoc -> Convert to Document type -> Add to document store -> User Interface shows the document from the documentstore.
-      const id = `doc-tei-${doc.id}`;
       const newDoc: Document = {
         id,
         title: doc.title,
