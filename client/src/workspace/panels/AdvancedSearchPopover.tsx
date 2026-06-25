@@ -129,7 +129,7 @@ shadow-lg"
                 type="button"
                 onClick={() => {
                   if (window.confirm("Reset all parameters to default values?")) {
-                    setMatchLength(120);
+                    setMatchLength(130);
                     setPrecision(1);
                     setDissimilarityScore(0.5);
                     setTopK(6);

@@ -20,7 +20,7 @@ export async function searchDocument(p: SearchParams): Promise<SearchResult[]> {
       query: p.query,
       top_k: p.topK ?? 10,
       dissimilarity_threshold: p.dissimilarityThreshold ?? 0.5,
-      window_size_ratio: p.windowSizeRatio ?? 0.5,
+      window_size_ratio: p.windowSizeRatio ?? 1.3,
       step_size: p.stepSize ?? 1,
     }),
   });
