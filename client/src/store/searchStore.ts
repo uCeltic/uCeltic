@@ -38,7 +38,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   query: "",
   resultsByDocument: {},
   activeResultIndexByDocument: {},
-  matchLength: 100,
+  matchLength: 130,
   precision: 1,
   dissimilarityScore: 0.5,
   topK: 10,

@@ -56,3 +56,28 @@ class SearchEndpointTests(APITestCase):
           )
           self.assertEqual(resp.status_code, 400)
           self.assertIn("error", resp.data)
+
+
+    def test_default_window_size_ratio_allows_window_longer_than_query(self):
+          # Regression guard for issue #19: with window_size_ratio omitted, the
+          # endpoint falls back to the canonical 1.3, so the sliding window
+          # exceeds the query word count (room to absorb an inserted word).
+          doc = TEIDocument.objects.create(
+              title="Headroom Doc",
+              language="ga",
+              parsed_json={"tag": "TEI"},
+              anchors=[{"id": "a1", "tag": "p", "parent_id": None, "line_no": 1}],
+              word_array=[
+                  {"w": w, "sep": " ", "a": "a1"}
+                  for w in ["alpha", "beta", "gamma", "delta", "epsilon", "zeta"]
+              ],
+          )
+          resp = self.client.post(
+              "/api/search/",
+              {"doc_id": doc.id, "query": "alpha beta gamma delta"},  # 4 words, ratio omitted
+              format="json",
+          )
+          self.assertEqual(resp.status_code, 200)
+          top = resp.data["results"][0]
+          # 4-word query -> int(4 * 1.3) = 5-word window, i.e. one longer than the query
+          self.assertEqual(top["word_end"] - top["word_start"], 5)
