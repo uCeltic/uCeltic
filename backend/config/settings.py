@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.tei",
     "apps.search",
+    "apps.analytics",
     "drf_spectacular",
 ]
 
