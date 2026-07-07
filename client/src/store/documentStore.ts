@@ -1,6 +1,16 @@
 import { create } from "zustand";
 import type { Document, DocumentId } from "../types/document";
 import type { TEIDoc } from "../types/tei";
+import { logEvent } from "../api/log";
+
+// shared {doc_id, title} payload shape for open/close events
+function logDocEvent(
+  eventType: "document_opened" | "document_closed",
+  id: DocumentId,
+  title: string,
+): void {
+  logEvent(eventType, { doc_id: id, title });
+}
 
 export const MAX_OPEN_DOCUMENTS = 8;
 export const MAX_VISIBLE_DOCUMENTS = 8;
@@ -62,6 +72,12 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
   // - visibleDocumentIds: the list of documents currently shown in the UI
   removeDocument: (id) =>
     set((state) => {
+      // log the closed doc's title before it's filtered out
+      const closedDoc = state.openDocuments.find((doc) => doc.id === id);
+      if (closedDoc) {
+        logDocEvent("document_closed", closedDoc.id, closedDoc.title);
+      }
+
       const newOpen = state.openDocuments.filter((doc) => doc.id !== id);
       const newVisible = state.visibleDocumentIds.filter(
         (visId) => visId !== id,
@@ -89,6 +105,8 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
         format: "txt",
         content,
       };
+
+      logDocEvent("document_opened", id, title);
 
       // Add this to the end of the open document list.
       const newOpen = [...state.openDocuments, newDoc];
@@ -136,6 +154,9 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
         format: "tei",
         content: doc,
       };
+
+      // a genuinely new open, not the re-focus branch above
+      logDocEvent("document_opened", id, doc.title);
 
       // Add the TEI document to the list of open documents.
       const newOpen = [...state.openDocuments, newDoc];

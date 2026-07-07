@@ -8,6 +8,16 @@ function logParamChange(param: string, from: number, to: number): void {
   logEvent("search_param_changed", { param, from, to });
 }
 
+// same guard-then-log shape as logParamChange, for result navigation
+function logResultNavigated(
+  action: "next" | "prev",
+  from: number,
+  to: number,
+): void {
+  if (to === from) return;
+  logEvent("result_navigated", { action, from_index: from, to_index: to });
+}
+
 //this store is used to store the search results/handle search operations for a given document
 interface SearchStore {
   query: string;
@@ -169,6 +179,8 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           ? currentIndex + 1
           : currentIndex;
 
+      logResultNavigated("next", currentIndex, nextIndex);
+
       return {
         activeResultIndexByDocument: {
           ...state.activeResultIndexByDocument,
@@ -188,6 +200,8 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       }
 
       const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+
+      logResultNavigated("prev", currentIndex, prevIndex);
 
       return {
         activeResultIndexByDocument: {
