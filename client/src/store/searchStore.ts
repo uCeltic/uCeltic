@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
+import { logEvent } from "../api/log";
+
+function logParamChange(param: string, from: number, to: number): void {
+  if (to === from) return;
+  logEvent("search_param_changed", { param, from, to });
+}
 
 //this store is used to store the search results/handle search operations for a given document
 interface SearchStore {
@@ -54,6 +60,15 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
         searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: false },
       }));
+      const windowSizeRatio = matchLength / 100;
+      const startedAt = performance.now();
+      const searchPerformedBase = {
+        query,
+        window_size_ratio: windowSizeRatio,
+        step_size: precision,
+        dissimilarity_threshold: dissimilarityScore,
+        top_k: topK,
+      };
       try {
         const { searchDocument } = await import("../api/search");
         const results = await searchDocument({
@@ -61,8 +76,14 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           query,
           topK,
           dissimilarityThreshold: dissimilarityScore,
-          windowSizeRatio: matchLength / 100,
+          windowSizeRatio,
           stepSize: precision,
+        });
+        logEvent("search_performed", {
+          ...searchPerformedBase,
+          result_count: results.length,
+          latency_ms: performance.now() - startedAt,
+          error: false,
         });
         set((s) => ({
           resultsByDocument: { ...s.resultsByDocument, [clientDocId]: results },
@@ -73,6 +94,12 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         }));
       } catch (e) {
         console.error(e);
+        logEvent("search_performed", {
+          ...searchPerformedBase,
+          result_count: 0,
+          latency_ms: performance.now() - startedAt,
+          error: true,
+        });
         set((s) => ({
           isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: false },
           searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: true },
@@ -110,10 +137,22 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       };
     }),
 
-  setMatchLength: (v) => set({ matchLength: v }),
-  setPrecision: (v) => set({ precision: v }),
-  setDissimilarityScore: (v) => set({ dissimilarityScore: v }),
-  setTopK: (v) => set({ topK: v }),
+  setMatchLength: (v) => {
+    logParamChange("match_length", get().matchLength, v);
+    set({ matchLength: v });
+  },
+  setPrecision: (v) => {
+    logParamChange("precision", get().precision, v);
+    set({ precision: v });
+  },
+  setDissimilarityScore: (v) => {
+    logParamChange("dissimilarity_score", get().dissimilarityScore, v);
+    set({ dissimilarityScore: v });
+  },
+  setTopK: (v) => {
+    logParamChange("top_k", get().topK, v);
+    set({ topK: v });
+  },
 
   nextResult: (documentId) =>
     set((state) => {
