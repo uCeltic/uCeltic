@@ -3,6 +3,11 @@ import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
 import { logEvent } from "../api/log";
 
+function logParamChange(param: string, from: number, to: number): void {
+  if (to === from) return;
+  logEvent("search_param_changed", { param, from, to });
+}
+
 //this store is used to store the search results/handle search operations for a given document
 interface SearchStore {
   query: string;
@@ -57,6 +62,13 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       }));
       const windowSizeRatio = matchLength / 100;
       const startedAt = performance.now();
+      const searchPerformedBase = {
+        query,
+        window_size_ratio: windowSizeRatio,
+        step_size: precision,
+        dissimilarity_threshold: dissimilarityScore,
+        top_k: topK,
+      };
       try {
         const { searchDocument } = await import("../api/search");
         const results = await searchDocument({
@@ -68,11 +80,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           stepSize: precision,
         });
         logEvent("search_performed", {
-          query,
-          window_size_ratio: windowSizeRatio,
-          step_size: precision,
-          dissimilarity_threshold: dissimilarityScore,
-          top_k: topK,
+          ...searchPerformedBase,
           result_count: results.length,
           latency_ms: performance.now() - startedAt,
           error: false,
@@ -87,11 +95,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       } catch (e) {
         console.error(e);
         logEvent("search_performed", {
-          query,
-          window_size_ratio: windowSizeRatio,
-          step_size: precision,
-          dissimilarity_threshold: dissimilarityScore,
-          top_k: topK,
+          ...searchPerformedBase,
           result_count: 0,
           latency_ms: performance.now() - startedAt,
           error: true,
@@ -134,31 +138,19 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     }),
 
   setMatchLength: (v) => {
-    const from = get().matchLength;
-    if (v === from) return;
-    logEvent("search_param_changed", { param: "match_length", from, to: v });
+    logParamChange("match_length", get().matchLength, v);
     set({ matchLength: v });
   },
   setPrecision: (v) => {
-    const from = get().precision;
-    if (v === from) return;
-    logEvent("search_param_changed", { param: "precision", from, to: v });
+    logParamChange("precision", get().precision, v);
     set({ precision: v });
   },
   setDissimilarityScore: (v) => {
-    const from = get().dissimilarityScore;
-    if (v === from) return;
-    logEvent("search_param_changed", {
-      param: "dissimilarity_score",
-      from,
-      to: v,
-    });
+    logParamChange("dissimilarity_score", get().dissimilarityScore, v);
     set({ dissimilarityScore: v });
   },
   setTopK: (v) => {
-    const from = get().topK;
-    if (v === from) return;
-    logEvent("search_param_changed", { param: "top_k", from, to: v });
+    logParamChange("top_k", get().topK, v);
     set({ topK: v });
   },
 
