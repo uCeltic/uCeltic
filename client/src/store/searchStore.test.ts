@@ -298,4 +298,36 @@ describe("searchStore result navigation", () => {
       0,
     );
   });
+
+  //Test: moving next/prev logs one result_navigated event with action/from_index/to_index
+  it("logs result_navigated on next and prev", () => {
+    const { nextResult, prevResult } = useSearchStore.getState();
+
+    nextResult("doc-1");
+    expect(mockedLogEvent).toHaveBeenNthCalledWith(1, "result_navigated", {
+      action: "next",
+      from_index: 0,
+      to_index: 1,
+    });
+
+    prevResult("doc-1");
+    expect(mockedLogEvent).toHaveBeenNthCalledWith(2, "result_navigated", {
+      action: "prev",
+      from_index: 1,
+      to_index: 0,
+    });
+  });
+
+  //Test: a no-op nav (already at the boundary) logs nothing
+  it("does not log result_navigated when next/prev is a no-op at the boundary", () => {
+    const { nextResult, prevResult } = useSearchStore.getState();
+
+    useSearchStore.setState({ activeResultIndexByDocument: { "doc-1": 2 } });
+    nextResult("doc-1");
+    expect(mockedLogEvent).not.toHaveBeenCalled();
+
+    useSearchStore.setState({ activeResultIndexByDocument: { "doc-1": 0 } });
+    prevResult("doc-1");
+    expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
 });
