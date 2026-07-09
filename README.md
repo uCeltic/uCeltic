@@ -48,23 +48,24 @@ Open **http://localhost**. The database starts empty — load a document through
 
 Secrets are read from `.env` only and are never committed (`.env` is gitignored — commit
 `.env.example` instead). Uploaded files persist in the `media` volume and database data in
-`pgdata`. This layer enforces **no authentication** by design; the access gate is added at
-deploy time.
+`pgdata`. This layer enforces **no authentication** by design; the deployed app is a
+public tool too (`/admin` keeps Django's own staff login).
 
 
-## Private deployment (self-managed VPS)
+## Deployment (self-managed VPS)
 
-A running instance is deployed **privately** on a self-managed CentOS VPS, reached
-by raw IP behind a Caddy reverse proxy. There is **no public live-demo link** —
-access requires a shared HTTP Basic Auth credential, and HTTPS uses a self-signed
-certificate (`tls internal`), so the browser shows a one-time warning to accept.
+A running instance is deployed on a self-managed CentOS VPS, reached by raw IP
+behind a Caddy reverse proxy. The app is **publicly reachable** — no credential is
+needed. HTTPS uses a self-signed certificate (`tls internal`), so the browser shows
+a one-time warning to accept.
 
 The hosting decision is recorded in
-[docs/adr/0001-private-vps-deployment.md](docs/adr/0001-private-vps-deployment.md).
+[docs/adr/0001-private-vps-deployment.md](docs/adr/0001-private-vps-deployment.md),
+amended by
+[docs/adr/0004-public-tool-with-optional-accounts.md](docs/adr/0004-public-tool-with-optional-accounts.md).
 
-To reach it: open `https://<server-ip>`, accept the certificate warning, then enter
-the Basic Auth credential (ask the maintainer). Production secrets and the Basic
-Auth hash live only in the VPS `.env` and are never committed.
+To reach it: open `https://<server-ip>` and accept the certificate warning.
+Production secrets live only in the VPS `.env` and are never committed.
 
 Operators deploy with the production overlay:
 
