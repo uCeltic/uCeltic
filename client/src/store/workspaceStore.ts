@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { WorkspaceStatus } from "../types/panel";
+import { logEvent } from "../api/log";
 
 export type WorkspaceMode = "search" | "entities" | "personal";
 
@@ -8,6 +9,22 @@ export const MODE_LABELS: Record<WorkspaceMode, string> = {
   entities: "People & Places",
   personal: "Personal",
 };
+
+// no-op guards, mirroring searchStore's logParamChange — skip logging when
+// the value didn't actually change (re-picked mode, clamped font size, same scope)
+function logModeChanged(from: WorkspaceMode, to: WorkspaceMode): void {
+  if (to === from) return;
+  logEvent("mode_changed", { from, to });
+}
+
+function logFontSizeChanged(from: number, to: number): void {
+  if (to === from) return;
+  logEvent("font_size_changed", { from, to });
+}
+
+function sameWorkIds(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
 
 interface WorkspaceStore {
   // status
@@ -32,7 +49,7 @@ interface WorkspaceStore {
   setSelectedWorkIds: (ids: string[]) => void;
 }
 
-export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
+export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   status: "ready",
   statusText: "Ready",
   fontSize: 14,
@@ -51,10 +68,31 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
       statusText: text,
     }),
   increaseFontSize: () =>
-    set((state) => ({ fontSize: Math.min(state.fontSize + 2, 24) })),
+    set((state) => {
+      const fontSize = Math.min(state.fontSize + 2, 24);
+      logFontSizeChanged(state.fontSize, fontSize);
+      return { fontSize };
+    }),
   decreaseFontSize: () =>
-    set((state) => ({ fontSize: Math.max(state.fontSize - 2, 10) })),
-  toggleIIIF: () => set((state) => ({ showIIIF: !state.showIIIF })),
-  setMode: (mode) => set({ mode }),
-  setSelectedWorkIds: (ids) => set({ selectedWorkIds: ids })
+    set((state) => {
+      const fontSize = Math.max(state.fontSize - 2, 10);
+      logFontSizeChanged(state.fontSize, fontSize);
+      return { fontSize };
+    }),
+  toggleIIIF: () =>
+    set((state) => {
+      const showIIIF = !state.showIIIF;
+      logEvent("iiif_toggled", { on: showIIIF });
+      return { showIIIF };
+    }),
+  setMode: (mode) => {
+    logModeChanged(get().mode, mode);
+    set({ mode });
+  },
+  setSelectedWorkIds: (ids) => {
+    if (!sameWorkIds(get().selectedWorkIds, ids)) {
+      logEvent("scope_changed", { selected_work_ids: ids });
+    }
+    set({ selectedWorkIds: ids });
+  },
 }));
