@@ -9,7 +9,7 @@ BASE="$1"
 RETRIES="${SMOKE_RETRIES:-30}"
 DELAY="${SMOKE_DELAY:-2}"
 # Extra curl flags, deliberately unquoted so multiple flags word-split into
-# args. Empty in CI (plain http); the VPS sets -k for self-signed TLS.
+# args. Empty by default (CI uses plain http; the VPS has a real cert, #63).
 CURL_OPTS="${CURL_OPTS:-}"
 
 # Wait for the backend to be ready. While it boots (migrate, gunicorn) Caddy
