@@ -7,6 +7,32 @@ timer pulls the blessed `:prod` images every ~2 min and recreates the stack.
 Assumes the repo is checked out at `/opt/uceltic` with a real `.env`
 (from `.env.example`).
 
+## URL scheme (#63)
+
+The site is served at `https://<SERVER_IP>.sslip.io` (e.g.
+`https://1.2.3.4.sslip.io`). [sslip.io](https://sslip.io) is a public DNS
+service that resolves `<ip>.sslip.io` to `<ip>` — no DNS setup on our side.
+Caddy sees a real hostname and auto-issues a Let's Encrypt certificate
+(ACME HTTP-01 on port 80, which is already open in firewalld), so browsers
+get a trusted cert with no warning. Raw-IP URLs (`https://<ip>`) no longer
+serve TLS; use the sslip.io hostname.
+
+The `.env` on the box must carry the hostname too:
+
+```sh
+SERVER_IP=<vps-ip>
+ALLOWED_HOSTS=<vps-ip>.sslip.io          # plus any local entries
+CSRF_TRUSTED_ORIGINS=https://<vps-ip>.sslip.io
+```
+
+Certs live in the `caddydata` volume; don't wipe it casually or Caddy
+re-issues on next boot (Let's Encrypt rate-limits issuance).
+
+**Swapping to a paid domain later**: point the domain's A record at the VPS,
+replace the site address in `Caddyfile.prod` (one line), and update
+`ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` in the box `.env`. Everything else
+(cert issuance, redirect, CD) stays the same.
+
 ## One-time setup
 
 1. **Registry login** — read-only PAT, `read:packages` on this repo only:

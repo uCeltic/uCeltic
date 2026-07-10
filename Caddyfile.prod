@@ -1,20 +1,12 @@
-# Production reverse proxy for the VPS deploy (issue #9; public per ADR-0004).
+# Production reverse proxy for the VPS deploy (issues #9, #63; public per ADR-0004).
 # Mounted over /etc/caddy/Caddyfile by docker-compose.prod.yml.
 # SERVER_IP comes from the VPS .env (env_file on the web service).
 
-# Global options. Raw-IP clients (browsers, curl) send no SNI when connecting to
-# an IP, and behind docker-proxy Caddy can't see the public IP either. With no SNI
-# to match the site below, Caddy aborts the TLS handshake (ERR_SSL_PROTOCOL_ERROR).
-# default_sni tells Caddy which cert to serve when a client sends no SNI.
-{
-    default_sni {$SERVER_IP}
-}
-
-https://{$SERVER_IP} {
-    # Self-signed cert from Caddy's internal CA (raw IP, no domain).
-    # Visitors accept a one-time browser warning. Caddy also redirects :80 -> :443.
-    tls internal
-
+# sslip.io resolves <ip>.sslip.io to <ip> with zero DNS setup, giving us a real
+# hostname. Caddy auto-issues a Let's Encrypt certificate for it (ACME HTTP-01
+# on port 80) and redirects :80 -> :443. Swapping to a paid domain later is a
+# one-line change of this site address.
+https://{$SERVER_IP}.sslip.io {
     encode gzip
 
     # API, admin, and Django static (WhiteNoise) -> backend.

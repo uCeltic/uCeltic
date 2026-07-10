@@ -10,13 +10,16 @@
 #
 # Tunables (env):
 #   APP_DIR    repo checkout on the box (default /opt/uceltic)
-#   SMOKE_URL  base url for the post-deploy smoke (default https://$SERVER_IP)
-#   CURL_OPTS  passed through to smoke.sh's curl. Default hits the box over its
-#              self-signed TLS (-k).
+#   SMOKE_URL  base url for the post-deploy smoke (default the sslip.io host,
+#              matching Caddyfile.prod; SERVER_IP comes from the systemd
+#              EnvironmentFile). The Let's Encrypt cert is real, so the smoke
+#              also verifies TLS (no -k).
+#   CURL_OPTS  passed through to smoke.sh's curl.
 set -eu
 
 APP_DIR="${APP_DIR:-/opt/uceltic}"
-SMOKE_URL="${SMOKE_URL:-https://${SERVER_IP:-localhost}}"
+# Fail fast with a clear message if the box .env lacks SERVER_IP.
+SMOKE_URL="${SMOKE_URL:-https://${SERVER_IP:?SERVER_IP must be set in the box .env}.sslip.io}"
 cd "$APP_DIR"
 
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
@@ -24,8 +27,6 @@ COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 $COMPOSE pull
 $COMPOSE up -d
 
-: "${CURL_OPTS:=-k}"
-export CURL_OPTS
 if ! ./scripts/smoke.sh "$SMOKE_URL"; then
   echo "deploy.sh: post-deploy smoke FAILED against $SMOKE_URL" >&2
   exit 1

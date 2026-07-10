@@ -19,11 +19,13 @@ services:
     # Caddy needs SERVER_IP at runtime; the base web service has no env_file.
     env_file: .env
     ports:
-      # 80 is already published by the base file (Caddy uses it for the HTTP->HTTPS redirect).
+      # 80 is already published by the base file (Caddy uses it for the
+      # HTTP->HTTPS redirect and the ACME HTTP-01 challenge, #63).
       - "443:443"
     volumes:
       - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
-      # Persist the internal CA + cert so reboots/rebuilds don't regenerate them.
+      # Persist Let's Encrypt certs + ACME account so reboots/rebuilds don't
+      # re-issue (and hit LE rate limits).
       - caddydata:/data
 
 volumes:

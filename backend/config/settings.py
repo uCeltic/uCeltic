@@ -39,6 +39,12 @@ if not DEBUG and not _RUNNING_TESTS and SECRET_KEY == _DEV_SECRET:
 # Comma-separated, e.g. ALLOWED_HOSTS=1.2.3.4,example.com
 ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 
+# Comma-separated full origins (scheme included), e.g.
+# CSRF_TRUSTED_ORIGINS=https://1.2.3.4.sslip.io (#63)
+CSRF_TRUSTED_ORIGINS = [
+    o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o
+]
+
 # Behind Caddy's HTTPS reverse proxy in production: Caddy terminates TLS and forwards
 # over plain HTTP with `X-Forwarded-Proto: https`. Trust that header so request.is_secure()
 # is correct — otherwise the /admin login POST fails Django's CSRF origin check (the browser
