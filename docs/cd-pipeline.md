@@ -32,7 +32,7 @@ implementation reference; the ADR holds the *why*.
 
 ## Smoke assertions (used in both CI gate and on-box post-deploy)
 
-Against the assembled stack (base `docker-compose.yml`, dev Caddyfile, **no** Basic Auth):
+Against the assembled stack (base `docker-compose.yml`, dev Caddyfile):
 
 1. `GET /api/tei/` → `200` — backend boots, DB connects, migrations applied, Caddy proxies `/api`.
 2. `GET /` → `200` and body contains `id="root"` — client image builds and is served.

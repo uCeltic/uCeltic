@@ -8,8 +8,8 @@ set -eu
 BASE="$1"
 RETRIES="${SMOKE_RETRIES:-30}"
 DELAY="${SMOKE_DELAY:-2}"
-# Extra curl flags, deliberately unquoted so "-k -u user:pw" word-splits into
-  # args. Empty in CI (plain http); the VPS sets it for self-signed TLS + auth.
+# Extra curl flags, deliberately unquoted so multiple flags word-split into
+# args. Empty in CI (plain http); the VPS sets -k for self-signed TLS.
 CURL_OPTS="${CURL_OPTS:-}"
 
 # Wait for the backend to be ready. While it boots (migrate, gunicorn) Caddy

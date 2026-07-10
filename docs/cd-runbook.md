@@ -5,7 +5,7 @@ Operational companion to [docs/cd-pipeline.md](cd-pipeline.md) and
 timer pulls the blessed `:prod` images every ~2 min and recreates the stack.
 
 Assumes the repo is checked out at `/opt/uceltic` with a real `.env`
-(from `.env.example`, including `BASIC_AUTH_PLAINTEXT`).
+(from `.env.example`).
 
 ## One-time setup
 

@@ -1,6 +1,8 @@
 # 1. Private VPS deployment behind Caddy + Basic Auth
 
-- Status: Accepted
+- Status: Accepted; superseded in part by
+  [ADR-0004](0004-public-tool-with-optional-accounts.md) — the Basic Auth gate,
+  the self-signed-certificate posture, and the private-exposure rationale
 - Date: 2026-06-15
 - Deciders: Zhou Dejian
 

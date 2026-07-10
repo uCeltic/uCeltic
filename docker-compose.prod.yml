@@ -16,7 +16,7 @@ services:
     # Service is `web`, image is `client`.
     image: ghcr.io/uceltic/uceltic/client:prod
     restart: unless-stopped
-    # Caddy needs SERVER_IP + BASIC_AUTH_HASH at runtime; the base web service has no env_file.
+    # Caddy needs SERVER_IP at runtime; the base web service has no env_file.
     env_file: .env
     ports:
       # 80 is already published by the base file (Caddy uses it for the HTTP->HTTPS redirect).
