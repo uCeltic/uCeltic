@@ -6,6 +6,9 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+# Backstop: systemd will not run this unit concurrently with itself, so a hang
+# in here also stalls the timer. Fail the run rather than wedge the pipeline.
+TimeoutStartSec=15min
 EnvironmentFile=/opt/uceltic/.env
 WorkingDirectory=/opt/uceltic
 ExecStart=/opt/uceltic/deploy.sh
