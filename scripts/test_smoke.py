@@ -122,6 +122,28 @@ class SmokeScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=f"stdout={result.stdout} stderr={result.stderr}")
         self.assertIn("smoke OK", result.stdout)
 
+    def test_gives_up_on_a_black_hole_instead_of_hanging(self):
+        # A dropped port (cloud firewall, wedged proxy) is not a refused one: the
+        # TCP connect completes but nothing ever answers. curl has no total
+        # timeout by default, so each attempt blocks indefinitely and the whole
+        # retry budget stops meaning anything -- on the VPS this wedged the
+        # deploy unit, and with it the CD timer, for the better part of an hour.
+        server = socket.socket()
+        server.bind(("127.0.0.1", 0))
+        server.listen(5)  # accept the connection, then never respond
+        port = server.getsockname()[1]
+        try:
+            result = subprocess.run(
+                ["sh", SMOKE, f"http://127.0.0.1:{port}"],
+                capture_output=True, text=True, timeout=20,
+                env={**os.environ, "SMOKE_RETRIES": "2", "SMOKE_DELAY": "0",
+                     "SMOKE_MAX_TIME": "1"},
+            )
+        finally:
+            server.close()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("/api/tei/", result.stdout + result.stderr)
+
     def test_honours_curl_opts_for_self_signed_tls(self):
         # The VPS serves self-signed HTTPS and sets CURL_OPTS="-k -u ...". Prove
         # smoke.sh threads CURL_OPTS into curl: same stack, -k flips fail -> pass.
