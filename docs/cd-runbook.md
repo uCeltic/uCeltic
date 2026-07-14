@@ -28,6 +28,26 @@ CSRF_TRUSTED_ORIGINS=https://<vps-ip>.sslip.io
 Certs live in the `caddydata` volume; don't wipe it casually or Caddy
 re-issues on next boot (Let's Encrypt rate-limits issuance).
 
+## Outbound mail for account activation (#64)
+
+Registration is worthless without email: allauth mails an activation link and the
+account cannot sign in until it is clicked. The box `.env` therefore needs an SMTP
+sender and the SPA's public address:
+
+```sh
+FRONTEND_BASE_URL=https://<vps-ip>.sslip.io   # the activation link is built from this
+EMAIL_HOST=smtp.gmail.com                     # or smtp-relay.brevo.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=<sender>
+EMAIL_HOST_PASSWORD=<app password / SMTP key>  # Gmail: an app password, not the login one
+DEFAULT_FROM_EMAIL=uCeltic <no-reply@...>
+```
+
+With `EMAIL_HOST` blank Django falls back to the console backend and the mail is
+written to the container log instead of being delivered — which looks like a working
+deploy until someone tries to register. After setting these, recreate the stack and
+check delivery with a throwaway registration.
+
 **Swapping to a paid domain later**: point the domain's A record at the VPS,
 replace the site address in `Caddyfile.prod` (one line), and update
 `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` in the box `.env`. Everything else

@@ -1,5 +1,6 @@
 asgiref==3.11.1
 Django==6.0.4
+django-allauth==65.18.0
 django-cors-headers==4.9.0
 djangorestframework==3.17.1
 lxml==6.1.0

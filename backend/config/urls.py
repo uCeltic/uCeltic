@@ -20,6 +20,10 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # allauth headless lives under /api/ so the existing proxy rules (Caddy, Vite) route
+    # it to Django unchanged — hence /api/auth/browser/v1/* rather than allauth's /_allauth/*.
+    path("api/auth/", include("allauth.headless.urls")),
+    path("api/auth/", include("apps.accounts.urls")),
     path("api/tei/", include("apps.tei.urls")),
     path("api/search/", include("apps.search.urls")),
     path("api/events/", include("apps.analytics.urls")),

@@ -69,6 +69,7 @@ def run_smoke(routes, env=None):
 
 HEALTHY = {
     "/api/tei/": (200, b"[]"),
+    "/api/auth/csrf/": (204, b""),
     "/": (200, b'<!doctype html><html><body><div id="root"></div></body></html>'),
 }
 
@@ -88,6 +89,16 @@ class SmokeScriptTests(unittest.TestCase):
         self.assertIn("500", output)         # what it returned
 
 
+
+    def test_fails_clearly_when_the_auth_api_is_not_wired_up(self):
+        # /api/tei/ and / can both be perfectly healthy while the auth API 404s (a proxy
+        # rule that doesn't route /api/auth/, say) -- and then nobody can register (#64).
+        routes = {**HEALTHY, "/api/auth/csrf/": (404, b"not found")}
+        result = run_smoke(routes)
+        self.assertNotEqual(result.returncode, 0)
+        output = result.stdout + result.stderr
+        self.assertIn("/api/auth/csrf/", output)
+        self.assertIn("404", output)
 
     def test_fails_clearly_when_root_html_missing_marker(self):
         routes = {**HEALTHY, "/": (200, b"<html><body>no marker here</body></html>")}
