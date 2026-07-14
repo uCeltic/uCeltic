@@ -5,6 +5,9 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 /** allauth headless, mounted under /api/ so Caddy and Vite proxy it to Django unchanged (#64). */
 const AUTH_BASE = `${API_BASE}/auth/browser/v1/auth`;
 
+/** Password change lives under allauth's "account" resource, not "auth" (#66). */
+const ACCOUNT_BASE = `${API_BASE}/auth/browser/v1/account`;
+
 /** No display name yet: #64 collects only email + password, and #66 adds a real one. */
 export interface AuthUser {
   id: number;
@@ -136,4 +139,26 @@ export async function resetPassword(key: string, password: string): Promise<void
 
 export async function logOut(): Promise<void> {
   await call("/session", { method: "DELETE" });
+}
+
+/**
+ * Change the signed-in user's password (#66). Unlike `call()`, a 401 here is a real
+ * failure rather than an expected outcome — it would mean the session lapsed mid-request,
+ * so the password was *not* changed, and the caller must be told that rather than seeing
+ * a silent "success".
+ */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await ensureCsrfToken();
+
+  const response = await fetch(`${ACCOUNT_BASE}/password/change`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...csrfHeaders() },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+
+  const body: AuthResponse = await response.json().catch(() => ({ status: response.status }));
+  if (response.status !== 200) {
+    throw new AuthError(body.errors ?? []);
+  }
 }

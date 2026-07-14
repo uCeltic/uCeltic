@@ -51,6 +51,14 @@ export default function AccountMenu() {
           role="menu"
           className="absolute right-0 z-20 mt-1 min-w-full rounded-md border border-[#D8D4C3] bg-white py-1 shadow-md"
         >
+          <Link
+            to="/account/profile"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block w-full px-3 py-1.5 text-left text-sm text-[#52524F] hover:bg-[#F0EEE6]"
+          >
+            Profile
+          </Link>
           <button
             type="button"
             role="menuitem"
