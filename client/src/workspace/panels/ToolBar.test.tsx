@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
@@ -33,12 +34,21 @@ beforeEach(() => {
     });
 });
 
+// The ToolBar holds the AccountMenu, which links to /account/login — so it now needs a router.
+function renderToolBar() {
+    return render(
+        <MemoryRouter>
+            <ToolBar onToggleIIIF={() => {}} />
+        </MemoryRouter>,
+    );
+}
+
 describe("ToolBar re-entrancy guard", () => {
     it("does not trigger a search when Enter is pressed in the search box", () => {
         const runSearch = vi.fn();
         useSearchStore.setState({ runSearch });
 
-        render(<ToolBar onToggleIIIF={() => {}} />);
+        renderToolBar();
         fireEvent.keyDown(screen.getByPlaceholderText("Search documents..."), {
             key: "Enter",
         });
@@ -50,7 +60,7 @@ describe("ToolBar re-entrancy guard", () => {
     it("disables the Search button while any column is searching", () => {
         useSearchStore.setState({ isSearchingByDocument: { "doc-a": true } });
 
-        render(<ToolBar onToggleIIIF={() => {}} />);
+        renderToolBar();
 
         expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
     });
