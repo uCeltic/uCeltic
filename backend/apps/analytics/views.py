@@ -1,10 +1,49 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
-from .models import BehaviorEvent
-from .serializers import BehaviorEventRequestSerializer
+from .models import QUESTIONNAIRE_VERSION, QUESTIONS, BehaviorEvent, QuestionnaireResponse
+from .serializers import (
+    BehaviorEventRequestSerializer,
+    QuestionnaireDefinitionSerializer,
+    QuestionnaireResponseRequestSerializer,
+)
+
+
+# controller for the pre-use purpose questionnaire (#67, ADR-0004). Signed-in only —
+# the SPA never shows the prompt to an anonymous visitor, and the server enforces the
+# same rule rather than trusting the client.
+class QuestionnaireView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses=QuestionnaireDefinitionSerializer,
+        description="Current questionnaire version and its question set.",
+    )
+    def get(self, request):
+        return Response({"version": QUESTIONNAIRE_VERSION, "questions": QUESTIONS})
+
+    @extend_schema(
+        request=QuestionnaireResponseRequestSerializer,
+        responses={201: None},
+        description="Record this session's questionnaire response, or that it was skipped.",
+    )
+    def post(self, request):
+        serializer = QuestionnaireResponseRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"error": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        QuestionnaireResponse.objects.create(
+            user=request.user,
+            questionnaire_version=QUESTIONNAIRE_VERSION,
+            **serializer.validated_data,
+        )
+        return Response(status=status.HTTP_201_CREATED)
+
 
 # controller for the behavior-event ingest api
 class EventView(APIView):

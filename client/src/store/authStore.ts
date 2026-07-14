@@ -27,18 +27,25 @@ interface AuthStore {
   status: AuthStatus;
   user: AuthUser | null;
   promptDismissed: boolean;
+  questionnaireResolved: boolean;
 
   probe: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<LoginOutcome>;
   signOut: () => Promise<void>;
   dismissStudyPrompt: () => void;
   shouldShowStudyPrompt: () => boolean;
+  resolveQuestionnaire: () => void;
+  shouldShowQuestionnaire: () => boolean;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   status: "unknown",
   user: null,
   promptDismissed: dismissedThisSitting(),
+  // No sessionStorage here, unlike promptDismissed: a "Session" is a session_id
+  // (client/src/api/log.ts), regenerated on every app load, and this flag lives in the
+  // same in-memory module — so a reload naturally means a new session and re-prompts.
+  questionnaireResolved: false,
 
   /** Ask the server who we are. Never throws — see getSession. */
   probe: async () => {
@@ -99,5 +106,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   shouldShowStudyPrompt: () => {
     const { status, promptDismissed } = get();
     return status === "anonymous" && !promptDismissed && !dismissedThisSitting();
+  },
+
+  resolveQuestionnaire: () => set({ questionnaireResolved: true }),
+
+  /**
+   * Only for a signed-in user this session hasn't answered or skipped yet. Anonymous
+   * visitors are never prompted (#67, ADR-0004) — status must be exactly "authenticated",
+   * not merely "not anonymous", so the "unknown" gap before the probe lands shows nothing.
+   */
+  shouldShowQuestionnaire: () => {
+    const { status, questionnaireResolved } = get();
+    return status === "authenticated" && !questionnaireResolved;
   },
 }));

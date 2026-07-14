@@ -23,6 +23,12 @@ export type BehaviorEventType = (typeof EVENT_TYPES)[number];
 // generated once per app load, held in memory only — never localStorage
 const sessionId = crypto.randomUUID();
 
+// Shared with the questionnaire (#67): same sitting, same session_id, so a
+// QuestionnaireResponse and its Behavior Events line up under one id.
+export function getSessionId(): string {
+  return sessionId;
+}
+
 export function logEvent(
   eventType: BehaviorEventType,
   payload: Record<string, unknown> = {},
