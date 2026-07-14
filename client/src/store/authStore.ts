@@ -27,18 +27,25 @@ interface AuthStore {
   status: AuthStatus;
   user: AuthUser | null;
   promptDismissed: boolean;
+  questionnaireResolved: boolean;
 
   probe: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<LoginOutcome>;
   signOut: () => Promise<void>;
   dismissStudyPrompt: () => void;
   shouldShowStudyPrompt: () => boolean;
+  resolveQuestionnaire: () => void;
+  shouldShowQuestionnaire: () => boolean;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   status: "unknown",
   user: null,
   promptDismissed: dismissedThisSitting(),
+  // No sessionStorage here, unlike promptDismissed: a "Session" is a session_id
+  // (client/src/api/log.ts), regenerated on every app load, and this flag lives in the
+  // same in-memory module — so a reload naturally means a new session and re-prompts.
+  questionnaireResolved: false,
 
   /** Ask the server who we are. Never throws — see getSession. */
   probe: async () => {
@@ -61,7 +68,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     if (outcome.status === "authenticated") {
-      set({ status: "authenticated", user: outcome.user });
+      // Reset even if the sign-in outcome resolves the *same* user re-entering: a
+      // fresh sign-in is itself "the start of a session" for that identity, and it
+      // guards against a stale resolution surviving an account switch within one tab.
+      set({ status: "authenticated", user: outcome.user, questionnaireResolved: false });
     } else {
       set({ status: "anonymous", user: null });
     }
@@ -80,7 +90,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // Swallowed on purpose: the server may already have expired the session, and a
       // failed round-trip is no reason to keep showing an account the user has left.
     }
-    set({ status: "anonymous", user: null });
+    // Also clears questionnaireResolved: the next sign-in in this tab is a different
+    // identity's "start of a session" and must not inherit this one's resolution.
+    set({ status: "anonymous", user: null, questionnaireResolved: false });
   },
 
   dismissStudyPrompt: () => {
@@ -99,5 +111,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   shouldShowStudyPrompt: () => {
     const { status, promptDismissed } = get();
     return status === "anonymous" && !promptDismissed && !dismissedThisSitting();
+  },
+
+  resolveQuestionnaire: () => set({ questionnaireResolved: true }),
+
+  /**
+   * Only for a signed-in user this session hasn't answered or skipped yet. Anonymous
+   * visitors are never prompted (#67, ADR-0004) — status must be exactly "authenticated",
+   * not merely "not anonymous", so the "unknown" gap before the probe lands shows nothing.
+   */
+  shouldShowQuestionnaire: () => {
+    const { status, questionnaireResolved } = get();
+    return status === "authenticated" && !questionnaireResolved;
   },
 }));
