@@ -4,6 +4,7 @@ from django.views.decorators.http import require_GET
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 
+from .models import Profile
 from .serializers import ProfileSerializer
 
 
@@ -12,7 +13,10 @@ class ProfileView(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return self.request.user.profile
+        # get_or_create, not a plain lookup: accounts registered before #66 predate the
+        # signal that now creates this row on signup, so they'd otherwise 500 here.
+        profile, _ = Profile.objects.get_or_create(user=self.request.user)
+        return profile
 
 
 @require_GET

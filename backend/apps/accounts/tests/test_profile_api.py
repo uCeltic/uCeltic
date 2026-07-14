@@ -79,6 +79,21 @@ class ProfileApiTests(TestCase):
         self.user.profile.refresh_from_db()
         self.assertEqual(self.user.profile.display_name, "Ada")
 
+    def test_get_lazily_creates_a_profile_for_a_user_who_predates_the_signal(self):
+        # Simulates a #64/#65 account: created before this signal existed, so it has no
+        # Profile row at all — not merely one with an empty display_name.
+        pre_existing = User.objects.create_user(
+            username="already-here", email="already-here@example.com", password=PASSWORD
+        )
+        self.assertFalse(Profile.objects.filter(user=pre_existing).exists())
+        self.client.login(username="already-here", password=PASSWORD)
+
+        resp = self.client.get(PROFILE)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["display_name"], "")
+        self.assertTrue(Profile.objects.filter(user=pre_existing).exists())
+
     def test_patch_cannot_change_the_email(self):
         self.login()
 
