@@ -68,7 +68,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     if (outcome.status === "authenticated") {
-      set({ status: "authenticated", user: outcome.user });
+      // Reset even if the sign-in outcome resolves the *same* user re-entering: a
+      // fresh sign-in is itself "the start of a session" for that identity, and it
+      // guards against a stale resolution surviving an account switch within one tab.
+      set({ status: "authenticated", user: outcome.user, questionnaireResolved: false });
     } else {
       set({ status: "anonymous", user: null });
     }
@@ -87,7 +90,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // Swallowed on purpose: the server may already have expired the session, and a
       // failed round-trip is no reason to keep showing an account the user has left.
     }
-    set({ status: "anonymous", user: null });
+    // Also clears questionnaireResolved: the next sign-in in this tab is a different
+    // identity's "start of a session" and must not inherit this one's resolution.
+    set({ status: "anonymous", user: null, questionnaireResolved: false });
   },
 
   dismissStudyPrompt: () => {

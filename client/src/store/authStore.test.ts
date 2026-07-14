@@ -6,7 +6,12 @@ import { AuthError } from "../api/auth";
 const USER = { id: 1, email: "visitor@example.com" };
 
 function resetStore() {
-  useAuthStore.setState({ status: "unknown", user: null, promptDismissed: false });
+  useAuthStore.setState({
+    status: "unknown",
+    user: null,
+    promptDismissed: false,
+    questionnaireResolved: false,
+  });
 }
 
 beforeEach(() => {
@@ -147,5 +152,38 @@ describe("the study prompt", () => {
     await useAuthStore.getState().probe();
 
     expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(false);
+  });
+});
+
+describe("the pre-use questionnaire (#67)", () => {
+  it("never shows to an anonymous visitor or before the probe lands", () => {
+    useAuthStore.setState({ status: "anonymous", user: null });
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(false);
+
+    useAuthStore.setState({ status: "unknown", user: null });
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(false);
+  });
+
+  it("shows to a signed-in visitor who hasn't resolved it yet, and stops once resolved", () => {
+    useAuthStore.setState({ status: "authenticated", user: USER });
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(true);
+
+    useAuthStore.getState().resolveQuestionnaire();
+
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(false);
+  });
+
+  it("resets on sign-out, so a different account signing in on the same tab is still asked", async () => {
+    useAuthStore.setState({ status: "authenticated", user: USER, questionnaireResolved: true });
+    vi.spyOn(auth, "logOut").mockResolvedValue(undefined);
+
+    await useAuthStore.getState().signOut();
+    vi.spyOn(auth, "logIn").mockResolvedValue({
+      status: "authenticated",
+      user: { id: 2, email: "someone-else@example.com" },
+    });
+    await useAuthStore.getState().signIn("someone-else@example.com", "pw");
+
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(true);
   });
 });

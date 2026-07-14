@@ -18,6 +18,13 @@ export interface QuestionnaireDefinition {
 /** A rejected questionnaire request — signed-in only, so this should be rare in practice. */
 export class QuestionnaireError extends Error {}
 
+/** Mirrors the DRF `{"error": {field: [messages]}}` shape from apps/analytics/views.py. */
+async function firstFieldError(response: Response): Promise<string | null> {
+  const body = await response.json().catch(() => ({}));
+  const firstMessage = Object.values(body.error ?? {}).flat()[0];
+  return typeof firstMessage === "string" ? firstMessage : null;
+}
+
 /** Auth-gated like profile.ts: SessionAuthentication enforces CSRF once a session exists. */
 export async function fetchQuestionnaire(): Promise<QuestionnaireDefinition> {
   const response = await fetch(QUESTIONNAIRE_URL, { credentials: "same-origin" });
@@ -38,7 +45,7 @@ async function submit(body: { skipped: boolean; answers?: Record<string, unknown
   });
 
   if (!response.ok) {
-    throw new QuestionnaireError("Could not save. Please try again.");
+    throw new QuestionnaireError((await firstFieldError(response)) ?? "Could not save. Please try again.");
   }
 }
 
