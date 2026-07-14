@@ -9,16 +9,9 @@ import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import ModeButton from "./ModeButton";
 import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
+import AccountMenu from "./AccountMenu";
+import { secondaryBtn, toggleOnBtn } from "./buttonStyles";
 import { useSearchStore } from "../../store/searchStore";
-
-// button style for add text button/manuscript button/font size buttons
-const secondaryBtn =
-  "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-[#52524F] cursor-pointer transition-all hover:bg-[#F0EEE6] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
-
-
-//  button style for the "on" state (for search button and manuscript button)
-const toggleOnBtn =
-  "rounded-md border border-[#52524F] bg-[#52524F] px-2.5 py-1.5 text-sm font-medium text-white cursor-pointer transition-all hover:bg-[#3F3F3C] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
 
 export default function ToolBar({
   onToggleIIIF,
@@ -161,6 +154,8 @@ export default function ToolBar({
         >
           {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
         </button>
+
+        <AccountMenu />
       </div>
     </header>
   );

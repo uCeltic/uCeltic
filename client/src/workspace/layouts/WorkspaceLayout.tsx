@@ -3,6 +3,7 @@ import StatusBar from "../panels/StatusBar";
 import DocumentArea from "../panels/DocumentArea";
 import IIIFPanel from "../panels/IIIFPanel";
 import ToolBar from "../panels/ToolBar";
+import StudyPrompt from "../panels/StudyPrompt";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 
 export default function WorkspaceLayout() {
@@ -12,6 +13,10 @@ export default function WorkspaceLayout() {
   return (
     <div className="flex h-screen flex-col bg-[#f5f6ee]">
       <ToolBar onToggleIIIF={toggleIIIF} />
+
+      {/* In the flow, above the document area — it shrinks the workspace by a line, and
+          never covers it. Renders nothing at all once signed in or dismissed. */}
+      <StudyPrompt />
 
       <div className="min-h-0 flex-1">
         <Group key={showIIIF ? "with-iiif" : "without-iiif"} orientation="horizontal"
