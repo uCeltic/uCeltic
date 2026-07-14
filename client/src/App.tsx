@@ -7,6 +7,7 @@ import CheckEmailPage from './pages/account/CheckEmailPage'
 import VerifyEmailPage from './pages/account/VerifyEmailPage'
 import PasswordResetRequestPage from './pages/account/PasswordResetRequestPage'
 import PasswordResetKeyPage from './pages/account/PasswordResetKeyPage'
+import ProfilePage from './pages/account/ProfilePage'
 import { logSessionStarted } from './api/log'
 import { useAuthStore } from './store/authStore'
 import { useEffect } from 'react'
@@ -45,6 +46,7 @@ function App() {
         <Route path="/account/verify-email/:key" element={<VerifyEmailPage />} />
         <Route path="/account/password/reset" element={<PasswordResetRequestPage />} />
         <Route path="/account/password/reset/key/:key" element={<PasswordResetKeyPage />} />
+        <Route path="/account/profile" element={<ProfilePage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
