@@ -32,5 +32,14 @@ i=$((i + 1))
 sleep "$DELAY"
 done
 
+# Accounts (#64). The auth API is mounted under /api/auth/, so a proxy rule that only
+# knows the older paths would leave registration dead on a stack that otherwise looks
+# healthy. This endpoint plants the CSRF cookie the SPA needs and answers 204.
+code=$(curl --max-time "$MAX_TIME" $CURL_OPTS -s -o /dev/null -w '%{http_code}' "$BASE/api/auth/csrf/" || true)
+if [ "$code" != "204" ]; then
+    echo "FAIL: GET /api/auth/csrf/ -> $code (want 204)"
+    exit 1
+fi
+
 curl --max-time "$MAX_TIME" $CURL_OPTS -fsS "$BASE/" | grep -q 'id="root"' || { echo 'FAIL: GET / missing id="root"'; exit 1; }
 echo "smoke OK"

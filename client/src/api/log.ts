@@ -1,3 +1,5 @@
+import { csrfHeaders } from "./csrf";
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 const APP_VERSION = import.meta.env.APP_VERSION ?? "unknown";
 
@@ -26,9 +28,13 @@ export function logEvent(
   payload: Record<string, unknown> = {},
 ): void {
   try {
+    // Stays fire-and-forget: the CSRF header is read straight from the cookie rather than
+    // awaited, so a signed-in visitor's event passes CSRF and an anonymous one sends no
+    // token at all — which the server does not ask for.
     fetch(`${API_BASE}/events/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", ...csrfHeaders() },
       body: JSON.stringify({
         session_id: sessionId,
         event_type: eventType,

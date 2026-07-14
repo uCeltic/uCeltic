@@ -36,6 +36,30 @@ describe("logEvent request contract", () => {
     expect(first).toBe(second);
   });
 
+  //Test: logging still works for visitors without an account (#64)
+  it("sends no CSRF header when the visitor is anonymous", () => {
+    Object.defineProperty(document, "cookie", { value: "", writable: true });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+
+    logEvent("mode_changed", { to: "entities" });
+
+    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty("X-CSRFToken");
+  });
+
+  it("echoes the CSRF token once a session cookie exists", () => {
+    Object.defineProperty(document, "cookie", {
+      value: "csrftoken=tok123",
+      writable: true,
+    });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+
+    logEvent("mode_changed", { to: "entities" });
+
+    expect(fetchMock.mock.calls[0][1].headers["X-CSRFToken"]).toBe("tok123");
+  });
+
   it("never throws and drops the event silently when fetch rejects", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
 

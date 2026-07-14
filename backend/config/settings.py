@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 import sys
+import warnings
 from dotenv import load_dotenv
 
 
@@ -63,11 +64,20 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "rest_framework",
     "corsheaders",
+    "allauth",
+    "allauth.account",
+    "allauth.headless",
+    "apps.accounts",
     "apps.tei",
     "apps.search",
     "apps.analytics",
     "drf_spectacular",
 ]
+
+# django.contrib.sites is deliberately NOT installed: allauth treats it as optional and
+# then derives the host in its emails from the request, which is what we want — the
+# deployment's address (<ip>.sslip.io) changes with the box, and a Site row would have
+# to be kept in sync by hand.
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -79,6 +89,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -137,6 +148,77 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Accounts — django-allauth in headless mode (ADR-0004, #64)
+# Optional accounts on a public tool: anonymous visitors keep the full workspace;
+# signing in adds profile, attribution, and the questionnaire.
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",   # /admin's staff login
+    "allauth.account.auth_backends.AuthenticationBackend",   # email + password
+]
+
+# Email + password only; no username is ever collected. Django's stock User model
+# still has a (unique, required) username column, so allauth derives one from the
+# email address on signup — it is an implementation detail no user ever sees.
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]
+ACCOUNT_UNIQUE_EMAIL = True
+
+# Mandatory activation before the first login: otherwise anyone could register an
+# address that isn't theirs. A blocked login re-sends the link (allauth's own flow).
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[uCeltic] "
+
+# Headless only: allauth serves JSON at /api/auth/browser/v1/* and renders no pages,
+# so every link it emails must point into the SPA's own routes.
+HEADLESS_ONLY = True
+HEADLESS_CLIENTS = ("browser",)
+
+# Where the SPA lives, as seen from a mail client: https://<ip>.sslip.io in prod (#63).
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173")
+
+HEADLESS_FRONTEND_URLS = {
+    "account_confirm_email": f"{FRONTEND_BASE_URL}/account/verify-email/{{key}}",
+    "account_reset_password": f"{FRONTEND_BASE_URL}/account/password/reset",
+    "account_reset_password_from_key": (
+        f"{FRONTEND_BASE_URL}/account/password/reset/key/{{key}}"
+    ),
+    "account_signup": f"{FRONTEND_BASE_URL}/account/signup",
+}
+
+# Session cookie is the auth mechanism (SPA and API share one origin behind Caddy).
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG and not _RUNNING_TESTS
+CSRF_COOKIE_SECURE = not DEBUG and not _RUNNING_TESTS
+CSRF_COOKIE_HTTPONLY = False   # the SPA reads it to send X-CSRFToken
+
+
+# Email
+# Dev prints activation links to the console; prod sends them over SMTP. EMAIL_HOST is
+# what flips the switch. Missing it in production is NOT fatal — the corpus, search and
+# anonymous logging must not go down over unconfigured mail — but registration is dead
+# in the water, since nobody can activate an account. So say so, loudly, at boot.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+if EMAIL_HOST:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    if not DEBUG and not _RUNNING_TESTS:
+        warnings.warn(
+            "EMAIL_HOST is not set: activation mail will be written to the container "
+            "log instead of being delivered, so no one can activate an account. "
+            "Set the EMAIL_* variables (see docs/cd-runbook.md).",
+            stacklevel=2,
+        )
+
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("1", "true", "yes")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL", "uCeltic <no-reply@localhost>"
+)
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -165,10 +247,15 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 REST_FRAMEWORK = {
       "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-      # Public, anonymous API (auth is added at the proxy layer in #9).
-      # Drop SessionAuthentication so a logged-in admin's cookie doesn't trigger
-      # CSRF enforcement on the SPA's POST /api/search/ requests.
-      "DEFAULT_AUTHENTICATION_CLASSES": [],
+      # Public tool with optional accounts (ADR-0004, #64). SessionAuthentication is
+      # back — reversing the empty-authenticators setting that the old shared Basic Auth
+      # gate made possible — so signed-in visitors are recognised on API calls and their
+      # events can be attributed. It enforces CSRF, but only for requests that carry a
+      # session: anonymous POST /api/search/ and /api/events/ still need no token.
+      # Permission stays AllowAny; only account/profile endpoints require signing in.
+      "DEFAULT_AUTHENTICATION_CLASSES": [
+          "rest_framework.authentication.SessionAuthentication",
+      ],
       "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
   }
 

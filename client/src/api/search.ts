@@ -1,4 +1,5 @@
 import type { SearchResult } from "../types/search";
+import { csrfHeaders } from "./csrf";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
@@ -14,7 +15,8 @@ export interface SearchParams {
 export async function searchDocument(p: SearchParams): Promise<SearchResult[]> {
   const res = await fetch(`${API_BASE}/search/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...csrfHeaders() },
     body: JSON.stringify({
       doc_id: p.docId,
       query: p.query,

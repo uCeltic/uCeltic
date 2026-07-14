@@ -36,6 +36,7 @@ def _make_handler(routes):
 
 HEALTHY = {
     "/api/tei/": (200, b"[]"),
+    "/api/auth/csrf/": (204, b""),   # smoke.sh checks the auth API too (#64)
     "/": (200, b'<!doctype html><html><body><div id="root"></div></body></html>'),
 }
 
