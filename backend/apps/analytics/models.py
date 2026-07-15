@@ -74,5 +74,9 @@ class QuestionnaireResponse(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
+        # No self.user here: Django's admin renders this string, unstyled, straight
+        # into the change page's <title>/breadcrumb/heading — the same
+        # personally-identifying username user_display exists to hide (#69). Who it
+        # belongs to is already visible on that page via the User field.
         state = "skipped" if self.skipped else "answered"
-        return f"{state} by {self.user} @ {self.created_at:%Y-%m-%d %H:%M:%S}"
+        return f"{state} @ {self.created_at:%Y-%m-%d %H:%M:%S}"

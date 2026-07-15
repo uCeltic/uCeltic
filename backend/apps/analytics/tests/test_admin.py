@@ -88,6 +88,22 @@ class UserDisplayTests(TestCase):
         self.assertEqual(qa.user_display(response), "Ada")
 
 
+class QuestionnaireResponseStrTests(TestCase):
+    """__str__ feeds the admin change page's <title>/breadcrumb/heading verbatim, so it
+    must never embed the raw user (#69) — same leak class as the FK-field fix above,
+    just reached through Model.__str__ instead of a ModelAdmin field."""
+
+    def test_str_does_not_embed_the_user(self):
+        user = User.objects.create_user(
+            username="signed-in", email="signed-in@example.com", password="pw-12345678"
+        )
+        response = QuestionnaireResponse.objects.create(
+            user=user, session_id="s1", questionnaire_version=1, skipped=True
+        )
+
+        self.assertNotIn("signed-in", str(response))
+
+
 class ReadOnlyPermissionTests(TestCase):
     """Collected study data: viewable, never addable or editable (#69 AC1/AC2)."""
 
@@ -129,7 +145,10 @@ class ReadOnlyPermissionTests(TestCase):
 
         html = resp.content.decode()
         self.assertIn("Ada Lovelace", html)
-        self.assertNotIn(">signed-in<", html)
+        # Bare substring, not just the readonly-field link: the username must not leak
+        # anywhere on the page — title, breadcrumb, and heading all render it unescaped
+        # via str(obj) if a model's __str__ embeds it (#69).
+        self.assertNotIn("signed-in", html)
 
     def test_questionnaire_response_add_is_forbidden(self):
         resp = self.client.get(reverse("admin:analytics_questionnaireresponse_add"))
@@ -151,7 +170,10 @@ class ReadOnlyPermissionTests(TestCase):
 
         html = resp.content.decode()
         self.assertIn("Ada Lovelace", html)
-        self.assertNotIn(">signed-in<", html)
+        # Bare substring, not just the readonly-field link: the username must not leak
+        # anywhere on the page — title, breadcrumb, and heading all render it unescaped
+        # via str(obj) if a model's __str__ embeds it (#69).
+        self.assertNotIn("signed-in", html)
 
 
 class UserListFilterTests(TestCase):
