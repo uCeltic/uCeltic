@@ -120,6 +120,17 @@ class ReadOnlyPermissionTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(resp.context["has_change_permission"])
 
+    def test_behavior_event_change_view_shows_display_name_not_username(self):
+        Profile.objects.create(user=self.subject, display_name="Ada Lovelace")
+
+        resp = self.client.get(
+            reverse("admin:analytics_behaviorevent_change", args=[self.event.pk])
+        )
+
+        html = resp.content.decode()
+        self.assertIn("Ada Lovelace", html)
+        self.assertNotIn(">signed-in<", html)
+
     def test_questionnaire_response_add_is_forbidden(self):
         resp = self.client.get(reverse("admin:analytics_questionnaireresponse_add"))
         self.assertEqual(resp.status_code, 403)
@@ -130,6 +141,17 @@ class ReadOnlyPermissionTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(resp.context["has_change_permission"])
+
+    def test_questionnaire_response_change_view_shows_display_name_not_username(self):
+        Profile.objects.create(user=self.subject, display_name="Ada Lovelace")
+
+        resp = self.client.get(
+            reverse("admin:analytics_questionnaireresponse_change", args=[self.response.pk])
+        )
+
+        html = resp.content.decode()
+        self.assertIn("Ada Lovelace", html)
+        self.assertNotIn(">signed-in<", html)
 
 
 class UserListFilterTests(TestCase):

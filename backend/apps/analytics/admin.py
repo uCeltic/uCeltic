@@ -46,8 +46,13 @@ class UserListFilter(admin.SimpleListFilter):
         return queryset
 
 
-class ReadOnlyAdminMixin:
-    """Collected study data: viewable for inspection, never addable or editable."""
+class StudyDataAdminMixin:
+    """Collected study data: read-only and shown by display name, not username (#69).
+
+    Bundles everything both study-model admins share: add/edit is blocked (it's
+    collected data, not something an admin authors), and the `user` column/field is
+    rendered through `user_display` rather than Django's default User.__str__.
+    """
 
     list_select_related = ("user", "user__profile")
 
@@ -63,16 +68,21 @@ class ReadOnlyAdminMixin:
 
 
 @admin.register(BehaviorEvent)
-class BehaviorEventAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class BehaviorEventAdmin(StudyDataAdminMixin, admin.ModelAdmin):
     list_display = ("server_ts", "event_type", "user_display", "session_id")
     list_filter = (UserListFilter, "event_type")
     search_fields = ("session_id",)
     ordering = ("-server_ts",)
+    # Swaps the `user` FK for `user_display` on the read-only detail view too — Django
+    # forces every field readonly here (has_change_permission is False), so without
+    # this override the raw FK would render via User.__str__ same as the old filter did.
+    fields = ("session_id", "event_type", "payload", "client_ts", "server_ts", "app_version", "user_display")
 
 
 @admin.register(QuestionnaireResponse)
-class QuestionnaireResponseAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class QuestionnaireResponseAdmin(StudyDataAdminMixin, admin.ModelAdmin):
     list_display = ("user_display", "skipped", "questionnaire_version", "session_id", "created_at")
     list_filter = (UserListFilter, "skipped")
     search_fields = ("session_id",)
     ordering = ("-created_at",)
+    fields = ("user_display", "session_id", "questionnaire_version", "answers", "skipped", "created_at")
