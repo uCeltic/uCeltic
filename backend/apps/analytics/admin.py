@@ -5,9 +5,9 @@ from .models import BehaviorEvent, QuestionnaireResponse
 
 @admin.register(BehaviorEvent)
 class BehaviorEventAdmin(admin.ModelAdmin):
-    list_display = ("event_type", "session_id", "client_ts", "server_ts", "app_version")
+    list_display = ("event_type", "user", "session_id", "client_ts", "server_ts", "app_version")
     list_filter = ("event_type", "app_version")
-    search_fields = ("session_id",)
+    search_fields = ("session_id", "user__email")
     ordering = ("-server_ts",)
 
 

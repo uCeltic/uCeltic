@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import EntryNotice from './components/EntryNotice'
 import LandingPage from './pages/LandingPage'
 import WorkspacePage from './pages/WorkspacePage'
 import LoginPage from './pages/account/LoginPage'
@@ -34,6 +35,9 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* At the app root, not inside a route, so it shows identically to guest and
+          signed-in visitors no matter which URL they land on first (ADR-0005). */}
+      <EntryNotice />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/workspace" element={<WorkspacePage />} />
