@@ -60,5 +60,9 @@ class EventView(APIView):
                 {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        BehaviorEvent.objects.create(**serializer.validated_data)
+        # #68: attribution rides on who the server thinks is signed in, never on
+        # anything the client sends — the request serializer has no user field, so a
+        # stray one in the body is already dropped by validation before we get here.
+        user = request.user if request.user.is_authenticated else None
+        BehaviorEvent.objects.create(user=user, **serializer.validated_data)
         return Response(status=status.HTTP_201_CREATED)

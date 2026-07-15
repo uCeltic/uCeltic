@@ -73,6 +73,19 @@
   published analysis. _Avoid_: account, member (same concept as User); calling
   anonymous visitors "users" — say visitor.
 
+  ### Entry Notice
+
+  A single, generic banner shown at the app's entry point, identically to guest
+  and signed-in visitors, stating that usage behavior is recorded and used to
+  improve the software and support a research project. Dismissal is
+  client-side only (no backend record). Distinct from the study's per-account
+  consent story ADR-0004 described (linked to your account, researcher-only,
+  pseudonymized, deletable, destroyed after thesis) — that specific language is
+  **not** part of the Entry Notice; see
+  [ADR-0005](docs/adr/0005-generic-entry-notice-not-per-account-consent.md).
+  _Avoid_: consent banner, privacy notice — this is a usage disclosure, not the
+  ethics-board informed-consent artifact.
+
   ### Questionnaire Response
 
   A signed-in User's self-stated purpose for **one Session** ("what are you trying

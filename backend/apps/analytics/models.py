@@ -24,6 +24,19 @@ class BehaviorEvent(models.Model):
     client_ts = models.DateTimeField()
     server_ts = models.DateTimeField(auto_now_add=True)
     app_version = models.CharField(max_length=32)
+    # ADR-0004/#68: who, if anyone, was signed in when this event happened. Stamped
+    # server-side from request.user (see EventView.post) — a client-supplied value is
+    # never trusted. NULL for anonymous traffic and for all rows recorded before #68.
+    #
+    # Study-cohort convention: cohort = BehaviorEvent.objects.filter(user__isnull=False).
+    # Anonymous traffic stays recorded but is, by construction, outside the cohort.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="behavior_events",
+    )
 
     class Meta:
         ordering = ["-server_ts"]
