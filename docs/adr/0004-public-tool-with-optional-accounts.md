@@ -1,6 +1,6 @@
 # 4. Public tool with optional user accounts
 
-- Status: Accepted; superseded in part by [ADR-0005](0005-generic-entry-notice-not-per-account-consent.md), [ADR-0006](0006-drop-workspace-study-prompt.md), and [ADR-0007](0007-questionnaire-for-guests-and-idle-session-expiry.md)
+- Status: Accepted; superseded in part by [ADR-0005](0005-generic-entry-notice-not-per-account-consent.md) and [ADR-0006](0006-drop-workspace-study-prompt.md)
 - Date: 2026-07-09
 - Deciders: Zhou Dejian
 - Supersedes: parts of [ADR-0001](0001-private-vps-deployment.md) — the shared
