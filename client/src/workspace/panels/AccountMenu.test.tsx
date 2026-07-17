@@ -16,7 +16,7 @@ function renderMenu() {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: "anonymous", user: null, promptDismissed: false });
+  useAuthStore.setState({ status: "anonymous", user: null });
 });
 
 afterEach(() => vi.restoreAllMocks());

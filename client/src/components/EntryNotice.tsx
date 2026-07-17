@@ -1,8 +1,7 @@
 import { useState } from "react";
 
 /**
- * Unlike STUDY_PROMPT_DISMISSED_KEY (sessionStorage, one sitting), this notice is
- * dismissed for good once acknowledged — ADR-0005 calls for a persistent, client-side-
+ * Dismissed for good once acknowledged — ADR-0005 calls for a persistent, client-side-
  * only record, not a per-sitting nag.
  */
 export const ENTRY_NOTICE_DISMISSED_KEY = "uceltic:entry-notice-dismissed";
