@@ -65,6 +65,7 @@ export default function SignupPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <p className="mt-1 text-sm text-[#6B6B67]">At least 8 characters.</p>
         </div>
 
         <button type="submit" className={primaryBtn} disabled={submitting}>

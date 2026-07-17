@@ -5,10 +5,12 @@ import { Link } from "react-router-dom";
 export default function AccountShell({
   title,
   subtitle,
+  hideAccountLink,
   children,
 }: {
   title: string;
   subtitle?: ReactNode;
+  hideAccountLink?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -19,10 +21,16 @@ export default function AccountShell({
         <div className="mt-5">{children}</div>
       </main>
 
-      {/* The workspace never depends on an account, so the way back is always open. */}
-      <Link to="/workspace" className="mt-5 text-sm text-[#6B6B67] underline hover:text-[#52524F]">
-        Continue without an account
-      </Link>
+      {/* The workspace never depends on an account, so the way back is always open —
+          unless the caller says otherwise. */}
+      {!hideAccountLink && (
+        <Link
+          to="/workspace"
+          className="mt-5 text-sm text-[#6B6B67] underline hover:text-[#52524F]"
+        >
+          Continue without an account
+        </Link>
+      )}
     </div>
   );
 }
