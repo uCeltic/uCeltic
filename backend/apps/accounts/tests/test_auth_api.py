@@ -76,6 +76,19 @@ class RegistrationActivationLoginTests(TestCase):
             "http://localhost:5173/account/verify-email/", mail.outbox[0].body
         )
 
+    def test_activation_email_uses_uceltic_branding_not_allauth_defaults(self):
+        self.signup()
+
+        subject = mail.outbox[0].subject
+        body = mail.outbox[0].body
+
+        self.assertEqual(subject, "[uCeltic] Confirm your email")
+        self.assertIn("Thanks for registering on uCeltic.", body)
+        # allauth's default copy exposes the auto-generated username and the raw
+        # Sites-framework domain — neither should appear in the branded version.
+        self.assertNotIn("has given your email address", body)
+        self.assertNotIn("Hello from", body)
+
     def test_login_before_activation_is_rejected(self):
         self.signup()
         self.client.logout()  # drop the pending-verification stage from signup
