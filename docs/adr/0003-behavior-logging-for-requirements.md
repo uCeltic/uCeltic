@@ -2,7 +2,9 @@
 
 - Status: Accepted; superseded in part by
   [ADR-0004](0004-public-tool-with-optional-accounts.md) — session-only
-  attribution and the "data is anonymous" consent wording
+  attribution and the "data is anonymous" consent wording; and by
+  [ADR-0007](0007-questionnaire-for-guests-and-idle-session-expiry.md) — a
+  Session now also ends after 6 hours of inactivity, not only on app load
 - Date: 2026-07-06
 - Deciders: Zhou Dejian
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useAuthStore, STUDY_PROMPT_DISMISSED_KEY } from "./authStore";
+import { useAuthStore } from "./authStore";
 import * as auth from "../api/auth";
 import { AuthError } from "../api/auth";
 
@@ -9,14 +9,12 @@ function resetStore() {
   useAuthStore.setState({
     status: "unknown",
     user: null,
-    promptDismissed: false,
     questionnaireResolved: false,
   });
 }
 
 beforeEach(() => {
   resetStore();
-  sessionStorage.clear();
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -98,60 +96,6 @@ describe("signing out", () => {
 
     expect(useAuthStore.getState().status).toBe("anonymous");
     expect(useAuthStore.getState().user).toBeNull();
-  });
-});
-
-describe("the study prompt", () => {
-  it("is hidden while the session is still unknown, so it never flashes on load", () => {
-    expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(false);
-  });
-
-  it("shows to a signed-out visitor", async () => {
-    vi.spyOn(auth, "getSession").mockResolvedValue(null);
-    await useAuthStore.getState().probe();
-
-    expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(true);
-  });
-
-  it("never shows to a signed-in user", async () => {
-    vi.spyOn(auth, "getSession").mockResolvedValue(USER);
-    await useAuthStore.getState().probe();
-
-    expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(false);
-  });
-
-  it("stays dismissed for the rest of the sitting", async () => {
-    vi.spyOn(auth, "getSession").mockResolvedValue(null);
-    await useAuthStore.getState().probe();
-
-    useAuthStore.getState().dismissStudyPrompt();
-
-    expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(false);
-    expect(sessionStorage.getItem(STUDY_PROMPT_DISMISSED_KEY)).toBe("1");
-  });
-
-  it("comes back on the next sitting: dismissal lives in sessionStorage, not localStorage", async () => {
-    useAuthStore.getState().dismissStudyPrompt();
-    expect(localStorage.getItem(STUDY_PROMPT_DISMISSED_KEY)).toBeNull();
-
-    // A new sitting: fresh store, and sessionStorage the browser has already cleared.
-    sessionStorage.clear();
-    resetStore();
-    vi.spyOn(auth, "getSession").mockResolvedValue(null);
-    await useAuthStore.getState().probe();
-
-    expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(true);
-  });
-
-  it("honours a dismissal made before a reload within the same sitting", async () => {
-    // A reload rebuilds the store from scratch, so sessionStorage — not the in-memory
-    // flag — is what has to carry the dismissal across it.
-    sessionStorage.setItem(STUDY_PROMPT_DISMISSED_KEY, "1");
-    resetStore();
-    vi.spyOn(auth, "getSession").mockResolvedValue(null);
-    await useAuthStore.getState().probe();
-
-    expect(useAuthStore.getState().shouldShowStudyPrompt()).toBe(false);
   });
 });
 

@@ -22,7 +22,7 @@ function renderProfile() {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: "authenticated", user: USER, promptDismissed: false });
+  useAuthStore.setState({ status: "authenticated", user: USER });
 });
 
 afterEach(() => vi.restoreAllMocks());

@@ -2,38 +2,19 @@ import { create } from "zustand";
 import { getSession, logIn, logOut, type AuthUser, type LoginOutcome } from "../api/auth";
 
 /**
- * Dismissing the study prompt lasts one sitting: sessionStorage, so a participant who
- * closes it today is reminded again on their next visit, but never nagged twice in the
- * same sitting. (localStorage would silence it forever on that browser.)
- */
-export const STUDY_PROMPT_DISMISSED_KEY = "uceltic:study-prompt-dismissed";
-
-/**
  * `unknown` until the session probe answers. The UI must not claim "signed out" before
- * then, or a signed-in user sees the study prompt flash on every load.
+ * then, or a signed-in user sees stale UI flash on every load.
  */
 export type AuthStatus = "unknown" | "anonymous" | "authenticated";
-
-function dismissedThisSitting(): boolean {
-  try {
-    return sessionStorage.getItem(STUDY_PROMPT_DISMISSED_KEY) === "1";
-  } catch {
-    // Private-mode browsers can throw on storage access; a missing dismissal is harmless.
-    return false;
-  }
-}
 
 interface AuthStore {
   status: AuthStatus;
   user: AuthUser | null;
-  promptDismissed: boolean;
   questionnaireResolved: boolean;
 
   probe: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<LoginOutcome>;
   signOut: () => Promise<void>;
-  dismissStudyPrompt: () => void;
-  shouldShowStudyPrompt: () => boolean;
   resolveQuestionnaire: () => void;
   shouldShowQuestionnaire: () => boolean;
 }
@@ -41,10 +22,9 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>((set, get) => ({
   status: "unknown",
   user: null,
-  promptDismissed: dismissedThisSitting(),
-  // No sessionStorage here, unlike promptDismissed: a "Session" is a session_id
-  // (client/src/api/log.ts), regenerated on every app load, and this flag lives in the
-  // same in-memory module — so a reload naturally means a new session and re-prompts.
+  // A "Session" is a session_id (client/src/api/log.ts), regenerated on every app load,
+  // and this flag lives in the same in-memory module — so a reload naturally means a new
+  // session and re-prompts.
   questionnaireResolved: false,
 
   /** Ask the server who we are. Never throws — see getSession. */
@@ -93,24 +73,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     // Also clears questionnaireResolved: the next sign-in in this tab is a different
     // identity's "start of a session" and must not inherit this one's resolution.
     set({ status: "anonymous", user: null, questionnaireResolved: false });
-  },
-
-  dismissStudyPrompt: () => {
-    try {
-      sessionStorage.setItem(STUDY_PROMPT_DISMISSED_KEY, "1");
-    } catch {
-      // Storage unavailable: the prompt simply returns on the next load.
-    }
-    set({ promptDismissed: true });
-  },
-
-  /**
-   * Only for a visitor we know to be signed out. The prompt is an invitation, never a
-   * gate: the workspace renders identically whether or not this returns true (ADR-0004).
-   */
-  shouldShowStudyPrompt: () => {
-    const { status, promptDismissed } = get();
-    return status === "anonymous" && !promptDismissed && !dismissedThisSitting();
   },
 
   resolveQuestionnaire: () => set({ questionnaireResolved: true }),

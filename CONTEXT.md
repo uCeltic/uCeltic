@@ -53,12 +53,15 @@
   ### Session
 
   The unit a Behavior Event is attributed to: one **continuous sitting**, identified
-  by a `session_id` (a uuid generated on app load). A Session lets you rebuild the
-  full sequence of one sitting (searched → tweaked a param → gave up), which is what
-  requirement-mining needs. A Session **may belong to a User** (signed in) or be
-  anonymous — cross-day "same person?" questions are answered through the owning
-  User for the study cohort, and stay unanswerable by design for anonymous traffic
-  (see [ADR-0004](docs/adr/0004-public-tool-with-optional-accounts.md)).
+  by a `session_id` (a uuid generated on app load, or after 6 hours of inactivity
+  within a still-open tab — see
+  [ADR-0007](docs/adr/0007-questionnaire-for-guests-and-idle-session-expiry.md)).
+  A Session lets you rebuild the full sequence of one sitting
+  (searched → tweaked a param → gave up), which is what requirement-mining needs. A
+  Session **may belong to a User** (signed in) or be anonymous — cross-day "same
+  person?" questions are answered through the owning User for the study cohort, and
+  stay unanswerable by design for anonymous traffic (see
+  [ADR-0004](docs/adr/0004-public-tool-with-optional-accounts.md)).
   _Avoid_: device, participant — no device ids exist, and "participant" is a
   study-protocol role, not a data concept.
 
@@ -66,9 +69,11 @@
 
   A registered account (email + password, activated via an emailed link) belonging
   to one person. **Optional by design**: the workspace is fully usable anonymously;
-  signing in adds a profile (display name, password change), attribution of the
-  holder's Sessions and Behavior Events, and the pre-use Questionnaire Response.
-  August study participants sign in because the protocol asks them to, not because
+  signing in adds a profile (display name, password change) and attribution of the
+  holder's Sessions, Behavior Events, and Questionnaire Responses — the pre-use
+  prompt itself is shown to every visitor regardless of account status (see
+  Questionnaire Response, below). August study participants sign in because the
+  protocol asks them to, not because
   a wall forces them. Data linked to a User is researcher-only and pseudonymized in
   published analysis. _Avoid_: account, member (same concept as User); calling
   anonymous visitors "users" — say visitor.
@@ -88,13 +93,15 @@
 
   ### Questionnaire Response
 
-  A signed-in User's self-stated purpose for **one Session** ("what are you trying
-  to do this time?"), captured by a short skippable prompt before entering the
-  workspace; a skip is recorded too. The "said" side of the study's core comparison,
-  cross-checked against the same Session's Behavior Events (the "did" side). The
-  question set is versioned and owned by the research team. Distinct from a Diary
-  Entry (free-text, after the fact) and from Behavior Events (observed actions, not
-  self-report).
+  A visitor's self-stated purpose for **one Session** ("what are you trying to do
+  this time?"), captured by a short skippable prompt before entering the workspace;
+  a skip is recorded too. Shown to every visitor, guest or signed-in — like Session
+  and Behavior Event, a Questionnaire Response **may belong to a User** or be
+  anonymous (see [ADR-0007](docs/adr/0007-questionnaire-for-guests-and-idle-session-expiry.md)).
+  The "said" side of the study's core comparison, cross-checked against the same
+  Session's Behavior Events (the "did" side). The question set is versioned and
+  owned by the research team. Distinct from a Diary Entry (free-text, after the
+  fact) and from Behavior Events (observed actions, not self-report).
 
   ### Diary Entry
 

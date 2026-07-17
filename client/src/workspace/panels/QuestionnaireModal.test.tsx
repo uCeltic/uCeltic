@@ -15,7 +15,6 @@ beforeEach(() => {
   useAuthStore.setState({
     status: "authenticated",
     user: USER,
-    promptDismissed: false,
     questionnaireResolved: false,
   });
 });
