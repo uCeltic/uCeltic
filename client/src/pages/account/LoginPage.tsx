@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AccountShell title="Sign in" subtitle="Signing in lets your study sessions be attributed to you.">
+    <AccountShell title="Sign in">
       <FormError message={error} />
 
       <form onSubmit={handleSubmit} noValidate>

@@ -73,7 +73,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <AccountShell title="Your profile">
+    // The visitor is already signed in here, so "Continue without an account" is meaningless.
+    <AccountShell title="Your profile" hideAccountLink>
       <section className="mb-6">
         <span className={label}>Email</span>
         <p className="mt-1 text-sm text-[#52524F]">{authUser?.email}</p>
