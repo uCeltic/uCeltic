@@ -1,0 +1,11 @@
+{% extends "account/email/base_message.txt" %}
+
+{% block content %}Hi,
+
+Thanks for registering on uCeltic.
+
+Click the link below to confirm your email address and activate your account:
+
+{{ activate_url }}
+
+If you didn't request this, please ignore this email.{% endblock content %}
