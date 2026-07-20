@@ -130,6 +130,18 @@ DATABASES = {
     }
 }
 
+# allauth rate-limits (e.g. confirm_email) through Django's cache framework.
+# LocMemCache is per-process, so under gunicorn's multiple workers each one keeps its own
+# counter and the throttle isn't actually enforced. DatabaseCache shares state across
+# workers via the existing Postgres — see ADR-0009. The table is created by a migration
+# (apps/accounts) rather than `createcachetable`, so it exists in the test DB too.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
