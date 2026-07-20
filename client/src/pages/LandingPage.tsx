@@ -3,12 +3,24 @@ import { useAuthStore } from "../store/authStore";
 import { link, primaryBtn } from "./account/AccountShell";
 import LoginForm from "./account/LoginForm";
 
-/** Right column of the homepage split: brand title + illustration, shared by both auth states. */
+/** Right column of the homepage split: brand title + illustration, shared by both auth states.
+ * The title is set in Uncial Antiqua — the same insular-script tradition the app's own
+ * subject matter (digitised medieval Irish manuscripts) draws on, echoing the hand-lettered
+ * roundel in the artwork below it. */
 function BrandPanel() {
   return (
     <div className="flex flex-col items-center justify-center p-6 text-center md:w-1/2">
-      <h1 className="text-lg font-semibold text-[#52524F]">uCeltic</h1>
-      <img src="/index_pic.png" alt="" className="mt-4 max-h-[400px] w-auto" />
+      <h1
+        className="text-4xl tracking-wide text-[#52524F] md:text-5xl"
+        style={{ fontFamily: "'Uncial Antiqua', serif" }}
+      >
+        uCeltic
+      </h1>
+      <img
+        src="/index_pic_illustration.png"
+        alt=""
+        className="mt-6 max-h-[320px] w-auto md:max-h-[560px]"
+      />
     </div>
   );
 }
