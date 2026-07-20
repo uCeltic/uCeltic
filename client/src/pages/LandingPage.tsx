@@ -9,15 +9,15 @@ import LoginForm from "./account/LoginForm";
  * roundel in the artwork below it. */
 function BrandPanel() {
   return (
-    <div className="flex flex-col items-center justify-center p-6 text-center md:w-1/2">
+    <div className="flex flex-col items-center justify-center p-4 text-center md:w-1/2">
       <h1
-        className="text-4xl tracking-wide text-[#52524F] md:text-5xl"
+        className="-mt-8 text-4xl tracking-wide text-[#52524F] md:text-5xl"
         style={{ fontFamily: "'Uncial Antiqua', serif" }}
       >
         uCeltic
       </h1>
       <img
-        src="/index_pic_illustration.png"
+        src="/index_pic.png"
         alt=""
         className="mt-6 max-h-[320px] w-auto md:max-h-[560px]"
       />

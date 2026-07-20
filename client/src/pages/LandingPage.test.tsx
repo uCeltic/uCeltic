@@ -63,7 +63,7 @@ describe("LandingPage", () => {
     it("renders the brand image", () => {
       const { container } = renderLanding();
 
-      expect(container.querySelector('img[src="/index_pic_illustration.png"]')).toBeInTheDocument();
+      expect(container.querySelector('img[src="/index_pic.png"]')).toBeInTheDocument();
     });
   });
 
@@ -100,7 +100,7 @@ describe("LandingPage", () => {
     it("renders the brand image", () => {
       const { container } = renderLanding();
 
-      expect(container.querySelector('img[src="/index_pic_illustration.png"]')).toBeInTheDocument();
+      expect(container.querySelector('img[src="/index_pic.png"]')).toBeInTheDocument();
     });
   });
 
