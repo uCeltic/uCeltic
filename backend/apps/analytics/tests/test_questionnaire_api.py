@@ -1,4 +1,4 @@
-"""Pre-use purpose questionnaire: submit + skip round-trips, auth-gated (#67)."""
+"""Pre-use purpose questionnaire: submit + skip round-trips, open to guests (#67, ADR-0007)."""
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -19,10 +19,13 @@ class QuestionnaireDefinitionTests(TestCase):
             username="signed-in", email=EMAIL, password=PASSWORD
         )
 
-    def test_anonymous_get_is_rejected(self):
+    def test_anonymous_get_returns_version_and_questions(self):
         resp = self.client.get(QUESTIONNAIRE)
 
-        self.assertIn(resp.status_code, (401, 403))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(body["version"], QUESTIONNAIRE_VERSION)
+        self.assertTrue(len(body["questions"]) >= 1)
 
     def test_signed_in_get_returns_version_and_questions(self):
         self.client.login(username="signed-in", password=PASSWORD)
@@ -46,15 +49,17 @@ class QuestionnaireSubmissionTests(TestCase):
     def login(self):
         self.client.login(username="signed-in", password=PASSWORD)
 
-    def test_anonymous_post_is_rejected(self):
+    def test_anonymous_post_persists_a_row_with_null_user(self):
         resp = self.client.post(
             QUESTIONNAIRE,
             data={"session_id": SESSION_ID, "skipped": False, "answers": {"purpose": "reading"}},
             content_type="application/json",
         )
 
-        self.assertIn(resp.status_code, (401, 403))
-        self.assertEqual(QuestionnaireResponse.objects.count(), 0)
+        self.assertEqual(resp.status_code, 201)
+        row = QuestionnaireResponse.objects.get()
+        self.assertIsNone(row.user)
+        self.assertEqual(row.session_id, SESSION_ID)
 
     def test_submitting_answers_persists_a_row_stamped_with_the_user(self):
         self.login()
@@ -144,3 +149,17 @@ class QuestionnaireSubmissionTests(TestCase):
         row = QuestionnaireResponse.objects.get()
         self.assertEqual(row.user, self.user)
         self.assertNotEqual(row.user, other)
+
+    def test_anonymous_post_ignores_any_client_supplied_user_field(self):
+        other = User.objects.create_user(
+            username="someone-else", email="someone-else@example.com", password=PASSWORD
+        )
+
+        resp = self.client.post(
+            QUESTIONNAIRE,
+            data={"session_id": SESSION_ID, "skipped": True, "user": other.pk},
+            content_type="application/json",
+        )
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertIsNone(QuestionnaireResponse.objects.get().user)

@@ -99,12 +99,18 @@ describe("signing out", () => {
   });
 });
 
-describe("the pre-use questionnaire (#67)", () => {
-  it("never shows to an anonymous visitor or before the probe lands", () => {
-    useAuthStore.setState({ status: "anonymous", user: null });
-    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(false);
-
+describe("the pre-use questionnaire (#67, ADR-0007)", () => {
+  it("never shows before the probe lands, so it can't flash ahead of the session check", () => {
     useAuthStore.setState({ status: "unknown", user: null });
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(false);
+  });
+
+  it("shows to an anonymous visitor who hasn't resolved it yet, and stops once resolved", () => {
+    useAuthStore.setState({ status: "anonymous", user: null });
+    expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(true);
+
+    useAuthStore.getState().resolveQuestionnaire();
+
     expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(false);
   });
 

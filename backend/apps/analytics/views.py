@@ -1,6 +1,5 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
@@ -12,11 +11,10 @@ from .serializers import (
 )
 
 
-# controller for the pre-use purpose questionnaire (#67, ADR-0004). Signed-in only —
-# the SPA never shows the prompt to an anonymous visitor, and the server enforces the
-# same rule rather than trusting the client.
+# controller for the pre-use purpose questionnaire (#67, ADR-0004; opened to guests by
+# ADR-0007). Open access, like EventView below — attribution rides on request.user
+# rather than being required for access.
 class QuestionnaireView(APIView):
-    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         responses=QuestionnaireDefinitionSerializer,
@@ -37,8 +35,9 @@ class QuestionnaireView(APIView):
                 {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        user = request.user if request.user.is_authenticated else None
         QuestionnaireResponse.objects.create(
-            user=request.user,
+            user=user,
             questionnaire_version=QUESTIONNAIRE_VERSION,
             **serializer.validated_data,
         )

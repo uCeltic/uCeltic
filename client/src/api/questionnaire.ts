@@ -15,7 +15,7 @@ export interface QuestionnaireDefinition {
   questions: Question[];
 }
 
-/** A rejected questionnaire request — signed-in only, so this should be rare in practice. */
+/** A rejected questionnaire request — open to any visitor (ADR-0007), so this should be rare. */
 export class QuestionnaireError extends Error {}
 
 /** Mirrors the DRF `{"error": {field: [messages]}}` shape from apps/analytics/views.py. */
@@ -25,7 +25,7 @@ async function firstFieldError(response: Response): Promise<string | null> {
   return typeof firstMessage === "string" ? firstMessage : null;
 }
 
-/** Auth-gated like profile.ts: SessionAuthentication enforces CSRF once a session exists. */
+/** Open to guests too (ADR-0007) — same-origin credentials so a signed-in visitor's session still rides along. */
 export async function fetchQuestionnaire(): Promise<QuestionnaireDefinition> {
   const response = await fetch(QUESTIONNAIRE_URL, { credentials: "same-origin" });
   if (!response.ok) {

@@ -22,12 +22,13 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("QuestionnaireModal", () => {
-  it("renders nothing for an anonymous visitor", () => {
+  it("shows for an anonymous visitor too (ADR-0007)", () => {
     useAuthStore.setState({ status: "anonymous", user: null });
+    vi.spyOn(questionnaireApi, "fetchQuestionnaire").mockResolvedValue(DEFINITION);
 
-    const { container } = render(<QuestionnaireModal />);
+    render(<QuestionnaireModal />);
 
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("renders nothing while the session probe is still out", () => {
