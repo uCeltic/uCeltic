@@ -28,7 +28,7 @@ export default function AccountShell({
           to="/workspace"
           className="mt-5 text-sm text-[#6B6B67] underline hover:text-[#52524F]"
         >
-          Continue without an account
+          Continue as a Visitor
         </Link>
       )}
     </div>
