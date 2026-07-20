@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import DocumentArea, {
+import DocumentArea from "./DocumentArea";
+import {
     computeDragEndReorder,
     DRAG_REORDER_HINT_DISMISSED_KEY,
-} from "./DocumentArea";
+} from "./dragReorderHint";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { searchDocument } from "../../api/search";

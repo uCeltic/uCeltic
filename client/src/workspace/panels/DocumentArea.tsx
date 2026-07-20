@@ -21,33 +21,13 @@ import {
   SortableContext,
   horizontalListSortingStrategy, //  The text viewers are arranged horizontally
   useSortable, //  Make the column draggable
-  arrayMove, // utility function: Update the index of the item
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities"; // dnd-kit transform object to CSS string
-
-/**
- * Dismissed for good once acknowledged, or once a drag-reorder proves the
- * feature was already discovered — same persistence pattern as
- * ENTRY_NOTICE_DISMISSED_KEY in components/EntryNotice.tsx.
- */
-export const DRAG_REORDER_HINT_DISMISSED_KEY = "uceltic:drag-reorder-hint-dismissed";
-
-function dragReorderHintDismissedBefore(): boolean {
-  try {
-    return localStorage.getItem(DRAG_REORDER_HINT_DISMISSED_KEY) === "1";
-  } catch {
-    // Private-mode browsers can throw on storage access; a missing dismissal is harmless.
-    return false;
-  }
-}
-
-function markDragReorderHintDismissed() {
-  try {
-    localStorage.setItem(DRAG_REORDER_HINT_DISMISSED_KEY, "1");
-  } catch {
-    // Storage unavailable: the hint simply reappears on the next load.
-  }
-}
+import {
+  computeDragEndReorder,
+  dragReorderHintDismissedBefore,
+  markDragReorderHintDismissed,
+} from "./dragReorderHint";
 
 // props for each text viewer column
 interface SortableDocumentColumnProps {
@@ -282,19 +262,6 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
   );
 }
 
-// Pure reorder computation for a drag-end event: null means "no-op drag"
-// (dropped outside any column, or back onto its own column).
-export function computeDragEndReorder(
-  event: DragEndEvent,
-  visibleDocumentIds: string[],
-): string[] | null {
-  const { active, over } = event;
-  if (!over || active.id === over.id) return null;
-  const oldIndex = visibleDocumentIds.indexOf(active.id as string);
-  const newIndex = visibleDocumentIds.indexOf(over.id as string);
-  return arrayMove(visibleDocumentIds, oldIndex, newIndex);
-}
-
 /**
  * DocumentArea
  *
@@ -386,20 +353,27 @@ export default function DocumentArea() {
   // Discovery hint: show once, the first time a second column appears, on
   // that column's grip icon. Dismissed for good either via its ✕ or by the
   // user completing any drag-reorder, whichever comes first.
+  //
+  // Detecting the 1->2 transition happens during render (not an effect):
+  // React's documented pattern for "adjusting state when a value changes"
+  // is to compare against a bit of state carried from the previous render
+  // and update it inline, which bails out before the DOM commits instead of
+  // scheduling a second, effect-driven render.
   const [dragHintDismissed, setDragHintDismissed] = useState(
     dragReorderHintDismissedBefore,
   );
   const [dragHintDocId, setDragHintDocId] = useState<string | null>(null);
-  const prevVisibleCountRef = useRef(visibleDocumentIds.length);
+  const [prevVisibleCount, setPrevVisibleCount] = useState(
+    visibleDocumentIds.length,
+  );
 
-  useEffect(() => {
-    const prevCount = prevVisibleCountRef.current;
+  if (visibleDocumentIds.length !== prevVisibleCount) {
     const newCount = visibleDocumentIds.length;
-    if (prevCount === 1 && newCount === 2 && !dragHintDismissed) {
+    if (prevVisibleCount === 1 && newCount === 2 && !dragHintDismissed) {
       setDragHintDocId(visibleDocumentIds[newCount - 1]);
     }
-    prevVisibleCountRef.current = newCount;
-  }, [visibleDocumentIds, dragHintDismissed]);
+    setPrevVisibleCount(newCount);
+  }
 
   function dismissDragHint() {
     markDragReorderHintDismissed();
