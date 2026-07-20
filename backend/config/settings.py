@@ -134,7 +134,8 @@ DATABASES = {
 # LocMemCache is per-process, so under gunicorn's multiple workers each one keeps its own
 # counter and the throttle isn't actually enforced. DatabaseCache shares state across
 # workers via the existing Postgres — see ADR-0009. The table is created by a migration
-# (apps/accounts) rather than `createcachetable`, so it exists in the test DB too.
+# (apps/accounts), so `entrypoint.sh`'s existing `migrate --noinput` creates it in
+# production without a separate `createcachetable` deploy step.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
