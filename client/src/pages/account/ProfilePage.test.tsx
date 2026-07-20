@@ -36,7 +36,7 @@ describe("ProfilePage", () => {
     await screen.findByRole("heading", { name: /sign in/i });
   });
 
-  it("does not offer 'Continue without an account' — the visitor is already signed in", async () => {
+  it("does not offer 'Continue as a Visitor' — the visitor is already signed in", async () => {
     vi.spyOn(profileApi, "fetchProfile").mockResolvedValue({
       email: USER.email,
       display_name: "Ada",
@@ -46,7 +46,7 @@ describe("ProfilePage", () => {
 
     await screen.findByDisplayValue("Ada");
     expect(
-      screen.queryByRole("link", { name: /continue without an account/i }),
+      screen.queryByRole("link", { name: /continue as a visitor/i }),
     ).not.toBeInTheDocument();
   });
 

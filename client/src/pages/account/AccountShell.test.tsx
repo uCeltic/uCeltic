@@ -4,14 +4,14 @@ import { MemoryRouter } from "react-router-dom";
 import AccountShell from "./AccountShell";
 
 describe("AccountShell", () => {
-  it("renders the 'Continue without an account' link by default", () => {
+  it("renders the 'Continue as a Visitor' link by default", () => {
     render(
       <MemoryRouter>
         <AccountShell title="Sign in">child</AccountShell>
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: /continue without an account/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /continue as a visitor/i })).toBeInTheDocument();
   });
 
   it("hides the link when hideAccountLink is set", () => {
@@ -24,7 +24,7 @@ describe("AccountShell", () => {
     );
 
     expect(
-      screen.queryByRole("link", { name: /continue without an account/i }),
+      screen.queryByRole("link", { name: /continue as a visitor/i }),
     ).not.toBeInTheDocument();
   });
 });
