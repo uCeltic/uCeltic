@@ -17,10 +17,11 @@ const primaryBtnStyle =
   "w-full rounded-md border border-[#52524F] bg-[#52524F] px-3 py-2 text-sm font-medium text-white cursor-pointer transition-all hover:bg-[#3F3F3C] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
 
 /**
- * The pre-use purpose questionnaire (#67, ADR-0004): shown once per session to a
- * signed-in visitor before they use the workspace, so stated purpose ("said") can be
- * compared against logged Behavior Events ("did"). Skip is always available and is
- * itself a recorded answer, not a way to make the modal not count as shown.
+ * The pre-use purpose questionnaire (#67, ADR-0004; opened to guests by ADR-0007):
+ * shown once per session to every visitor, guest or signed-in, before they use the
+ * workspace, so stated purpose ("said") can be compared against logged Behavior Events
+ * ("did"). Skip is always available and is itself a recorded answer, not a way to make
+ * the modal not count as shown.
  */
 export default function QuestionnaireModal() {
   const shouldShow = useAuthStore((s) => s.shouldShowQuestionnaire());

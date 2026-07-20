@@ -22,9 +22,9 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>((set, get) => ({
   status: "unknown",
   user: null,
-  // A "Session" is a session_id (client/src/api/log.ts), regenerated on every app load,
-  // and this flag lives in the same in-memory module — so a reload naturally means a new
-  // session and re-prompts.
+  // A "Session" is a session_id (client/src/api/log.ts), regenerated on every app load
+  // or after 6h idle (ADR-0007) — the latter resets this flag directly from log.ts's
+  // logEvent, since that's where the idle clock and the next real activity meet.
   questionnaireResolved: false,
 
   /** Ask the server who we are. Never throws — see getSession. */
@@ -78,12 +78,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   resolveQuestionnaire: () => set({ questionnaireResolved: true }),
 
   /**
-   * Only for a signed-in user this session hasn't answered or skipped yet. Anonymous
-   * visitors are never prompted (#67, ADR-0004) — status must be exactly "authenticated",
-   * not merely "not anonymous", so the "unknown" gap before the probe lands shows nothing.
+   * For any visitor, guest or signed-in, who hasn't answered or skipped it yet
+   * (#67, ADR-0007). status must be resolved to "anonymous" or "authenticated" — not
+   * "unknown" — so the gap before the probe lands still shows nothing.
    */
   shouldShowQuestionnaire: () => {
     const { status, questionnaireResolved } = get();
-    return status === "authenticated" && !questionnaireResolved;
+    return status !== "unknown" && !questionnaireResolved;
   },
 }));

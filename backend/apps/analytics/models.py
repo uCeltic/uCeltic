@@ -60,8 +60,13 @@ QUESTIONS = [
 
 
 class QuestionnaireResponse(models.Model):
+    # NULL for anonymous visitors (ADR-0007) — mirrors BehaviorEvent.user above.
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="questionnaire_responses"
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="questionnaire_responses",
     )
     session_id = models.CharField(max_length=64)
     questionnaire_version = models.PositiveIntegerField()
