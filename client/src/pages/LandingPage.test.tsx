@@ -59,6 +59,12 @@ describe("LandingPage", () => {
 
       expect(screen.queryByText(/signed in as/i)).not.toBeInTheDocument();
     });
+
+    it("renders the brand image", () => {
+      const { container } = renderLanding();
+
+      expect(container.querySelector('img[src="/index_pic.png"]')).toBeInTheDocument();
+    });
   });
 
   describe("authenticated visitor", () => {
@@ -89,6 +95,12 @@ describe("LandingPage", () => {
       expect(
         screen.queryByRole("link", { name: /continue as a visitor/i }),
       ).not.toBeInTheDocument();
+    });
+
+    it("renders the brand image", () => {
+      const { container } = renderLanding();
+
+      expect(container.querySelector('img[src="/index_pic.png"]')).toBeInTheDocument();
     });
   });
 
