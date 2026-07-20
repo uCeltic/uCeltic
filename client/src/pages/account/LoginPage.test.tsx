@@ -5,6 +5,7 @@ import LoginPage from "./LoginPage";
 import { useAuthStore } from "../../store/authStore";
 import * as auth from "../../api/auth";
 import { AuthError } from "../../api/auth";
+import { getVerificationCooldownRemainingMs } from "./verifyEmailCooldown";
 
 const USER = { id: 1, email: "visitor@example.com" };
 
@@ -29,6 +30,7 @@ function fillAndSubmit(email: string, password: string) {
 
 beforeEach(() => {
   useAuthStore.setState({ status: "anonymous", user: null });
+  localStorage.clear();
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -65,6 +67,16 @@ describe("LoginPage", () => {
 
     await screen.findByRole("heading", { name: /check your email/i });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("starts the resend cooldown, since a blocked login re-sends the link server-side", async () => {
+    vi.spyOn(auth, "logIn").mockResolvedValue({ status: "verification_pending" });
+
+    renderLogin();
+    fillAndSubmit("visitor@example.com", "correct-horse");
+
+    await screen.findByRole("heading", { name: /check your email/i });
+    expect(getVerificationCooldownRemainingMs("visitor@example.com")).toBeGreaterThan(0);
   });
 
   it("disables the button while the request is in flight, so a double-click cannot double-submit", async () => {

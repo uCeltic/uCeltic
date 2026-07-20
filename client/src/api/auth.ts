@@ -8,6 +8,12 @@ const AUTH_BASE = `${API_BASE}/auth/browser/v1/auth`;
 /** Password change lives under allauth's "account" resource, not "auth" (#66). */
 const ACCOUNT_BASE = `${API_BASE}/auth/browser/v1/account`;
 
+/**
+ * allauth's own resend endpoint only serves code-based verification; this project
+ * verifies by link, so the resend button (#103) hits a small app-level endpoint instead.
+ */
+const RESEND_VERIFICATION_URL = `${API_BASE}/auth/resend-verification-email/`;
+
 /** No display name yet: #64 collects only email + password, and #66 adds a real one. */
 export interface AuthUser {
   id: number;
@@ -127,6 +133,27 @@ export async function signUp(email: string, password: string): Promise<void> {
 /** Redeem an activation key from the emailed link. The visitor then signs in. */
 export async function verifyEmail(key: string): Promise<void> {
   await call("/email/verify", { method: "POST", body: { key } });
+}
+
+/**
+ * Explicit resend of the activation link. Like allauth's own flow, this always resolves
+ * on success: an unknown email or a resend inside allauth's 3-minute rate-limit window
+ * are both silently absorbed server-side, indistinguishable from a real send — the
+ * client-side cooldown (verifyEmailCooldown.ts) is what actually throttles the button.
+ */
+export async function resendVerificationEmail(email: string): Promise<void> {
+  await ensureCsrfToken();
+
+  const response = await fetch(RESEND_VERIFICATION_URL, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...csrfHeaders() },
+    body: JSON.stringify({ email }),
+  });
+
+  if (response.status !== 200) {
+    throw new Error("Could not resend the verification email. Please try again.");
+  }
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

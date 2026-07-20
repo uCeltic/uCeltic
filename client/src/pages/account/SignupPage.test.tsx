@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import SignupPage from "./SignupPage";
 import * as auth from "../../api/auth";
+import { getVerificationCooldownRemainingMs } from "./verifyEmailCooldown";
 
 /** Render the form inside a router that reveals where a successful sign-up lands. */
 function renderSignup() {
@@ -24,6 +25,7 @@ function fillEmailAndPasswords(email: string, password: string, confirmPassword:
   });
 }
 
+beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 describe("SignupPage", () => {
@@ -84,5 +86,16 @@ describe("SignupPage", () => {
     expect(auth.signUp).toHaveBeenCalledWith("visitor@example.com", "correct-horse");
     expect(auth.signUp).toHaveBeenCalledTimes(1);
     await screen.findByRole("heading", { name: /check your email/i });
+  });
+
+  it("starts the resend cooldown, since signup itself just sent the activation mail", async () => {
+    vi.spyOn(auth, "signUp").mockResolvedValue(undefined);
+    renderSignup();
+
+    fillEmailAndPasswords("visitor@example.com", "correct-horse", "correct-horse");
+    fireEvent.click(screen.getByRole("button", { name: /register/i }));
+
+    await screen.findByRole("heading", { name: /check your email/i });
+    expect(getVerificationCooldownRemainingMs("visitor@example.com")).toBeGreaterThan(0);
   });
 });

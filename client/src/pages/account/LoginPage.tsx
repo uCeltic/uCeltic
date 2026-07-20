@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { AuthError } from "../../api/auth";
 import AccountShell, { FormError, input, label, link, primaryBtn } from "./AccountShell";
+import { recordVerificationEmailSent } from "./verifyEmailCooldown";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function LoginPage() {
         // The password was right but the account is not activated. allauth has just
         // re-sent the link, so this is the same interstitial as a fresh sign-up — not
         // an error the visitor can act on by retyping.
+        recordVerificationEmailSent(email);
         navigate("/account/verify-email/sent", { state: { email }, replace: true });
         return;
       }

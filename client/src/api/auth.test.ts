@@ -5,6 +5,7 @@ import {
   logIn,
   logOut,
   requestPasswordReset,
+  resendVerificationEmail,
   resetPassword,
   signUp,
   verifyEmail,
@@ -269,6 +270,28 @@ describe("password reset", () => {
     );
 
     await expect(resetPassword("the-key", "x")).rejects.toThrow("This password is too short.");
+  });
+});
+
+describe("resendVerificationEmail", () => {
+  it("posts the email to the app-level resend endpoint, not allauth's", async () => {
+    const fetchMock = stubFetch(jsonResponse(200, {}));
+
+    await expect(resendVerificationEmail("visitor@example.com")).resolves.toBeUndefined();
+
+    const [url, init] = fetchMock.mock.calls[0];
+    // allauth's own `email/verify/resend` only serves code-based verification and 409s
+    // here; this hits the app-level endpoint that reuses allauth's link-based resend.
+    expect(url).toBe("/api/auth/resend-verification-email/");
+    expect(init.method).toBe("POST");
+    expect(init.headers["X-CSRFToken"]).toBe("tok123");
+    expect(JSON.parse(init.body)).toEqual({ email: "visitor@example.com" });
+  });
+
+  it("throws when the server rejects the request", async () => {
+    stubFetch(jsonResponse(400, {}));
+
+    await expect(resendVerificationEmail("visitor@example.com")).rejects.toThrow();
   });
 });
 

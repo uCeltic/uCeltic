@@ -2,6 +2,7 @@ import { useState, type FocusEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthError, signUp } from "../../api/auth";
 import AccountShell, { FormError, input, label, link, primaryBtn } from "./AccountShell";
+import { recordVerificationEmailSent } from "./verifyEmailCooldown";
 
 const MISMATCH_MESSAGE = "Passwords don't match.";
 
@@ -36,7 +37,10 @@ export default function SignupPage() {
     try {
       await signUp(email, password);
       // Registration never signs you in: activation is mandatory, so the only place to
-      // go from here is the inbox.
+      // go from here is the inbox. Signup itself sent the first activation mail, so the
+      // resend cooldown starts now — CheckEmailPage never re-records this on its own,
+      // since it can't tell a fresh arrival from a refresh of the same one.
+      recordVerificationEmailSent(email);
       navigate("/account/verify-email/sent", { state: { email }, replace: true });
     } catch (caught) {
       setError(
