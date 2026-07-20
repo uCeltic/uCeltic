@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import DocumentArea from "./DocumentArea";
+import {
+    computeDragEndReorder,
+    DRAG_REORDER_HINT_DISMISSED_KEY,
+} from "./dragReorderHint";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { searchDocument } from "../../api/search";
@@ -84,8 +88,16 @@ const span = (word_start: number, word_end: number): SearchResult => ({
     line_no: null,
 });
 
+const doc2: Document = {
+    id: "doc-2",
+    title: "Cattle Raid",
+    format: "txt",
+    content: "the morrigan watches",
+};
+
 beforeEach(() => {
     mockedSearch.mockReset();
+    localStorage.clear();
     useDocumentStore.setState({
         openDocuments: [doc],
         visibleDocumentIds: ["doc-1"],
@@ -198,5 +210,110 @@ describe("DocumentArea search flow", () => {
         // A's current moved hello -> world; B's "foo" highlight is untouched
         expect(active()).toEqual(["foo", "world"]);
         expect(match()).toEqual([]);
+    });
+});
+
+describe("drag-handle icon", () => {
+    it("shows the grip icon and never the old dropdown chevron", () => {
+        render(<DocumentArea />);
+
+        expect(screen.getByText("⋮⋮")).toBeInTheDocument();
+        expect(screen.queryByText(/▾/)).not.toBeInTheDocument();
+    });
+});
+
+describe("drag-reorder discovery hint", () => {
+    it("stays hidden while only one column is visible", () => {
+        render(<DocumentArea />);
+
+        expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+    });
+
+    it("appears the first time a second column becomes visible, anchored to that column", () => {
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+
+        const hint = screen.getByText("Drag to reorder columns");
+        expect(hint).toBeInTheDocument();
+        // anchored under doc-2's column, not doc-1's
+        expect(
+            screen.getByText("Cattle Raid").closest("article")?.contains(hint),
+        ).toBe(true);
+    });
+
+    it("does not reappear on a later 1->2 transition once dismissed via ✕, and records the dismissal", () => {
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+        fireEvent.click(screen.getByRole("button", { name: /dismiss/i }));
+
+        expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+        expect(localStorage.getItem(DRAG_REORDER_HINT_DISMISSED_KEY)).toBe("1");
+
+        // drop back to one column, then back up to two — still shouldn't reappear
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc],
+                visibleDocumentIds: ["doc-1"],
+            });
+        });
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+        expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+    });
+
+    it("never shows if a past session already recorded the dismissal", () => {
+        localStorage.setItem(DRAG_REORDER_HINT_DISMISSED_KEY, "1");
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+
+        expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+    });
+});
+
+describe("computeDragEndReorder", () => {
+    it("returns the reordered id list when dropped on a different column", () => {
+        const result = computeDragEndReorder(
+            { active: { id: "doc-1" }, over: { id: "doc-2" } } as never,
+            ["doc-1", "doc-2", "doc-3"],
+        );
+
+        expect(result).toEqual(["doc-2", "doc-1", "doc-3"]);
+    });
+
+    it("returns null when dropped on itself or outside any droppable", () => {
+        expect(
+            computeDragEndReorder(
+                { active: { id: "doc-1" }, over: { id: "doc-1" } } as never,
+                ["doc-1", "doc-2"],
+            ),
+        ).toBeNull();
+        expect(
+            computeDragEndReorder(
+                { active: { id: "doc-1" }, over: null } as never,
+                ["doc-1", "doc-2"],
+            ),
+        ).toBeNull();
     });
 });

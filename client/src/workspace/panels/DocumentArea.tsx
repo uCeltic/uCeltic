@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
@@ -21,9 +21,13 @@ import {
   SortableContext,
   horizontalListSortingStrategy, //  The text viewers are arranged horizontally
   useSortable, //  Make the column draggable
-  arrayMove, // utility function: Update the index of the item
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities"; // dnd-kit transform object to CSS string
+import {
+  computeDragEndReorder,
+  dragReorderHintDismissedBefore,
+  markDragReorderHintDismissed,
+} from "./dragReorderHint";
 
 // props for each text viewer column
 interface SortableDocumentColumnProps {
@@ -37,9 +41,33 @@ interface SortableDocumentColumnProps {
   hasError: boolean;
   activeIndex: number;
   activeResult: SearchResult | undefined;
+  showDragHint: boolean;
+  onDismissDragHint: () => void;
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+}
+
+// One-time popover pointing at the grip icon, telling the user the title
+// button is draggable. Rendered as a sibling of the draggable button (not a
+// child) so its own pointer events never reach the button's drag listeners.
+function DragReorderHint({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div
+      role="status"
+      className="absolute left-0 top-full z-50 mt-1.5 flex w-56 items-start gap-2 rounded-md border border-[#D8D4C3] bg-[#F5F1DF] px-3 py-2 text-xs text-[#52524F] shadow-lg"
+    >
+      <p className="flex-1">Drag to reorder columns</p>
+      <button
+        type="button"
+        aria-label="Dismiss drag-reorder hint"
+        onClick={onDismiss}
+        className="shrink-0 rounded-md px-1 text-[#6B6B67] cursor-pointer transition-all hover:bg-[#E8E3CE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30"
+      >
+        ✕
+      </button>
+    </div>
+  );
 }
 
 // Scroll a TEI column to a search result. Highlight painting is centralized in
@@ -88,6 +116,8 @@ function SortableDocumentColumn({
   hasError,
   activeIndex,
   activeResult,
+  showDragHint,
+  onDismissDragHint,
   onPrev,
   onNext,
   onClose,
@@ -116,16 +146,20 @@ function SortableDocumentColumn({
         }`}
     >
       <header className="flex items-center justify-between border-b border-gray-200 px-4 py-1">
-        <button
-          type="button"
-          title={doc.title}
-          {...attributes}
-          {...listeners}
-          className="w-[160px] cursor-grab truncate rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm
-font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
-        >
-          {doc.title} ▾
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            title={doc.title}
+            {...attributes}
+            {...listeners}
+            className="flex w-[160px] cursor-grab items-center gap-1.5 truncate rounded-md border border-gray-200
+bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
+          >
+            <span aria-hidden="true" className="shrink-0 text-gray-400">⋮⋮</span>
+            <span className="truncate">{doc.title}</span>
+          </button>
+          {showDragHint && <DragReorderHint onDismiss={onDismissDragHint} />}
+        </div>
         <button
           type="button"
           onClick={onClose}
@@ -316,14 +350,42 @@ export default function DocumentArea() {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
+  // Discovery hint: show once, the first time a second column appears, on
+  // that column's grip icon. Dismissed for good either via its ✕ or by the
+  // user completing any drag-reorder, whichever comes first.
+  //
+  // Detecting the 1->2 transition happens during render (not an effect):
+  // React's documented pattern for "adjusting state when a value changes"
+  // is to compare against a bit of state carried from the previous render
+  // and update it inline, which bails out before the DOM commits instead of
+  // scheduling a second, effect-driven render.
+  const [dragHintDismissed, setDragHintDismissed] = useState(
+    dragReorderHintDismissedBefore,
+  );
+  const [dragHintDocId, setDragHintDocId] = useState<string | null>(null);
+  const [prevVisibleCount, setPrevVisibleCount] = useState(
+    visibleDocumentIds.length,
+  );
+
+  if (visibleDocumentIds.length !== prevVisibleCount) {
+    const newCount = visibleDocumentIds.length;
+    if (prevVisibleCount === 1 && newCount === 2 && !dragHintDismissed) {
+      setDragHintDocId(visibleDocumentIds[newCount - 1]);
+    }
+    setPrevVisibleCount(newCount);
+  }
+
+  function dismissDragHint() {
+    markDragReorderHintDismissed();
+    setDragHintDismissed(true);
+    setDragHintDocId(null);
+  }
+
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = visibleDocumentIds.indexOf(active.id as string);
-    const newIndex = visibleDocumentIds.indexOf(over.id as string);
-    setVisibleDocumentIds(
-      arrayMove(visibleDocumentIds, oldIndex, newIndex),
-    );
+    const reordered = computeDragEndReorder(event, visibleDocumentIds);
+    if (!reordered) return;
+    setVisibleDocumentIds(reordered);
+    dismissDragHint();
   }
 
   return (
@@ -355,6 +417,8 @@ export default function DocumentArea() {
                 hasError={searchErrorByDocument[doc.id] ?? false}
                 activeIndex={activeIndex}
                 activeResult={activeResult}
+                showDragHint={doc.id === dragHintDocId}
+                onDismissDragHint={dismissDragHint}
                 onPrev={() => {
                   const next = activeIndex > 0 ? activeIndex - 1 : activeIndex;
                   prevResult(doc.id);
