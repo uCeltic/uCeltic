@@ -190,4 +190,27 @@ describe("getSearchableDocuments", () => {
     expect(searchable.map((d) => d.id)).toEqual(["doc-tei-1", "doc-tei-2"]);
     expect(searchable.map((d) => d.content.id)).toEqual([1, 2]);
   });
+
+  //Test: a selection-triggered search never searches the document it came from
+  it("leaves out the excluded document", () => {
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1, "First"));
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(2, "Second"));
+
+    const searchable = getSearchableDocuments(useDocumentStore.getState(), {
+      excludeDocId: "doc-tei-1",
+    });
+
+    expect(searchable.map((d) => d.id)).toEqual(["doc-tei-2"]);
+  });
+
+  //Test: the source document may be the only visible TEI one — then nothing is searchable
+  it("returns nothing when the excluded document is the only visible TEI one", () => {
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1, "First"));
+
+    const searchable = getSearchableDocuments(useDocumentStore.getState(), {
+      excludeDocId: "doc-tei-1",
+    });
+
+    expect(searchable).toEqual([]);
+  });
 });

@@ -17,10 +17,17 @@ const OFFSET_PX = 6;
  * once globally (not per column), so selecting elsewhere simply replaces it,
  * and a selection the browser collapses (any click off the button) takes the
  * button down with it — no dismiss handling of our own.
+ *
+ * The document the selection came from is never searched, so with nothing else
+ * visible to search the button does not appear at all rather than appearing and
+ * doing nothing.
  */
 export default function SelectionSearchButton() {
   const [pending, setPending] = useState<TEISelection | null>(null);
   const runSearch = useSearchStore((s) => s.runSearch);
+  const clearDocumentResults = useSearchStore((s) => s.clearDocumentResults);
+  const openDocuments = useDocumentStore((s) => s.openDocuments);
+  const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const [, reposition] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
@@ -44,18 +51,32 @@ export default function SelectionSearchButton() {
     };
   }, [pending]);
 
-  if (!pending) return null;
+  // Subscribed rather than read on click: closing or hiding the last other TEI
+  // column while text is selected has to take the button down with it.
+  const targets = pending
+    ? getSearchableDocuments(
+        { openDocuments, visibleDocumentIds },
+        { excludeDocId: pending.docId },
+      )
+    : [];
+
+  if (!pending || targets.length === 0) return null;
 
   const rect = pending.range.getBoundingClientRect();
 
   function handleSearch() {
     if (!pending) return;
-    for (const doc of getSearchableDocuments(useDocumentStore.getState())) {
+    for (const doc of targets) {
       runSearch(doc.content.id, doc.id, {
         query: pending.text,
         origin: "selection",
+        excludedDocId: pending.docId,
       });
     }
+    // The source document is skipped, not searched — so it has to be emptied
+    // explicitly, or it keeps showing an earlier search's hits alongside the
+    // results this search just produced.
+    clearDocumentResults(pending.docId);
     setPending(null);
   }
 

@@ -4,7 +4,19 @@ import SelectionSearchButton from "./SelectionSearchButton";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import type { Document } from "../../types/document";
+import type { SearchResult } from "../../types/search";
 import type { TEIDoc } from "../../types/tei";
+
+// stands in for whatever a column was showing before this selection search
+const staleResult: SearchResult = {
+  score: 0.12,
+  snippet: "an older search's hit",
+  word_start: 4,
+  word_end: 8,
+  anchor_id: 3,
+  anchor_tag: "seg",
+  line_no: "12",
+};
 
 function makeTEIDoc(id: number): TEIDoc {
   return {
@@ -94,7 +106,13 @@ beforeEach(() => {
     visibleDocumentIds: ["doc-tei-1", "doc-tei-2", "doc-3"],
     activeDocumentId: "doc-tei-1",
   });
-  useSearchStore.setState({ query: "typed in the bar", runSearch });
+  useSearchStore.setState({
+    query: "typed in the bar",
+    runSearch,
+    resultsByDocument: {},
+    activeResultIndexByDocument: {},
+    searchErrorByDocument: {},
+  });
   renderColumns();
 });
 
@@ -136,21 +154,52 @@ describe("SelectionSearchButton", () => {
     expect(searchButton()).not.toBeInTheDocument();
   });
 
-  it("searches every visible TEI document with the selected text", () => {
+  it("searches the other visible TEI documents, never the one selected in", () => {
     render(<SelectionSearchButton />);
     selectText("tei-a");
 
     fireEvent.click(searchButton()!);
 
-    expect(runSearch).toHaveBeenCalledTimes(2);
-    expect(runSearch).toHaveBeenCalledWith(1, "doc-tei-1", {
-      query: "the hound of culann",
-      origin: "selection",
-    });
+    expect(runSearch).toHaveBeenCalledOnce();
     expect(runSearch).toHaveBeenCalledWith(2, "doc-tei-2", {
       query: "the hound of culann",
       origin: "selection",
+      excludedDocId: "doc-tei-1",
     });
+  });
+
+  //Test: the source column is skipped, not searched — so whatever it was showing
+  //from an earlier search has to go, or it reads as a result of THIS search
+  it("clears the source document's stale results instead of leaving them", () => {
+    useSearchStore.setState({
+      resultsByDocument: { "doc-tei-1": [staleResult], "doc-tei-2": [staleResult] },
+      activeResultIndexByDocument: { "doc-tei-1": 1 },
+      searchErrorByDocument: { "doc-tei-1": true },
+    });
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+
+    fireEvent.click(searchButton()!);
+
+    const state = useSearchStore.getState();
+    expect(state.resultsByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.activeResultIndexByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.searchErrorByDocument["doc-tei-1"]).toBeUndefined();
+  });
+
+  //Test: with the source document excluded there is nothing left to search, so
+  //the button must not offer a search that would do nothing
+  it("stays away when the source is the only visible TEI document", () => {
+    useDocumentStore.setState({
+      openDocuments: [teiDocA, teiDocB, txtDoc],
+      visibleDocumentIds: ["doc-tei-1", "doc-3"],
+      activeDocumentId: "doc-tei-1",
+    });
+    render(<SelectionSearchButton />);
+
+    selectText("tei-a");
+
+    expect(searchButton()).not.toBeInTheDocument();
   });
 
   it("leaves the search bar's query untouched (ADR-0008)", () => {

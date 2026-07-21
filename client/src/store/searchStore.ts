@@ -18,6 +18,17 @@ function logResultNavigated(
   logEvent("result_navigated", { action, from_index: from, to_index: to });
 }
 
+// A copy of a per-document map with one document's entry dropped, so the map
+// answers "never searched" for it rather than holding a stale value.
+function without<T>(
+  map: Record<DocumentId, T>,
+  documentId: DocumentId,
+): Record<DocumentId, T> {
+  return Object.fromEntries(
+    Object.entries(map).filter(([id]) => id !== documentId),
+  );
+}
+
 // Where the query a search ran with came from: the search bar ("typed") or text
 // selected inside a TEI viewer ("selection"). Logged on every search_performed.
 export type QueryOrigin = "selection" | "typed";
@@ -28,6 +39,10 @@ export type QueryOrigin = "selection" | "typed";
 export interface RunSearchOptions {
   query?: string;
   origin?: QueryOrigin;
+  // The document left out of this search because the query was selected in it.
+  // Recorded on every `search_performed` the search emits, so a logged search
+  // says which documents it could have covered but deliberately did not.
+  excludedDocId?: DocumentId;
 }
 
 //this store is used to store the search results/handle search operations for a given document
@@ -46,6 +61,7 @@ interface SearchStore {
     results: Record<DocumentId, SearchResult[]>,
   ) => void;
   setActiveResultIndex: (documentId: DocumentId, index: number) => void;
+  clearDocumentResults: (documentId: DocumentId) => void;
 
   setMatchLength: (v: number) => void;
   setPrecision: (v: number) => void;
@@ -81,6 +97,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       const { dissimilarityScore, topK, matchLength, precision } = get();
       const query = options.query ?? get().query;
       const queryOrigin = options.origin ?? "typed";
+      const excludedDocId = options.excludedDocId ?? null;
       if (!query.trim()) return;
       set((s) => ({
         isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: true },
@@ -93,6 +110,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       const searchPerformedBase = {
         query,
         query_origin: queryOrigin,
+        excluded_doc_id: excludedDocId,
         window_size_ratio: windowSizeRatio,
         step_size: precision,
         dissimilarity_threshold: dissimilarityScore,
@@ -144,6 +162,20 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     set({
       resultsByDocument: results,
     }),
+
+  // Put a document back to "not searched": drop the results, the active index,
+  // and the error flag it carried. Used for a document a search deliberately
+  // skipped — leaving its keys in place would show an earlier, unrelated
+  // search's hits as if they belonged to this one.
+  clearDocumentResults: (documentId) =>
+    set((state) => ({
+      resultsByDocument: without(state.resultsByDocument, documentId),
+      activeResultIndexByDocument: without(
+        state.activeResultIndexByDocument,
+        documentId,
+      ),
+      searchErrorByDocument: without(state.searchErrorByDocument, documentId),
+    })),
 
   setActiveResultIndex: (documentId, index) =>
     set((state) => {
