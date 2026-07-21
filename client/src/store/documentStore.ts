@@ -40,6 +40,27 @@ interface DocumentStore {
   addTEIDocument: (doc: TEIDoc) => void;
 }
 
+// A document search can actually run against: the TEI variant of Document, so
+// callers reach `content.id` (the backend TEI id search needs) without a cast.
+export type SearchableDocument = Extract<Document, { format: "tei" }>;
+
+/**
+ * The documents a search should currently run against: every visible column
+ * that holds a TEI document, in visible order. Search is TEI-only end to end,
+ * so `.txt`/`.docx` columns are never searchable.
+ *
+ * Both search triggers (the toolbar's Search button and the select-to-search
+ * floating button) go through here, so later rules — e.g. excluding the
+ * document a selection came from — extend this one helper.
+ */
+export function getSearchableDocuments(
+  state: Pick<DocumentStore, "openDocuments" | "visibleDocumentIds">,
+): SearchableDocument[] {
+  return state.visibleDocumentIds
+    .map((id) => state.openDocuments.find((doc) => doc.id === id))
+    .filter((doc): doc is SearchableDocument => doc?.format === "tei");
+}
+
 const initialDocuments: Document[] = [];
 
 export const useDocumentStore = create<DocumentStore>((set) => ({

@@ -200,6 +200,66 @@ describe("searchStore.runSearch", () => {
     await useSearchStore.getState().runSearch(42, "doc-tei-42");
     expect(mockedLogEvent).not.toHaveBeenCalled();
   });
+
+  //Test: a search bar search is tagged as typed
+  it("tags a search bar search as query_origin typed", async () => {
+    mockedSearch.mockResolvedValue([]);
+    useSearchStore.getState().setQuery("hound");
+
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+    expect(mockedLogEvent.mock.calls[0][1]).toMatchObject({
+      query_origin: "typed",
+    });
+  });
+});
+
+//A selection-originated search runs the selected text WITHOUT going through the
+//search bar's query state (ADR-0008), so it needs its own query per call.
+describe("searchStore.runSearch from a selection", () => {
+  it("searches the selected text and leaves the search bar's query untouched", async () => {
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("typed text");
+
+    await useSearchStore
+      .getState()
+      .runSearch(42, "doc-tei-42", {
+        query: "selected text",
+        origin: "selection",
+      });
+
+    expect(mockedSearch).toHaveBeenCalledWith(
+      expect.objectContaining({ query: "selected text" }),
+    );
+    expect(useSearchStore.getState().query).toBe("typed text");
+  });
+
+  it("tags the logged event as query_origin selection", async () => {
+    mockedSearch.mockResolvedValue([]);
+
+    await useSearchStore
+      .getState()
+      .runSearch(42, "doc-tei-42", {
+        query: "selected text",
+        origin: "selection",
+      });
+
+    expect(mockedLogEvent.mock.calls[0][1]).toMatchObject({
+      query: "selected text",
+      query_origin: "selection",
+    });
+  });
+
+  //Test: a whitespace-only selection is not a query, even though the search bar has one
+  it("skips the API call when the selected text is blank", async () => {
+    useSearchStore.getState().setQuery("hound");
+
+    await useSearchStore
+      .getState()
+      .runSearch(42, "doc-tei-42", { query: "  ", origin: "selection" });
+
+    expect(mockedSearch).not.toHaveBeenCalled();
+  });
 });
 
 describe("searchStore search_param_changed logging", () => {

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useDocumentStore, MAX_OPEN_DOCUMENTS } from "./documentStore";
+import {
+  useDocumentStore,
+  MAX_OPEN_DOCUMENTS,
+  getSearchableDocuments,
+} from "./documentStore";
 import { logEvent } from "../api/log";
 import type { TEIDoc } from "../types/tei";
 
@@ -172,5 +176,18 @@ describe("documentStore.addTEIDocument open-once", () => {
     useDocumentStore.getState().addTEIDocument(doc);
 
     expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("getSearchableDocuments", () => {
+  //Test: only the TEI documents that are currently visible can be searched
+  it("returns the visible TEI documents, in visible order", () => {
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1, "First"));
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(2, "Second"));
+
+    const searchable = getSearchableDocuments(useDocumentStore.getState());
+
+    expect(searchable.map((d) => d.id)).toEqual(["doc-tei-1", "doc-tei-2"]);
+    expect(searchable.map((d) => d.content.id)).toEqual([1, 2]);
   });
 });
