@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import SelectionSearchButton from "./SelectionSearchButton";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
@@ -112,10 +112,16 @@ beforeEach(() => {
     runSearch,
     resultsByDocument: {},
     activeResultIndexByDocument: {},
+    isSearchingByDocument: {},
     searchErrorByDocument: {},
   });
   renderColumns();
 });
+
+// a search running on some column, from wherever it was fired
+function setSearching(isSearchingByDocument: Record<string, boolean>) {
+  act(() => useSearchStore.setState({ isSearchingByDocument }));
+}
 
 const searchButton = () => screen.queryByRole("button", { name: /selected/i });
 
@@ -271,6 +277,52 @@ describe("SelectionSearchButton", () => {
     fireEvent.click(searchButton()!);
 
     expect(querySourceText()).toEqual(["a second passage"]);
+  });
+
+  //Test: a search already in flight owns the columns' state, so offering to fire
+  //a second one over the top of it is the confusing window #96 closes
+  it("stays away for a selection made while a search is in flight", () => {
+    setSearching({ "doc-tei-2": true });
+    render(<SelectionSearchButton />);
+
+    selectText("tei-a");
+
+    expect(searchButton()).not.toBeInTheDocument();
+  });
+
+  //Test: a search fired from the tool bar starts while text is still selected —
+  //the button standing over it would be that same second-search offer
+  it("takes an already-shown button down when a search starts", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+    expect(searchButton()).toBeInTheDocument();
+
+    setSearching({ "doc-tei-2": true });
+
+    expect(searchButton()).not.toBeInTheDocument();
+  });
+
+  it("comes back for a new selection once the search has finished", () => {
+    setSearching({ "doc-tei-2": true });
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+
+    setSearching({ "doc-tei-2": false });
+    selectText("tei-a");
+
+    expect(searchButton()).toBeInTheDocument();
+  });
+
+  //Test: the selection dropped while the search ran is stale by the time it ends
+  //— it should stay silent until the user selects something again
+  it("does not resurface a selection made during the search", () => {
+    render(<SelectionSearchButton />);
+    setSearching({ "doc-tei-2": true });
+    selectText("tei-a");
+
+    setSearching({ "doc-tei-2": false });
+
+    expect(searchButton()).not.toBeInTheDocument();
   });
 
   //Test: nothing takes the button down when its source column closes, so the
