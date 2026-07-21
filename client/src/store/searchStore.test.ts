@@ -212,6 +212,18 @@ describe("searchStore.runSearch", () => {
       query_origin: "typed",
     });
   });
+
+  //Test: a typed search excludes nothing, so the field is present but null
+  it("logs excluded_doc_id null for a search bar search", async () => {
+    mockedSearch.mockResolvedValue([]);
+    useSearchStore.getState().setQuery("hound");
+
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+    expect(mockedLogEvent.mock.calls[0][1]).toMatchObject({
+      excluded_doc_id: null,
+    });
+  });
 });
 
 //A selection-originated search runs the selected text WITHOUT going through the
@@ -259,6 +271,80 @@ describe("searchStore.runSearch from a selection", () => {
       .runSearch(42, "doc-tei-42", { query: "  ", origin: "selection" });
 
     expect(mockedSearch).not.toHaveBeenCalled();
+  });
+
+  //Test: the excluded source document is named on every event the search emits
+  it("logs the excluded document's id on each searched document's event", async () => {
+    mockedSearch.mockResolvedValue([]);
+
+    await useSearchStore.getState().runSearch(42, "doc-tei-42", {
+      query: "selected text",
+      origin: "selection",
+      excludedDocId: "doc-tei-7",
+    });
+
+    expect(mockedLogEvent.mock.calls[0][1]).toMatchObject({
+      excluded_doc_id: "doc-tei-7",
+    });
+  });
+});
+
+//The source document is skipped rather than searched, so its previous results
+//have to be dropped explicitly — otherwise the column keeps showing hits from
+//an earlier, unrelated search instead of "not searched this time".
+describe("searchStore.clearDocumentResults", () => {
+  it("drops the document's results, active index, and error state", () => {
+    useSearchStore.setState({
+      resultsByDocument: { "doc-tei-1": [sampleResult], "doc-tei-2": [sampleResult] },
+      activeResultIndexByDocument: { "doc-tei-1": 3, "doc-tei-2": 2 },
+      searchErrorByDocument: { "doc-tei-1": true, "doc-tei-2": true },
+    });
+
+    useSearchStore.getState().clearDocumentResults("doc-tei-1");
+
+    const state = useSearchStore.getState();
+    expect(state.resultsByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.activeResultIndexByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.searchErrorByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.isSearchingByDocument["doc-tei-1"]).toBeUndefined();
+  });
+
+  //Test: clearing while that document's own search is still in flight. The
+  //result that lands afterwards belongs to the search we just declared over,
+  //so it must not repopulate the column we emptied.
+  it("discards a search still in flight on the cleared document", async () => {
+    let resolveSearch!: (results: SearchResult[]) => void;
+    mockedSearch.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
+    useSearchStore.getState().setQuery("hound");
+    const inFlight = useSearchStore.getState().runSearch(42, "doc-tei-1");
+
+    useSearchStore.getState().clearDocumentResults("doc-tei-1");
+    resolveSearch([sampleResult]);
+    await inFlight;
+
+    const state = useSearchStore.getState();
+    expect(state.resultsByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.isSearchingByDocument["doc-tei-1"]).toBeFalsy();
+  });
+
+  //Test: clearing one column must not disturb the columns that were searched
+  it("leaves the other documents' results alone", () => {
+    useSearchStore.setState({
+      resultsByDocument: { "doc-tei-1": [sampleResult], "doc-tei-2": [sampleResult] },
+      activeResultIndexByDocument: { "doc-tei-2": 2 },
+      searchErrorByDocument: { "doc-tei-2": true },
+    });
+
+    useSearchStore.getState().clearDocumentResults("doc-tei-1");
+
+    const state = useSearchStore.getState();
+    expect(state.resultsByDocument["doc-tei-2"]).toEqual([sampleResult]);
+    expect(state.activeResultIndexByDocument["doc-tei-2"]).toBe(2);
+    expect(state.searchErrorByDocument["doc-tei-2"]).toBe(true);
   });
 });
 
