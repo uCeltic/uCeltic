@@ -9,6 +9,19 @@ export interface TEISelection {
   range: Range;
 }
 
+// The TEI column a node sits in, or null when the node is outside any TEI
+// viewer's rendered content.
+function teiColumnOf(node: Node): Element | null {
+  const element =
+    node.nodeType === Node.ELEMENT_NODE
+      ? (node as Element)
+      : node.parentElement;
+  return (
+    element?.closest("[data-tei-content]")?.closest("[data-doc-column-id]") ??
+    null
+  );
+}
+
 /**
  * Read the browser's current selection as a searchable TEI selection, or null
  * if it isn't one.
@@ -29,16 +42,19 @@ export function readTEISelection(
   if (!text) return null;
 
   const range = selection.getRangeAt(0);
-  const node = range.commonAncestorContainer;
-  const element =
-    node.nodeType === Node.ELEMENT_NODE
-      ? (node as Element)
-      : node.parentElement;
 
-  const column = element
-    ?.closest("[data-tei-content]")
-    ?.closest("[data-doc-column-id]");
-  const docId = column?.getAttribute("data-doc-column-id");
+  // Resolve from where the drag STARTED, not from the range's common ancestor:
+  // a drag that runs past the column's edge lands its end outside the rendered
+  // content, which would push the common ancestor above it and lose the column.
+  const startColumn = teiColumnOf(range.startContainer);
+  if (!startColumn) return null;
+
+  // ...but a drag that made it into a *different* TEI column is not one
+  // document's text, so it is not a query.
+  const endColumn = teiColumnOf(range.endContainer);
+  if (endColumn && endColumn !== startColumn) return null;
+
+  const docId = startColumn.getAttribute("data-doc-column-id");
   if (!docId) return null;
 
   return { docId, text, range };

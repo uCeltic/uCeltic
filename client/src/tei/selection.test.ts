@@ -8,6 +8,9 @@ function renderColumns() {
     <article data-doc-column-id="doc-tei-1">
       <div data-tei-content><p id="tei-text">the hound of culann</p></div>
     </article>
+    <article data-doc-column-id="doc-tei-2">
+      <div data-tei-content><p id="tei-text-2">a second passage</p></div>
+    </article>
     <article data-doc-column-id="doc-2">
       <pre id="txt-text">plain uploaded text</pre>
     </article>
@@ -56,5 +59,31 @@ describe("readTEISelection", () => {
 
   it("returns null when there is no selection at all", () => {
     expect(readTEISelection(null)).toBeNull();
+  });
+
+  //Test: dragging past the edge of the text still selects that column's text
+  it("still reports the column when the drag ends outside the rendered content", () => {
+    const range = document.createRange();
+    range.setStart(document.getElementById("tei-text")!.firstChild!, 0);
+    // past the end of the content div — where a drag off the column's edge lands
+    const column = document.querySelector('[data-doc-column-id="doc-tei-1"]')!;
+    range.setEnd(column, column.childNodes.length);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(readTEISelection(selection)).toMatchObject({ docId: "doc-tei-1" });
+  });
+
+  //Test: text dragged across two columns is not one document's text, so not a query
+  it("ignores a selection spanning two TEI columns", () => {
+    const range = document.createRange();
+    range.setStart(document.getElementById("tei-text")!.firstChild!, 0);
+    range.setEnd(document.getElementById("tei-text-2")!.firstChild!, 5);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(readTEISelection(selection)).toBeNull();
   });
 });

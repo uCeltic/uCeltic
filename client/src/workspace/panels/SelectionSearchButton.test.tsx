@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import SelectionSearchButton from "./SelectionSearchButton";
 import { useDocumentStore } from "../../store/documentStore";
@@ -40,8 +40,17 @@ const txtDoc: Document = {
 
 // jsdom implements neither Range.getBoundingClientRect (the button positions
 // itself against it) nor selectionchange dispatch, so both are supplied here.
-Range.prototype.getBoundingClientRect = () =>
-  ({ top: 10, left: 20, bottom: 30, right: 60 }) as DOMRect;
+// The rect is a let so a test can move the "text" the way scrolling would.
+let selectionRect = { top: 10, left: 20, bottom: 30, right: 60 } as DOMRect;
+const realRangeRect = Range.prototype.getBoundingClientRect;
+
+beforeAll(() => {
+  Range.prototype.getBoundingClientRect = () => selectionRect;
+});
+// leave the prototype as we found it — other suites share this worker
+afterAll(() => {
+  Range.prototype.getBoundingClientRect = realRangeRect;
+});
 
 // Stand in for the DOM the DocumentArea columns render.
 function renderColumns() {
@@ -78,6 +87,7 @@ const runSearch = vi.fn();
 
 beforeEach(() => {
   runSearch.mockReset();
+  selectionRect = { top: 10, left: 20, bottom: 30, right: 60 } as DOMRect;
   document.body.innerHTML = "";
   useDocumentStore.setState({
     openDocuments: [teiDocA, teiDocB, txtDoc],
@@ -150,6 +160,19 @@ describe("SelectionSearchButton", () => {
     fireEvent.click(searchButton()!);
 
     expect(useSearchStore.getState().query).toBe("typed in the bar");
+  });
+
+  //Test: TEI text scrolls inside its own column, so a button pinned to viewport
+  //coordinates has to be re-measured or it drifts away from the text
+  it("follows the selected text when a column is scrolled", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+    expect(searchButton()).toHaveStyle({ top: "36px" });
+
+    selectionRect = { top: 60, left: 20, bottom: 80, right: 60 } as DOMRect;
+    fireEvent.scroll(document.querySelector("[data-tei-content]")!);
+
+    expect(searchButton()).toHaveStyle({ top: "86px" });
   });
 
   it("takes itself down once the search has been fired", () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { getSearchableDocuments, useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { readTEISelection, type TEISelection } from "../../tei/selection";
@@ -21,6 +21,7 @@ const OFFSET_PX = 6;
 export default function SelectionSearchButton() {
   const [pending, setPending] = useState<TEISelection | null>(null);
   const runSearch = useSearchStore((s) => s.runSearch);
+  const [, reposition] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
     const onSelectionChange = () =>
@@ -29,6 +30,19 @@ export default function SelectionSearchButton() {
     return () =>
       document.removeEventListener("selectionchange", onSelectionChange);
   }, []);
+
+  // The button is positioned in viewport coordinates against text that scrolls
+  // inside its own column, so re-measure whenever anything moves. Capture phase:
+  // an inner scroller's scroll event does not bubble to the window.
+  useEffect(() => {
+    if (!pending) return;
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [pending]);
 
   if (!pending) return null;
 
