@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AuthError, resetPassword } from "../../api/auth";
-import AccountShell, { FormError, input, label, link, primaryBtn } from "./AccountShell";
+import { resetPassword } from "../../api/auth";
+import AccountShell, { Field, FormError, link, primaryBtn } from "./AccountShell";
+import { useAuthSubmit } from "./useAuthSubmit";
 
 /**
  * The landing page for the emailed reset link. Like activation, redeeming the key changes
@@ -12,27 +13,18 @@ export default function PasswordResetKeyPage() {
 
   const [password, setPassword] = useState("");
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { error, submitting, run } = useAuthSubmit(
+    "Could not set the password. The link may have expired.",
+  );
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!key) return;
 
-    setError(null);
-    setSubmitting(true);
-
-    try {
+    await run(async () => {
       await resetPassword(key, password);
       setDone(true);
-    } catch (caught) {
-      setError(
-        caught instanceof AuthError
-          ? caught.message
-          : "Could not set the password. The link may have expired.",
-      );
-      setSubmitting(false);
-    }
+    });
   }
 
   if (done) {
@@ -53,20 +45,16 @@ export default function PasswordResetKeyPage() {
       <FormError message={error} />
 
       <form onSubmit={handleSubmit} noValidate>
-        <div className="mb-5">
-          <label className={label} htmlFor="password">
-            New password
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            className={input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+        <Field
+          id="password"
+          label="New password"
+          className="mb-5"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
         <button type="submit" className={primaryBtn} disabled={submitting}>
           {submitting ? "Saving…" : "Set password"}
