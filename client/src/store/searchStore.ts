@@ -284,3 +284,10 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       };
     }),
 }));
+
+// Is a search running on any column, whichever control fired it? Everything
+// that has to stand aside for a search in flight — the tool bar's own Search
+// button, the select-to-search trigger — asks this one question, so the shape
+// of the per-document loading state stays the store's business.
+export const selectAnySearching = (state: SearchStore): boolean =>
+  Object.values(state.isSearchingByDocument).some(Boolean);

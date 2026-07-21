@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from "react";
 import { getSearchableDocuments, useDocumentStore } from "../../store/documentStore";
-import { useSearchStore } from "../../store/searchStore";
+import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { readTEISelection, type TEISelection } from "../../tei/selection";
 import { toggleOnBtn } from "./buttonStyles";
@@ -21,7 +21,7 @@ const OFFSET_PX = 6;
  *
  * The document the selection came from is never searched, so with nothing else
  * visible to search the button does not appear at all rather than appearing and
- * doing nothing.
+ * doing nothing. Nor does it appear while a search is already in flight.
  */
 export default function SelectionSearchButton() {
   const [pending, setPending] = useState<TEISelection | null>(null);
@@ -30,14 +30,30 @@ export default function SelectionSearchButton() {
   const openDocuments = useDocumentStore((s) => s.openDocuments);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const [, reposition] = useReducer((n: number) => n + 1, 0);
+  // The same condition the tool bar disables its own Search button on.
+  const anySearching = useSearchStore(selectAnySearching);
+
+  // A search in flight owns the columns it is filling, so the button that would
+  // fire a second one over the top of it stands down for the duration: the
+  // pending selection is dropped the moment a search starts, and selections are
+  // not listened for until it is over. Whatever was selected meanwhile is stale
+  // by then, so listening resumes empty-handed — the next selection brings the
+  // button back.
+  //
+  // The drop happens during render, not in an effect: React's documented
+  // "adjusting state when a value changes" pattern re-renders before the DOM
+  // commits, instead of briefly painting a button the search has already
+  // invalidated.
+  if (anySearching && pending) setPending(null);
 
   useEffect(() => {
+    if (anySearching) return;
     const onSelectionChange = () =>
       setPending(readTEISelection(window.getSelection()));
     document.addEventListener("selectionchange", onSelectionChange);
     return () =>
       document.removeEventListener("selectionchange", onSelectionChange);
-  }, []);
+  }, [anySearching]);
 
   // The button is positioned in viewport coordinates against text that scrolls
   // inside its own column, so re-measure whenever anything moves. Capture phase:
