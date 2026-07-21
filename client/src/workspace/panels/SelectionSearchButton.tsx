@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from "react";
 import { getSearchableDocuments, useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { setQuerySourceHighlight } from "../../tei/highlight";
 import { readTEISelection, type TEISelection } from "../../tei/selection";
 import { toggleOnBtn } from "./buttonStyles";
 
@@ -75,6 +76,10 @@ export default function SelectionSearchButton() {
     }
     // Skipped, not searched — so it is emptied rather than left as it was.
     clearDocumentResults(pending.docId);
+    // The click that got us here has already collapsed the native selection
+    // highlight; this puts the same text back under a highlight of our own, so
+    // the results stay traceable to the text that produced them.
+    setQuerySourceHighlight(pending.range);
     setPending(null);
   }
 

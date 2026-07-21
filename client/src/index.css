@@ -5,3 +5,11 @@
 background-color: #FB923C;
 color: #1f2937;
 }
+
+/* The text a selection-triggered search used as its query, standing in for the
+   native selection highlight the click collapses. Cool blue against the warm
+   orange above, so "what I searched for" never reads as "a result". */
+::highlight(query-source) {
+background-color: #93C5FD;
+color: #1f2937;
+}

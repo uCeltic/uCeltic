@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { rebuildHighlights } from "./highlight";
+import { rebuildHighlights, setQuerySourceHighlight } from "./highlight";
 import type { TEIAnchor, TEIWordEntry } from "../types/tei";
 import type { SearchResult } from "../types/search";
 
@@ -64,5 +64,70 @@ describe("rebuildHighlights", () => {
         expect(active).toEqual(["foo", "hello"]);
         // the all-matches highlight is no longer painted
         expect(match).toEqual([]);
+    });
+});
+
+describe("setQuerySourceHighlight", () => {
+    beforeEach(() => {
+        makeColumn("doc-a", '<span id="src-a">hello world</span>');
+        makeColumn("doc-b", '<span id="src-b">foo bar</span>');
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = "";
+        CSS.highlights.get("query-source")?.clear();
+    });
+
+    // the text of whatever the query-source highlight is currently painted over
+    const painted = () =>
+        [...(CSS.highlights.get("query-source") ?? [])].map((r) => r.toString());
+
+    function rangeOver(id: string): Range {
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById(id)!);
+        return range;
+    }
+
+    it("paints the range the search took its query from", () => {
+        setQuerySourceHighlight(rangeOver("src-a"));
+
+        expect(painted()).toEqual(["hello world"]);
+    });
+
+    //Test: a second selection search elsewhere marks its own source, not both
+    it("replaces the previous range rather than adding to it", () => {
+        setQuerySourceHighlight(rangeOver("src-a"));
+
+        setQuerySourceHighlight(rangeOver("src-b"));
+
+        expect(painted()).toEqual(["foo bar"]);
+    });
+
+    //Test: a typed search has no source text to point at
+    it("clears the highlight when passed null", () => {
+        setQuerySourceHighlight(rangeOver("src-a"));
+
+        setQuerySourceHighlight(null);
+
+        expect(painted()).toEqual([]);
+    });
+
+    //Test: the source document can be closed while its text is still selected —
+    //removing its nodes collapses the range onto their old parent, and a range
+    //with no text left in it must fail quietly rather than paint nothing visible
+    it("ignores a range whose text has left the document", () => {
+        const range = rangeOver("src-a");
+        document.querySelector('[data-doc-column-id="doc-a"]')!.remove();
+
+        expect(() => setQuerySourceHighlight(range)).not.toThrow();
+        expect(painted()).toEqual([]);
+    });
+
+    it("still clears when the previously painted document has been closed", () => {
+        setQuerySourceHighlight(rangeOver("src-a"));
+        document.querySelector('[data-doc-column-id="doc-a"]')!.remove();
+
+        expect(() => setQuerySourceHighlight(null)).not.toThrow();
+        expect(painted()).toEqual([]);
     });
 });

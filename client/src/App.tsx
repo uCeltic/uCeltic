@@ -12,10 +12,14 @@ import ProfilePage from './pages/account/ProfilePage'
 import { logSessionStarted } from './api/log'
 import { useAuthStore } from './store/authStore'
 import { useEffect } from 'react'
-// highlight the search resutls
+// The named highlights the app paints into: the search result a column is
+// currently on, and the text a selection-triggered search took its query from.
+// Registered up front so ::highlight() in index.css has something to style.
 if (typeof CSS !== "undefined" && "highlights" in CSS) {
-  if (!CSS.highlights.has("search-match-active")) {
-    CSS.highlights.set("search-match-active", new Highlight());
+  for (const name of ["search-match-active", "query-source"]) {
+    if (!CSS.highlights.has(name)) {
+      CSS.highlights.set(name, new Highlight());
+    }
   }
 }
 

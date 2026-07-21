@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { setQuerySourceHighlight } from "../../tei/highlight";
 import type { Document } from "../../types/document";
 import type { TEIDoc } from "../../types/tei";
 
@@ -86,5 +87,22 @@ describe("ToolBar search button", () => {
 
         expect(runSearch).toHaveBeenCalledOnce();
         expect(runSearch).toHaveBeenCalledWith(1, "doc-a");
+    });
+
+    //Test: the query-source mark points at text an EARLIER selection search ran
+    //on — a typed search did not come from it, so it must not stay lit (#95)
+    it("clears the query-source highlight left by an earlier selection search", () => {
+        useSearchStore.setState({ runSearch: vi.fn() });
+        const source = document.createElement("p");
+        source.textContent = "the hound of culann";
+        document.body.appendChild(source);
+        const range = document.createRange();
+        range.selectNodeContents(source);
+        setQuerySourceHighlight(range);
+
+        renderToolBar();
+        fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+        expect([...(CSS.highlights.get("query-source") ?? [])]).toEqual([]);
     });
 });

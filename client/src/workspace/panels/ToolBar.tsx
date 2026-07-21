@@ -13,6 +13,7 @@ import TEIPickerDropdown from "./TEIPickerDropdown";
 import AccountMenu from "./AccountMenu";
 import { secondaryBtn, toggleOnBtn } from "./buttonStyles";
 import { useSearchStore } from "../../store/searchStore";
+import { setQuerySourceHighlight } from "../../tei/highlight";
 
 export default function ToolBar({
   onToggleIIIF,
@@ -116,6 +117,10 @@ export default function ToolBar({
         className={toggleOnBtn}
         disabled={anySearching}
         onClick={() => {
+          // A typed query came from the search bar, not from text on screen, so
+          // any mark an earlier selection search left behind now points at text
+          // that has nothing to do with these results.
+          setQuerySourceHighlight(null);
           for (const doc of getSearchableDocuments({
             openDocuments,
             visibleDocumentIds,
