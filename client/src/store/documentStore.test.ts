@@ -197,7 +197,7 @@ describe("getSearchableDocuments", () => {
     useDocumentStore.getState().addTEIDocument(makeTEIDoc(2, "Second"));
 
     const searchable = getSearchableDocuments(useDocumentStore.getState(), {
-      excludeDocId: "doc-tei-1",
+      excludedDocId: "doc-tei-1",
     });
 
     expect(searchable.map((d) => d.id)).toEqual(["doc-tei-2"]);
@@ -208,7 +208,7 @@ describe("getSearchableDocuments", () => {
     useDocumentStore.getState().addTEIDocument(makeTEIDoc(1, "First"));
 
     const searchable = getSearchableDocuments(useDocumentStore.getState(), {
-      excludeDocId: "doc-tei-1",
+      excludedDocId: "doc-tei-1",
     });
 
     expect(searchable).toEqual([]);

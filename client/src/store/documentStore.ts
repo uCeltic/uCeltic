@@ -50,7 +50,7 @@ export type SearchableDocument = Extract<Document, { format: "tei" }>;
  * so `.txt`/`.docx` columns are never searchable.
  *
  * Both search triggers (the toolbar's Search button and the select-to-search
- * floating button) go through here. `excludeDocId` is what the selection
+ * floating button) go through here. `excludedDocId` is what the selection
  * trigger adds: the query came out of that document, so searching it for its
  * own text would only find the text itself.
  *
@@ -59,10 +59,10 @@ export type SearchableDocument = Extract<Document, { format: "tei" }>;
  */
 export function getSearchableDocuments(
   state: Pick<DocumentStore, "openDocuments" | "visibleDocumentIds">,
-  options: { excludeDocId?: DocumentId } = {},
+  options: { excludedDocId?: DocumentId } = {},
 ): SearchableDocument[] {
   return state.visibleDocumentIds
-    .filter((id) => id !== options.excludeDocId)
+    .filter((id) => id !== options.excludedDocId)
     .map((id) => state.openDocuments.find((doc) => doc.id === id))
     .filter((doc): doc is SearchableDocument => doc?.format === "tei");
 }

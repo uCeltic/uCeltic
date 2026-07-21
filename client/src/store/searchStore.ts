@@ -70,6 +70,9 @@ interface SearchStore {
 
   isSearchingByDocument: Record<DocumentId, boolean>; //per-document loading state
   searchErrorByDocument: Record<DocumentId, boolean>; //per-document error state
+  //bumped whenever a document's search state is thrown away, so a response that
+  //arrives afterwards can tell that nobody is waiting for it any more
+  searchGenerationByDocument: Record<DocumentId, number>;
   runSearch: (
     docId: number,
     clientDocId: string,
@@ -92,6 +95,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   topK: 10,
   isSearchingByDocument: {},
   searchErrorByDocument: {},
+  searchGenerationByDocument: {},
   //run the search
     runSearch: async (docId, clientDocId, options = {}) => {
       const { dissimilarityScore, topK, matchLength, precision } = get();
@@ -105,6 +109,13 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
         searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: false },
       }));
+      // What this column counted as "current" when the request went out. If a
+      // clear bumps it while we are awaiting, the response belongs to a search
+      // that has since been declared over, and writing it back would refill a
+      // column we just emptied.
+      const generation = get().searchGenerationByDocument[clientDocId] ?? 0;
+      const superseded = () =>
+        (get().searchGenerationByDocument[clientDocId] ?? 0) !== generation;
       const windowSizeRatio = matchLength / 100;
       const startedAt = performance.now();
       const searchPerformedBase = {
@@ -132,6 +143,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           latency_ms: performance.now() - startedAt,
           error: false,
         });
+        if (superseded()) return;
         set((s) => ({
           resultsByDocument: { ...s.resultsByDocument, [clientDocId]: results },
           // on the documents we've opened, which result should be highlighted and displayed?
@@ -147,6 +159,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           latency_ms: performance.now() - startedAt,
           error: true,
         });
+        if (superseded()) return;
         set((s) => ({
           isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: false },
           searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: true },
@@ -164,9 +177,13 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     }),
 
   // Put a document back to "not searched": drop the results, the active index,
-  // and the error flag it carried. Used for a document a search deliberately
-  // skipped — leaving its keys in place would show an earlier, unrelated
-  // search's hits as if they belonged to this one.
+  // the error flag, and the loading flag it carried. Used for a document a
+  // search deliberately skipped — leaving its keys in place would show an
+  // earlier, unrelated search's hits as if they belonged to this one.
+  //
+  // Bumping the generation covers the case where that earlier search is still
+  // in flight: it finds itself superseded and drops its response instead of
+  // refilling the column.
   clearDocumentResults: (documentId) =>
     set((state) => ({
       resultsByDocument: without(state.resultsByDocument, documentId),
@@ -175,6 +192,11 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         documentId,
       ),
       searchErrorByDocument: without(state.searchErrorByDocument, documentId),
+      isSearchingByDocument: without(state.isSearchingByDocument, documentId),
+      searchGenerationByDocument: {
+        ...state.searchGenerationByDocument,
+        [documentId]: (state.searchGenerationByDocument[documentId] ?? 0) + 1,
+      },
     })),
 
   setActiveResultIndex: (documentId, index) =>

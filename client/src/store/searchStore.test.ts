@@ -306,6 +306,29 @@ describe("searchStore.clearDocumentResults", () => {
     expect(state.resultsByDocument["doc-tei-1"]).toBeUndefined();
     expect(state.activeResultIndexByDocument["doc-tei-1"]).toBeUndefined();
     expect(state.searchErrorByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.isSearchingByDocument["doc-tei-1"]).toBeUndefined();
+  });
+
+  //Test: clearing while that document's own search is still in flight. The
+  //result that lands afterwards belongs to the search we just declared over,
+  //so it must not repopulate the column we emptied.
+  it("discards a search still in flight on the cleared document", async () => {
+    let resolveSearch!: (results: SearchResult[]) => void;
+    mockedSearch.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
+    useSearchStore.getState().setQuery("hound");
+    const inFlight = useSearchStore.getState().runSearch(42, "doc-tei-1");
+
+    useSearchStore.getState().clearDocumentResults("doc-tei-1");
+    resolveSearch([sampleResult]);
+    await inFlight;
+
+    const state = useSearchStore.getState();
+    expect(state.resultsByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.isSearchingByDocument["doc-tei-1"]).toBeFalsy();
   });
 
   //Test: clearing one column must not disturb the columns that were searched

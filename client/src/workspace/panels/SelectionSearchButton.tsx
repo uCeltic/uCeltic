@@ -56,7 +56,7 @@ export default function SelectionSearchButton() {
   const targets = pending
     ? getSearchableDocuments(
         { openDocuments, visibleDocumentIds },
-        { excludeDocId: pending.docId },
+        { excludedDocId: pending.docId },
       )
     : [];
 
@@ -73,9 +73,7 @@ export default function SelectionSearchButton() {
         excludedDocId: pending.docId,
       });
     }
-    // The source document is skipped, not searched — so it has to be emptied
-    // explicitly, or it keeps showing an earlier search's hits alongside the
-    // results this search just produced.
+    // Skipped, not searched — so it is emptied rather than left as it was.
     clearDocumentResults(pending.docId);
     setPending(null);
   }
