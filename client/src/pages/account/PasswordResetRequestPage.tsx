@@ -1,30 +1,21 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { AuthError, requestPasswordReset } from "../../api/auth";
-import AccountShell, { FormError, input, label, link, primaryBtn } from "./AccountShell";
+import { requestPasswordReset } from "../../api/auth";
+import AccountShell, { Field, FormError, link, primaryBtn } from "./AccountShell";
+import { useAuthSubmit } from "./useAuthSubmit";
 
 export default function PasswordResetRequestPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { error, submitting, run } = useAuthSubmit("Could not send the link. Please try again.");
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setError(null);
-    setSubmitting(true);
 
-    try {
+    await run(async () => {
       await requestPasswordReset(email);
       setSent(true);
-    } catch (caught) {
-      setError(
-        caught instanceof AuthError
-          ? caught.message
-          : "Could not send the link. Please try again.",
-      );
-      setSubmitting(false);
-    }
+    });
   }
 
   if (sent) {
@@ -48,20 +39,16 @@ export default function PasswordResetRequestPage() {
       <FormError message={error} />
 
       <form onSubmit={handleSubmit} noValidate>
-        <div className="mb-5">
-          <label className={label} htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            className={input}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <Field
+          id="email"
+          label="Email"
+          spacing="mb-5"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         <button type="submit" className={primaryBtn} disabled={submitting}>
           {submitting ? "Sending…" : "Send reset link"}

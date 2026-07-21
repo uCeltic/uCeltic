@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { AuthError, changePassword } from "../../api/auth";
 import { fetchProfile, updateDisplayName, ProfileError } from "../../api/profile";
-import AccountShell, { FormError, input, label, primaryBtn } from "./AccountShell";
+import AccountShell, { Field, FormError, labelClass, primaryBtn } from "./AccountShell";
 
 function localPart(email: string): string {
   return email.split("@")[0];
@@ -76,30 +76,26 @@ export default function ProfilePage() {
     // The visitor is already signed in here, so "Continue as a Visitor" is meaningless.
     <AccountShell title="Your profile" hideAccountLink>
       <section className="mb-6">
-        <span className={label}>Email</span>
+        <span className={labelClass}>Email</span>
         <p className="mt-1 text-sm text-[#52524F]">{authUser?.email}</p>
       </section>
 
       <section className="mb-6">
         <FormError message={nameError} />
         <form onSubmit={handleSaveName} noValidate>
-          <div className="mb-3">
-            <label className={label} htmlFor="display-name">
-              Display name
-            </label>
-            <input
-              id="display-name"
-              type="text"
-              maxLength={150}
-              placeholder={authUser ? localPart(authUser.email) : ""}
-              className={input}
-              value={displayName}
-              onChange={(e) => {
-                setDisplayName(e.target.value);
-                setNameSaved(false);
-              }}
-            />
-          </div>
+          <Field
+            id="display-name"
+            label="Display name"
+            spacing="mb-3"
+            type="text"
+            maxLength={150}
+            placeholder={authUser ? localPart(authUser.email) : ""}
+            value={displayName}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              setNameSaved(false);
+            }}
+          />
           <button type="submit" className={primaryBtn} disabled={savingName}>
             {savingName ? "Saving…" : "Save"}
           </button>
@@ -115,34 +111,26 @@ export default function ProfilePage() {
         <h2 className="text-sm font-semibold text-[#52524F]">Change password</h2>
         <FormError message={passwordError} />
         <form onSubmit={handleChangePassword} noValidate>
-          <div className="mb-3">
-            <label className={label} htmlFor="current-password">
-              Current password
-            </label>
-            <input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              className={input}
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-          </div>
-          <div className="mb-3">
-            <label className={label} htmlFor="new-password">
-              New password
-            </label>
-            <input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              required
-              className={input}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </div>
+          <Field
+            id="current-password"
+            label="Current password"
+            spacing="mb-3"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+          <Field
+            id="new-password"
+            label="New password"
+            spacing="mb-3"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
           <button type="submit" className={primaryBtn} disabled={changingPassword}>
             {changingPassword ? "Changing…" : "Change password"}
           </button>

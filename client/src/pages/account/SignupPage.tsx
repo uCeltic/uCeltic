@@ -1,7 +1,8 @@
 import { useState, type FocusEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthError, signUp } from "../../api/auth";
-import AccountShell, { FormError, input, label, link, primaryBtn } from "./AccountShell";
+import { signUp } from "../../api/auth";
+import AccountShell, { Field, FormError, link, primaryBtn } from "./AccountShell";
+import { useAuthSubmit } from "./useAuthSubmit";
 import { recordVerificationEmailSent } from "./verifyEmailCooldown";
 
 const MISMATCH_MESSAGE = "Passwords don't match.";
@@ -13,8 +14,9 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [mismatch, setMismatch] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { error, submitting, run, clearError } = useAuthSubmit(
+    "Could not register. Please try again.",
+  );
 
   function syncMismatch(confirmValue: string) {
     const mismatched = confirmValue !== "" && confirmValue !== password;
@@ -28,13 +30,13 @@ export default function SignupPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setError(null);
 
+    // A mismatch is caught here rather than by the server, so it clears any standing
+    // server error itself — nothing was sent that could have replaced it.
+    clearError();
     if (syncMismatch(confirmPassword)) return;
 
-    setSubmitting(true);
-
-    try {
+    await run(async () => {
       await signUp(email, password);
       // Registration never signs you in: activation is mandatory, so the only place to
       // go from here is the inbox. Signup itself sent the first activation mail, so the
@@ -42,12 +44,7 @@ export default function SignupPage() {
       // since it can't tell a fresh arrival from a refresh of the same one.
       recordVerificationEmailSent(email);
       navigate("/account/verify-email/sent", { state: { email }, replace: true });
-    } catch (caught) {
-      setError(
-        caught instanceof AuthError ? caught.message : "Could not register. Please try again.",
-      );
-      setSubmitting(false);
-    }
+    });
   }
 
   return (
@@ -58,63 +55,52 @@ export default function SignupPage() {
       <FormError message={error} />
 
       <form onSubmit={handleSubmit} noValidate>
-        <div className="mb-4">
-          <label className={label} htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            className={input}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <Field
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        <div className="mb-5">
-          <label className={label} htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            className={input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+        <Field
+          id="password"
+          label="Password"
+          spacing="mb-5"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        >
           <p className="mt-1 text-sm text-[#6B6B67]">
             At least 8 characters, not too similar to your email address, not a common or
             breached password, and not entirely numeric.
           </p>
-        </div>
+        </Field>
 
-        <div className="mb-5">
-          <label className={label} htmlFor="confirmPassword">
-            Confirm password
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            required
-            className={input}
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              if (mismatch) syncMismatch(e.target.value);
-            }}
-            onBlur={handleConfirmBlur}
-          />
+        <Field
+          id="confirmPassword"
+          label="Confirm password"
+          spacing="mb-5"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            if (mismatch) syncMismatch(e.target.value);
+          }}
+          onBlur={handleConfirmBlur}
+        >
           {mismatch && (
             <div className="mt-1">
               <FormError message={MISMATCH_MESSAGE} />
             </div>
           )}
-        </div>
+        </Field>
 
         <button type="submit" className={primaryBtn} disabled={submitting}>
           {submitting ? "Registering…" : "Register"}
