@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import SelectionSearchButton from "./SelectionSearchButton";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
-import type { Document } from "../../types/document";
+import type { Document, DocumentId } from "../../types/document";
 import type { SearchResult } from "../../types/search";
 import type { TEIDoc } from "../../types/tei";
 
@@ -118,8 +118,8 @@ beforeEach(() => {
   renderColumns();
 });
 
-// a search running on some column, from wherever it was fired
-function setSearching(isSearchingByDocument: Record<string, boolean>) {
+// put the named columns into (or out of) a search, wherever it was fired from
+function setSearchingColumns(isSearchingByDocument: Record<DocumentId, boolean>) {
   act(() => useSearchStore.setState({ isSearchingByDocument }));
 }
 
@@ -282,7 +282,18 @@ describe("SelectionSearchButton", () => {
   //Test: a search already in flight owns the columns' state, so offering to fire
   //a second one over the top of it is the confusing window #96 closes
   it("stays away for a selection made while a search is in flight", () => {
-    setSearching({ "doc-tei-2": true });
+    setSearchingColumns({ "doc-tei-2": true });
+    render(<SelectionSearchButton />);
+
+    selectText("tei-a");
+
+    expect(searchButton()).not.toBeInTheDocument();
+  });
+
+  //Test: any column counts, not just the ones this button would have searched —
+  //here it is the column the selection is in that is busy
+  it("stays away while the selection's own column is searching", () => {
+    setSearchingColumns({ "doc-tei-1": true });
     render(<SelectionSearchButton />);
 
     selectText("tei-a");
@@ -297,17 +308,17 @@ describe("SelectionSearchButton", () => {
     selectText("tei-a");
     expect(searchButton()).toBeInTheDocument();
 
-    setSearching({ "doc-tei-2": true });
+    setSearchingColumns({ "doc-tei-2": true });
 
     expect(searchButton()).not.toBeInTheDocument();
   });
 
   it("comes back for a new selection once the search has finished", () => {
-    setSearching({ "doc-tei-2": true });
+    setSearchingColumns({ "doc-tei-2": true });
     render(<SelectionSearchButton />);
     selectText("tei-a");
 
-    setSearching({ "doc-tei-2": false });
+    setSearchingColumns({ "doc-tei-2": false });
     selectText("tei-a");
 
     expect(searchButton()).toBeInTheDocument();
@@ -317,10 +328,10 @@ describe("SelectionSearchButton", () => {
   //— it should stay silent until the user selects something again
   it("does not resurface a selection made during the search", () => {
     render(<SelectionSearchButton />);
-    setSearching({ "doc-tei-2": true });
+    setSearchingColumns({ "doc-tei-2": true });
     selectText("tei-a");
 
-    setSearching({ "doc-tei-2": false });
+    setSearchingColumns({ "doc-tei-2": false });
 
     expect(searchButton()).not.toBeInTheDocument();
   });

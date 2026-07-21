@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from "react";
 import { getSearchableDocuments, useDocumentStore } from "../../store/documentStore";
-import { useSearchStore } from "../../store/searchStore";
+import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { readTEISelection, type TEISelection } from "../../tei/selection";
 import { toggleOnBtn } from "./buttonStyles";
@@ -30,11 +30,8 @@ export default function SelectionSearchButton() {
   const openDocuments = useDocumentStore((s) => s.openDocuments);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const [, reposition] = useReducer((n: number) => n + 1, 0);
-  // Any column searching, no matter which control fired it — same condition the
-  // tool bar disables its own Search button on.
-  const anySearching = useSearchStore((s) =>
-    Object.values(s.isSearchingByDocument).some(Boolean),
-  );
+  // The same condition the tool bar disables its own Search button on.
+  const anySearching = useSearchStore(selectAnySearching);
 
   // A search in flight owns the columns it is filling, so the button that would
   // fire a second one over the top of it stands down for the duration: the
@@ -47,11 +44,7 @@ export default function SelectionSearchButton() {
   // "adjusting state when a value changes" pattern re-renders before the DOM
   // commits, instead of briefly painting a button the search has already
   // invalidated.
-  const [prevSearching, setPrevSearching] = useState(anySearching);
-  if (anySearching !== prevSearching) {
-    setPrevSearching(anySearching);
-    if (anySearching) setPending(null);
-  }
+  if (anySearching && pending) setPending(null);
 
   useEffect(() => {
     if (anySearching) return;

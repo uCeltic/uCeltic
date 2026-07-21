@@ -12,7 +12,7 @@ import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
 import AccountMenu from "./AccountMenu";
 import { secondaryBtn, toggleOnBtn } from "./buttonStyles";
-import { useSearchStore } from "../../store/searchStore";
+import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 
 export default function ToolBar({
@@ -27,9 +27,8 @@ export default function ToolBar({
   const decreaseFontSize = useWorkspaceStore((state) => state.decreaseFontSize);
   const showIIIF = useWorkspaceStore((state) => state.showIIIF);
   const runSearch = useSearchStore((s) => s.runSearch);
-  const isSearchingByDocument = useSearchStore((s) => s.isSearchingByDocument);
   // disable Search while ANY column is still in flight (replaces the old global flag)
-  const anySearching = Object.values(isSearchingByDocument).some(Boolean);
+  const anySearching = useSearchStore(selectAnySearching);
   const setQuery = useSearchStore((s) => s.setQuery);
   const query = useSearchStore((s) => s.query);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
