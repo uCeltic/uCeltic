@@ -67,10 +67,10 @@ export function rebuildHighlights(columns: HighlightColumn[]): void {
  * Mark the text a selection-triggered search took its query from, or clear the
  * mark when passed null.
  *
- * The native selection highlight disappears the instant the floating search
- * button is clicked (clicking anything collapses a selection), so this paints
- * the same text again in a highlight of our own — otherwise the user is looking
- * at results with no sign of what produced them.
+ * A native text selection does not survive being acted on — it is the browser's
+ * to collapse, and it says "you are selecting this", not "these results came
+ * from this". So the search hands the text over to a mark of our own, which
+ * outlives the selection and stays put while the user reads the results.
  *
  * Exactly one range is marked at a time: a second selection search replaces the
  * first, and a typed search (which came from no text on screen) clears it.

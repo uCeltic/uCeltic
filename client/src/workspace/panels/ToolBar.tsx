@@ -31,6 +31,7 @@ export default function ToolBar({
   // disable Search while ANY column is still in flight (replaces the old global flag)
   const anySearching = Object.values(isSearchingByDocument).some(Boolean);
   const setQuery = useSearchStore((s) => s.setQuery);
+  const query = useSearchStore((s) => s.query);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
 
   //handle file upload
@@ -117,6 +118,11 @@ export default function ToolBar({
         className={toggleOnBtn}
         disabled={anySearching}
         onClick={() => {
+          // Nothing typed, nothing searched: runSearch bails on a blank query
+          // per document, so returning here changes no search behaviour — it
+          // just stops a click that searches nothing from clearing the mark
+          // below, which would strip the on-screen results of their provenance.
+          if (!query.trim()) return;
           // A typed query came from the search bar, not from text on screen, so
           // any mark an earlier selection search left behind now points at text
           // that has nothing to do with these results.

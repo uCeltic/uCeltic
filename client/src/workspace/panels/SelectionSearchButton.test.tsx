@@ -238,15 +238,27 @@ describe("SelectionSearchButton", () => {
     expect(searchButton()).not.toBeInTheDocument();
   });
 
-  //Test: the native selection highlight vanishes on click, so the text that drove
-  //the results has to be re-marked or the user cannot see what was searched (#95)
-  it("marks the text it searched with, once the native selection is gone", () => {
+  //Test: the results have to stay traceable to the text that drove them once the
+  //native selection is gone, which is the whole point of the mark (#95)
+  it("marks the text it searched with", () => {
     render(<SelectionSearchButton />);
     selectText("tei-a");
 
     fireEvent.click(searchButton()!);
-    clearSelection();
 
+    expect(querySourceText()).toEqual(["the hound of culann"]);
+  });
+
+  //Test: this button suppresses the collapse a click normally causes, so it has
+  //to drop the selection itself — otherwise the native highlight stays painted
+  //over the mark and the mark only surfaces on some later, unrelated click
+  it("hands the text over from the native selection to the mark", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+
+    fireEvent.click(searchButton()!);
+
+    expect(window.getSelection()!.rangeCount).toBe(0);
     expect(querySourceText()).toEqual(["the hound of culann"]);
   });
 
