@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { setQuerySourceHighlight } from "../../tei/highlight";
 import type { Document } from "../../types/document";
 import type { TEIDoc } from "../../types/tei";
 
@@ -26,12 +27,31 @@ beforeEach(() => {
         activeDocumentId: "doc-a",
     });
     useSearchStore.setState({
-        query: "",
+        query: "culann",
         resultsByDocument: {},
         activeResultIndexByDocument: {},
         isSearchingByDocument: {},
         searchErrorByDocument: {},
     });
+});
+
+// Stand in for a mark an earlier selection search left on some document's text.
+function markQuerySource(text: string) {
+    const source = document.createElement("p");
+    source.textContent = text;
+    document.body.appendChild(source);
+    const range = document.createRange();
+    range.selectNodeContents(source);
+    setQuerySourceHighlight(range);
+}
+
+const paintedQuerySource = () =>
+    [...(CSS.highlights.get("query-source") ?? [])].map((r) => r.toString());
+
+// the highlight registry and the body outlive a single test — both are global
+afterEach(() => {
+    CSS.highlights.get("query-source")?.clear();
+    document.body.innerHTML = "";
 });
 
 // The ToolBar holds the AccountMenu, which links to /account/login — so it now needs a router.
@@ -86,5 +106,29 @@ describe("ToolBar search button", () => {
 
         expect(runSearch).toHaveBeenCalledOnce();
         expect(runSearch).toHaveBeenCalledWith(1, "doc-a");
+    });
+
+    //Test: the query-source mark points at text an EARLIER selection search ran
+    //on — a typed search did not come from it, so it must not stay lit (#95)
+    it("clears the query-source highlight left by an earlier selection search", () => {
+        useSearchStore.setState({ runSearch: vi.fn() });
+        markQuerySource("the hound of culann");
+
+        renderToolBar();
+        fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+        expect(paintedQuerySource()).toEqual([]);
+    });
+
+    //Test: a blank bar searches nothing, so it must not strip the on-screen
+    //results of the mark showing where they came from
+    it("keeps the query-source highlight when the search bar is empty", () => {
+        useSearchStore.setState({ runSearch: vi.fn(), query: "   " });
+        markQuerySource("the hound of culann");
+
+        renderToolBar();
+        fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+        expect(paintedQuerySource()).toEqual(["the hound of culann"]);
     });
 });

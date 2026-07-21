@@ -101,6 +101,7 @@ beforeEach(() => {
   runSearch.mockReset();
   selectionRect = { top: 10, left: 20, bottom: 30, right: 60 } as DOMRect;
   document.body.innerHTML = "";
+  CSS.highlights.get("query-source")?.clear();
   useDocumentStore.setState({
     openDocuments: [teiDocA, teiDocB, txtDoc],
     visibleDocumentIds: ["doc-tei-1", "doc-tei-2", "doc-3"],
@@ -117,6 +118,10 @@ beforeEach(() => {
 });
 
 const searchButton = () => screen.queryByRole("button", { name: /selected/i });
+
+// the text the query-source highlight is currently painted over
+const querySourceText = () =>
+  [...(CSS.highlights.get("query-source") ?? [])].map((r) => r.toString());
 
 describe("SelectionSearchButton", () => {
   it("appears when text is selected inside a TEI viewer", () => {
@@ -231,5 +236,51 @@ describe("SelectionSearchButton", () => {
     fireEvent.click(searchButton()!);
 
     expect(searchButton()).not.toBeInTheDocument();
+  });
+
+  //Test: the results have to stay traceable to the text that drove them once the
+  //native selection is gone, which is the whole point of the mark (#95)
+  it("marks the text it searched with", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+
+    fireEvent.click(searchButton()!);
+
+    expect(querySourceText()).toEqual(["the hound of culann"]);
+  });
+
+  //Test: this button suppresses the collapse a click normally causes, so it has
+  //to drop the selection itself — otherwise the native highlight stays painted
+  //over the mark and the mark only surfaces on some later, unrelated click
+  it("hands the text over from the native selection to the mark", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+
+    fireEvent.click(searchButton()!);
+
+    expect(window.getSelection()!.rangeCount).toBe(0);
+    expect(querySourceText()).toEqual(["the hound of culann"]);
+  });
+
+  it("moves the mark to the new source when a second selection search fires", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+    fireEvent.click(searchButton()!);
+
+    selectText("tei-b");
+    fireEvent.click(searchButton()!);
+
+    expect(querySourceText()).toEqual(["a second passage"]);
+  });
+
+  //Test: nothing takes the button down when its source column closes, so the
+  //click still lands — on a range that no longer points into the page
+  it("survives a click after the source document has been closed", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+    document.querySelector('[data-doc-column-id="doc-tei-1"]')!.remove();
+
+    expect(() => fireEvent.click(searchButton()!)).not.toThrow();
+    expect(querySourceText()).toEqual([]);
   });
 });

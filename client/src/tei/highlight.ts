@@ -62,3 +62,28 @@ export function rebuildHighlights(columns: HighlightColumn[]): void {
     for (const r of ranges) activeHL.add(r);
   }
 }
+
+/**
+ * Mark the text a selection-triggered search took its query from, or clear the
+ * mark when passed null.
+ *
+ * A native text selection does not survive being acted on — it is the browser's
+ * to collapse, and it says "you are selecting this", not "these results came
+ * from this". So the search hands the text over to a mark of our own, which
+ * outlives the selection and stays put while the user reads the results.
+ *
+ * Exactly one range is marked at a time: a second selection search replaces the
+ * first, and a typed search (which came from no text on screen) clears it.
+ *
+ * A range with no text left to mark is dropped rather than painted. Closing the
+ * source document is the way that happens: removing a node collapses the live
+ * ranges inside it onto the parent it was removed from (DOM spec), so a stale
+ * range arrives here empty rather than throwing. Refusing it keeps the registry
+ * honest about what is actually on screen.
+ */
+export function setQuerySourceHighlight(range: Range | null): void {
+  const sourceHL = getHighlight("query-source");
+  sourceHL?.clear();
+  if (!sourceHL || !range || range.collapsed) return;
+  sourceHL.add(range);
+}

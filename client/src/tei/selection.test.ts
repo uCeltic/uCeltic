@@ -40,6 +40,20 @@ describe("readTEISelection", () => {
     });
   });
 
+  //Test: clicking anything (the search button included) collapses the native
+  //selection, and browsers hand out a LIVE range that collapses with it. So what
+  //is returned must be detached from the selection, or the text the search ran
+  //on is lost the moment the search is fired. (jsdom's ranges do not go live, so
+  //this asserts the independence itself rather than collapsing to observe it.)
+  it("hands back a range snapshot, not the selection's live one", () => {
+    const selection = selectContentsOf("tei-text");
+
+    const result = readTEISelection(selection)!;
+
+    expect(result.range).not.toBe(selection.getRangeAt(0));
+    expect(result.range.toString()).toBe("the hound of culann");
+  });
+
   it("ignores a selection in a non-TEI column", () => {
     expect(readTEISelection(selectContentsOf("txt-text"))).toBeNull();
   });

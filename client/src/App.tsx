@@ -12,10 +12,16 @@ import ProfilePage from './pages/account/ProfilePage'
 import { logSessionStarted } from './api/log'
 import { useAuthStore } from './store/authStore'
 import { useEffect } from 'react'
-// highlight the search resutls
+// Every named highlight the app paints into: the search result a column is
+// currently on, and the text a selection-triggered search took its query from.
+// The painters in tei/highlight.ts register their own name on first use, so
+// this declares nothing they need — it is the one place a reader can see the
+// full set, and it pairs with the ::highlight() rules in index.css.
 if (typeof CSS !== "undefined" && "highlights" in CSS) {
-  if (!CSS.highlights.has("search-match-active")) {
-    CSS.highlights.set("search-match-active", new Highlight());
+  for (const name of ["search-match-active", "query-source"]) {
+    if (!CSS.highlights.has(name)) {
+      CSS.highlights.set(name, new Highlight());
+    }
   }
 }
 

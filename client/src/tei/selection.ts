@@ -57,5 +57,8 @@ export function readTEISelection(
   const docId = startColumn.getAttribute("data-doc-column-id");
   if (!docId) return null;
 
-  return { docId, text, range };
+  // A selection's range is live: collapsing the selection — which any click,
+  // the search button included, does — collapses it too. Hand back a snapshot,
+  // so the text stays available to search with and to mark afterwards.
+  return { docId, text, range: range.cloneRange() };
 }

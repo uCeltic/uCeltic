@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from "react";
 import { getSearchableDocuments, useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { setQuerySourceHighlight } from "../../tei/highlight";
 import { readTEISelection, type TEISelection } from "../../tei/selection";
 import { toggleOnBtn } from "./buttonStyles";
 
@@ -75,6 +76,15 @@ export default function SelectionSearchButton() {
     }
     // Skipped, not searched — so it is emptied rather than left as it was.
     clearDocumentResults(pending.docId);
+    // Hand the text over from the native selection to a mark of our own, so the
+    // results stay traceable to what produced them. The native highlight is
+    // dropped rather than left to expire on the user's next click: this button
+    // suppresses the collapse a click normally causes (see onMouseDown below),
+    // so without this the two would sit on the same text with the native one
+    // painted on top, and the mark would only surface later, out of context.
+    // `pending.range` is a snapshot, so clearing the selection cannot move it.
+    setQuerySourceHighlight(pending.range);
+    window.getSelection()?.removeAllRanges();
     setPending(null);
   }
 
