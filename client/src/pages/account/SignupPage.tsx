@@ -68,7 +68,7 @@ export default function SignupPage() {
         <Field
           id="password"
           label="Password"
-          className="mb-5"
+          spacing="mb-5"
           type="password"
           autoComplete="new-password"
           required
@@ -84,7 +84,7 @@ export default function SignupPage() {
         <Field
           id="confirmPassword"
           label="Confirm password"
-          className="mb-5"
+          spacing="mb-5"
           type="password"
           autoComplete="new-password"
           required

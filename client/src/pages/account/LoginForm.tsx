@@ -50,7 +50,7 @@ export default function LoginForm() {
         <Field
           id="password"
           label="Password"
-          className="mb-5"
+          spacing="mb-5"
           type="password"
           autoComplete="current-password"
           required

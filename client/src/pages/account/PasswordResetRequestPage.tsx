@@ -42,7 +42,7 @@ export default function PasswordResetRequestPage() {
         <Field
           id="email"
           label="Email"
-          className="mb-5"
+          spacing="mb-5"
           type="email"
           autoComplete="email"
           required

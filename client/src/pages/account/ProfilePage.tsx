@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { AuthError, changePassword } from "../../api/auth";
 import { fetchProfile, updateDisplayName, ProfileError } from "../../api/profile";
-import AccountShell, { Field, FormError, label, primaryBtn } from "./AccountShell";
+import AccountShell, { Field, FormError, labelClass, primaryBtn } from "./AccountShell";
 
 function localPart(email: string): string {
   return email.split("@")[0];
@@ -76,7 +76,7 @@ export default function ProfilePage() {
     // The visitor is already signed in here, so "Continue as a Visitor" is meaningless.
     <AccountShell title="Your profile" hideAccountLink>
       <section className="mb-6">
-        <span className={label}>Email</span>
+        <span className={labelClass}>Email</span>
         <p className="mt-1 text-sm text-[#52524F]">{authUser?.email}</p>
       </section>
 
@@ -86,7 +86,7 @@ export default function ProfilePage() {
           <Field
             id="display-name"
             label="Display name"
-            className="mb-3"
+            spacing="mb-3"
             type="text"
             maxLength={150}
             placeholder={authUser ? localPart(authUser.email) : ""}
@@ -114,7 +114,7 @@ export default function ProfilePage() {
           <Field
             id="current-password"
             label="Current password"
-            className="mb-3"
+            spacing="mb-3"
             type="password"
             autoComplete="current-password"
             required
@@ -124,7 +124,7 @@ export default function ProfilePage() {
           <Field
             id="new-password"
             label="New password"
-            className="mb-3"
+            spacing="mb-3"
             type="password"
             autoComplete="new-password"
             required

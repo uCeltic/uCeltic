@@ -48,7 +48,7 @@ export default function PasswordResetKeyPage() {
         <Field
           id="password"
           label="New password"
-          className="mb-5"
+          spacing="mb-5"
           type="password"
           autoComplete="new-password"
           required
