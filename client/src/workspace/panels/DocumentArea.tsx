@@ -23,6 +23,7 @@ import {
   useSortable, //  Make the column draggable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities"; // dnd-kit transform object to CSS string
+import SelectionSearchButton from "./SelectionSearchButton";
 import {
   computeDragEndReorder,
   dragReorderHintDismissedBefore,
@@ -243,7 +244,13 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
         <div className="min-h-0 flex-1 overflow-auto p-4">
           {/* if the document is a TEI document, hand it to the TEIRenderer, let it render the tei document. */}
           {doc.format === "tei" ? (
-            <div className="leading-6 text-gray-800" style={{ fontSize }}>
+            // data-tei-content marks the searchable rendered text: select-to-search
+            // only offers itself for selections landing inside one of these.
+            <div
+              data-tei-content
+              className="leading-6 text-gray-800"
+              style={{ fontSize }}
+            >
               <TEIErrorBoundary>
                 <TEIRenderer node={(doc.content as TEIDoc).parsed_json} />
               </TEIErrorBoundary>
@@ -443,6 +450,9 @@ export default function DocumentArea() {
             );
           })}
         </section>
+        {/* One trigger for the whole workspace — the pending selection is global,
+            not per column, so it lives outside the column list. */}
+        <SelectionSearchButton />
       </SortableContext>
     </DndContext>
   );

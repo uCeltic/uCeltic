@@ -65,3 +65,26 @@ describe("ToolBar re-entrancy guard", () => {
         expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
     });
 });
+
+describe("ToolBar search button", () => {
+    it("searches every visible TEI document and skips uploaded text columns", () => {
+        const runSearch = vi.fn();
+        useSearchStore.setState({ runSearch });
+        const txtDoc: Document = {
+            id: "doc-b",
+            title: "B",
+            format: "txt",
+            content: "plain uploaded text",
+        };
+        useDocumentStore.setState({
+            openDocuments: [teiDoc, txtDoc],
+            visibleDocumentIds: ["doc-a", "doc-b"],
+        });
+
+        renderToolBar();
+        fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+        expect(runSearch).toHaveBeenCalledOnce();
+        expect(runSearch).toHaveBeenCalledWith(1, "doc-a");
+    });
+});

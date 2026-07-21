@@ -3,6 +3,7 @@ import mammoth from "mammoth";
 import {
   useDocumentStore,
   MAX_OPEN_DOCUMENTS,
+  getSearchableDocuments,
 } from "../../store/documentStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
@@ -115,14 +116,11 @@ export default function ToolBar({
         className={toggleOnBtn}
         disabled={anySearching}
         onClick={() => {
-          const docs = visibleDocumentIds
-            .map((id) => openDocuments.find((d) => d.id === id))
-            .filter(
-              (d): d is NonNullable<typeof d> =>
-                d !== undefined && d.format === "tei",
-            );
-          for (const doc of docs) {
-            runSearch((doc.content as { id: number }).id, doc.id);
+          for (const doc of getSearchableDocuments({
+            openDocuments,
+            visibleDocumentIds,
+          })) {
+            runSearch(doc.content.id, doc.id);
           }
         }}
       >

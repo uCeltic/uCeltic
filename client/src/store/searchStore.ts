@@ -18,6 +18,18 @@ function logResultNavigated(
   logEvent("result_navigated", { action, from_index: from, to_index: to });
 }
 
+// Where the query a search ran with came from: the search bar ("typed") or text
+// selected inside a TEI viewer ("selection"). Logged on every search_performed.
+export type QueryOrigin = "selection" | "typed";
+
+// A selection-originated search carries its own query rather than reading the
+// search bar's `query` state — the two paths never share mutable state, so
+// there is nothing to disambiguate at runtime (ADR-0008).
+export interface RunSearchOptions {
+  query?: string;
+  origin?: QueryOrigin;
+}
+
 //this store is used to store the search results/handle search operations for a given document
 interface SearchStore {
   query: string;
@@ -42,7 +54,11 @@ interface SearchStore {
 
   isSearchingByDocument: Record<DocumentId, boolean>; //per-document loading state
   searchErrorByDocument: Record<DocumentId, boolean>; //per-document error state
-  runSearch: (docId: number, clientDocId: string) => Promise<void>;
+  runSearch: (
+    docId: number,
+    clientDocId: string,
+    options?: RunSearchOptions,
+  ) => Promise<void>;
 
   nextResult: (documentId: DocumentId) => void;
   prevResult: (documentId: DocumentId) => void;
@@ -61,8 +77,10 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   isSearchingByDocument: {},
   searchErrorByDocument: {},
   //run the search
-    runSearch: async (docId, clientDocId) => {
-      const { query, dissimilarityScore, topK, matchLength, precision } = get();
+    runSearch: async (docId, clientDocId, options = {}) => {
+      const { dissimilarityScore, topK, matchLength, precision } = get();
+      const query = options.query ?? get().query;
+      const queryOrigin = options.origin ?? "typed";
       if (!query.trim()) return;
       set((s) => ({
         isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: true },
@@ -74,6 +92,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       const startedAt = performance.now();
       const searchPerformedBase = {
         query,
+        query_origin: queryOrigin,
         window_size_ratio: windowSizeRatio,
         step_size: precision,
         dissimilarity_threshold: dissimilarityScore,
