@@ -46,6 +46,7 @@ interface SortableDocumentColumnProps {
   onDismissDragHint: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onRetry: () => void;
   onClose: () => void;
 }
 
@@ -121,6 +122,7 @@ function SortableDocumentColumn({
   onDismissDragHint,
   onPrev,
   onNext,
+  onRetry,
   onClose,
 }: SortableDocumentColumnProps) {
   const {
@@ -231,8 +233,22 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
             </div>
           </div>
         ) : hasError ? (
-          <div className="border-b border-gray-200 px-3 py-2 text-xs text-red-500">
-            Search failed — retry
+          // "retry" names an action, so it is a button that performs it: one
+          // search of this column alone, replaying the attempt that failed.
+          // The loading state renders above this branch, so a retry in flight
+          // takes the button off screen — it cannot be fired twice.
+          <div className="flex items-center gap-2 border-b border-gray-200 px-3 py-2 text-xs text-red-500">
+            <span>Search failed</span>
+            <button
+              type="button"
+              aria-label={`Retry search in ${doc.title}`}
+              onClick={onRetry}
+              className="rounded-md border border-red-300 bg-white px-2 py-0.5 font-medium text-red-600
+              cursor-pointer transition-colors hover:bg-red-50 focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-red-400/40"
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
@@ -304,6 +320,10 @@ export default function DocumentArea() {
 
   const nextResult = useSearchStore((state) => state.nextResult);
   const prevResult = useSearchStore((state) => state.prevResult);
+  const retrySearch = useSearchStore((state) => state.retrySearch);
+  const clearDocumentResults = useSearchStore(
+    (state) => state.clearDocumentResults,
+  );
 
   const visibleDocuments = visibleDocumentIds
     .map((id) => openDocuments.find((d) => d.id === id))
@@ -441,8 +461,14 @@ export default function DocumentArea() {
                   const r = docResults[next];
                   if (r && doc.format === "tei") scrollToResult(doc.id, r, doc.content as TEIDoc);
                 }}
+                onRetry={() => retrySearch(doc.id)}
                 onClose={() => {
                   if (window.confirm(`Close "${doc.title}"?`)) {
+                    // A TEI column's id is derived from the document it shows,
+                    // so reopening that document lands on the same id. Leaving
+                    // this column's search state behind would hand the next one
+                    // a failure — and a Retry — belonging to a closed column.
+                    clearDocumentResults(doc.id);
                     removeDocument(doc.id);
                   }
                 }}

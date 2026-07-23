@@ -33,6 +33,16 @@ function without<T>(
 // selected inside a TEI viewer ("selection"). Logged on every search_performed.
 export type QueryOrigin = "selection" | "typed";
 
+// The four tuning knobs a search runs with. Normally read off the store, but
+// carried explicitly by a retry, which replays the values its failed attempt
+// used rather than whatever the sliders say now.
+export interface SearchParams {
+  matchLength: number;
+  precision: number;
+  dissimilarityScore: number;
+  topK: number;
+}
+
 // A selection-originated search carries its own query rather than reading the
 // search bar's `query` state — the two paths never share mutable state, so
 // there is nothing to disambiguate at runtime (ADR-0008).
@@ -42,19 +52,32 @@ export interface RunSearchOptions {
   // The document left out of this search because the query was selected in it.
   // Recorded on every `search_performed` the search emits, so a logged search
   // says which documents it could have covered but deliberately did not.
-  excludedDocId?: DocumentId;
+  excludedDocId?: DocumentId | null;
+  params?: SearchParams;
+}
+
+// Everything one column's search was made of, kept so a retry can re-run that
+// exact search. A failed attempt is not reconstructible from current state: a
+// selection search's query lives nowhere else (ADR-0008), and the search bar
+// and the sliders may have moved on since. Replaying the whole attempt is what
+// keeps Retry meaning "that search again" rather than "some search now".
+export interface SearchAttempt {
+  // the searched document's *server* id, as `runSearch` takes it — unlike
+  // `excludedDocId` below, which is a client column id
+  docId: number;
+  query: string;
+  origin: QueryOrigin;
+  excludedDocId: DocumentId | null;
+  params: SearchParams;
 }
 
 //this store is used to store the search results/handle search operations for a given document
-interface SearchStore {
+//the store holds the live search parameters, so `runSearch` can fall back to
+//the store itself where a retry hands it a recorded set
+interface SearchStore extends SearchParams {
   query: string;
   resultsByDocument: Record<DocumentId, SearchResult[]>; //store the search results for a document
   activeResultIndexByDocument: Record<DocumentId, number>; //store the index of the current result
-  //search parameters
-  matchLength: number; 
-  precision: number;
-  dissimilarityScore: number;
-  topK: number;
 
   setQuery: (query: string) => void;
   setResultsByDocument: (
@@ -73,11 +96,14 @@ interface SearchStore {
   //bumped whenever a document's search state is thrown away, so a response that
   //arrives afterwards can tell that nobody is waiting for it any more
   searchGenerationByDocument: Record<DocumentId, number>;
+  //what each column last tried to search for, so its failure can be re-run
+  lastAttemptByDocument: Record<DocumentId, SearchAttempt>;
   runSearch: (
     docId: number,
     clientDocId: string,
     options?: RunSearchOptions,
   ) => Promise<void>;
+  retrySearch: (clientDocId: DocumentId) => Promise<void>;
 
   nextResult: (documentId: DocumentId) => void;
   prevResult: (documentId: DocumentId) => void;
@@ -96,14 +122,29 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   isSearchingByDocument: {},
   searchErrorByDocument: {},
   searchGenerationByDocument: {},
+  lastAttemptByDocument: {},
   //run the search
     runSearch: async (docId, clientDocId, options = {}) => {
-      const { dissimilarityScore, topK, matchLength, precision } = get();
-      const query = options.query ?? get().query;
+      const state = get();
+      const { dissimilarityScore, topK, matchLength, precision } =
+        options.params ?? state;
+      const query = options.query ?? state.query;
       const queryOrigin = options.origin ?? "typed";
       const excludedDocId = options.excludedDocId ?? null;
       if (!query.trim()) return;
       set((s) => ({
+        // Recorded before the request goes out, so a failure always has an
+        // attempt to replay — including the one a retry itself made.
+        lastAttemptByDocument: {
+          ...s.lastAttemptByDocument,
+          [clientDocId]: {
+            docId,
+            query,
+            origin: queryOrigin,
+            excludedDocId,
+            params: { matchLength, precision, dissimilarityScore, topK },
+          },
+        },
         isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: true },
         resultsByDocument: { ...s.resultsByDocument, [clientDocId]: [] },
         activeResultIndexByDocument: { ...s.activeResultIndexByDocument, [clientDocId]: 0 },
@@ -166,6 +207,33 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         }));
       }
     },
+
+  // Re-run one column's last attempt, exactly as it was made. Every other
+  // column is left alone: this is one `runSearch` call, and `runSearch` only
+  // ever writes into the column it was given.
+  //
+  // A column with nothing recorded has nothing to replay, and a column already
+  // searching owns its request — the retry affordance is hidden behind the
+  // loading state anyway, so both cases simply decline rather than reporting.
+  //
+  // What it deliberately does not touch is the query source highlight a
+  // selection search leaves on its source text (ADR-0008): that mark belongs to
+  // whatever search the workspace last ran, and a retry of one column is not a
+  // reason to move it — least of all back onto text a later search has moved on
+  // from.
+  retrySearch: async (clientDocId) => {
+    const state = get();
+    const attempt = state.lastAttemptByDocument[clientDocId];
+    if (!attempt) return;
+    if (state.isSearchingByDocument[clientDocId]) return;
+    await state.runSearch(attempt.docId, clientDocId, {
+      query: attempt.query,
+      origin: attempt.origin,
+      excludedDocId: attempt.excludedDocId,
+      params: attempt.params,
+    });
+  },
+
   setQuery: (query) =>
     set({
       query,
@@ -177,7 +245,8 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     }),
 
   // Put a document back to "not searched": drop the results, the active index,
-  // the error flag, and the loading flag it carried. Used for a document a
+  // the error flag, the loading flag, and the attempt a retry would have
+  // replayed. Used for a document a
   // search deliberately skipped — leaving its keys in place would show an
   // earlier, unrelated search's hits as if they belonged to this one.
   //
@@ -193,6 +262,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       ),
       searchErrorByDocument: without(state.searchErrorByDocument, documentId),
       isSearchingByDocument: without(state.isSearchingByDocument, documentId),
+      lastAttemptByDocument: without(state.lastAttemptByDocument, documentId),
       searchGenerationByDocument: {
         ...state.searchGenerationByDocument,
         [documentId]: (state.searchGenerationByDocument[documentId] ?? 0) + 1,

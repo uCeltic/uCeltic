@@ -35,6 +35,7 @@ beforeEach(() => {
     activeResultIndexByDocument: {},
     isSearchingByDocument: {},
     searchErrorByDocument: {},
+    lastAttemptByDocument: {},
   });
 });
 
@@ -289,11 +290,169 @@ describe("searchStore.runSearch from a selection", () => {
   });
 });
 
+//A failed column offers a Retry that re-runs *that column's* search. What it
+//re-runs is the attempt that failed, not whatever the app's state has drifted
+//to since — so the store records each column's last attempt in full.
+describe("searchStore.retrySearch", () => {
+  it("re-runs the failed column's search with the query it used", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("network down"));
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+    mockedSearch.mockResolvedValueOnce([sampleResult]);
+    await useSearchStore.getState().retrySearch("doc-tei-42");
+
+    expect(mockedSearch).toHaveBeenCalledTimes(2);
+    expect(mockedSearch).toHaveBeenLastCalledWith(
+      expect.objectContaining({ docId: 42, query: "hound" }),
+    );
+    const state = useSearchStore.getState();
+    expect(state.resultsByDocument["doc-tei-42"]).toEqual([sampleResult]);
+    expect(state.searchErrorByDocument["doc-tei-42"]).toBe(false);
+  });
+
+  //Test: the decisive case. A selection search never reads the search bar
+  //(ADR-0008), so retrying one with the search bar's query would silently
+  //search for something else.
+  it("retries a selection search with the selected text, not the search bar", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("network down"));
+    useSearchStore.getState().setQuery("search bar text");
+    await useSearchStore.getState().runSearch(42, "doc-tei-42", {
+      query: "selected text",
+      origin: "selection",
+      excludedDocId: "doc-tei-7",
+    });
+
+    mockedSearch.mockResolvedValueOnce([]);
+    await useSearchStore.getState().retrySearch("doc-tei-42");
+
+    expect(mockedSearch).toHaveBeenLastCalledWith(
+      expect.objectContaining({ query: "selected text" }),
+    );
+    expect(mockedLogEvent.mock.calls[1][1]).toMatchObject({
+      query: "selected text",
+      query_origin: "selection",
+      excluded_doc_id: "doc-tei-7",
+    });
+  });
+
+  //Test: the parameters are part of the attempt too, so a retry after the user
+  //nudged a slider is still the same search rather than quietly a new one.
+  it("replays the parameters the failed attempt ran with", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("network down"));
+    useSearchStore.setState({
+      matchLength: 130,
+      precision: 1,
+      dissimilarityScore: 0.5,
+      topK: 10,
+    });
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+    // the user fiddles with every parameter before pressing Retry
+    useSearchStore.setState({
+      matchLength: 200,
+      precision: 3,
+      dissimilarityScore: 0.9,
+      topK: 25,
+    });
+    mockedSearch.mockResolvedValueOnce([]);
+    await useSearchStore.getState().retrySearch("doc-tei-42");
+
+    expect(mockedSearch).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        windowSizeRatio: 1.3,
+        stepSize: 1,
+        dissimilarityThreshold: 0.5,
+        topK: 10,
+      }),
+    );
+    expect(mockedLogEvent.mock.calls[1][1]).toMatchObject({
+      window_size_ratio: 1.3,
+      step_size: 1,
+      dissimilarity_threshold: 0.5,
+      top_k: 10,
+    });
+  });
+
+  //Test: a second failure leaves the column retryable rather than stuck
+  it("leaves the column errored and retryable when the retry fails too", async () => {
+    mockedSearch.mockRejectedValue(new Error("network down"));
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+    await useSearchStore.getState().retrySearch("doc-tei-42");
+
+    expect(useSearchStore.getState().searchErrorByDocument["doc-tei-42"]).toBe(
+      true,
+    );
+    expect(
+      useSearchStore.getState().lastAttemptByDocument["doc-tei-42"],
+    ).toBeDefined();
+  });
+
+  //Test: nothing recorded means nothing to replay — a retry cannot invent one
+  it("does nothing for a column that has never been searched", async () => {
+    await useSearchStore.getState().retrySearch("doc-tei-42");
+    expect(mockedSearch).not.toHaveBeenCalled();
+  });
+
+  //Test: the button is hidden while the column shows its loading state, but the
+  //store refuses a second in-flight search on the same column regardless.
+  it("does not start a second search while one is in flight on that column", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("network down"));
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+
+    mockedSearch.mockReturnValue(new Promise<SearchResult[]>(() => {}));
+    useSearchStore.getState().retrySearch("doc-tei-42"); // stays pending
+    await useSearchStore.getState().retrySearch("doc-tei-42");
+    // runSearch reaches searchDocument through a dynamic import, so let the
+    // pending retry's own call land before counting.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // the failed original plus one retry — the second retry declined
+    expect(mockedSearch).toHaveBeenCalledTimes(2);
+  });
+
+  //Test: a retry is a one-column operation — the columns beside it are not
+  //marked as searching, nor do they lose their results or error state.
+  it("touches only the retried column", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("network down"));
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore.getState().runSearch(42, "doc-tei-42");
+    useSearchStore.setState({
+      resultsByDocument: {
+        ...useSearchStore.getState().resultsByDocument,
+        "doc-tei-1": [sampleResult],
+      },
+      activeResultIndexByDocument: { "doc-tei-1": 2 },
+      searchErrorByDocument: {
+        ...useSearchStore.getState().searchErrorByDocument,
+        "doc-tei-9": true,
+      },
+    });
+
+    mockedSearch.mockReturnValue(new Promise<SearchResult[]>(() => {}));
+    useSearchStore.getState().retrySearch("doc-tei-42");
+
+    const state = useSearchStore.getState();
+    expect(state.isSearchingByDocument["doc-tei-42"]).toBe(true);
+    expect(state.isSearchingByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.resultsByDocument["doc-tei-1"]).toEqual([sampleResult]);
+    expect(state.activeResultIndexByDocument["doc-tei-1"]).toBe(2);
+    expect(state.searchErrorByDocument["doc-tei-9"]).toBe(true);
+  });
+});
+
 //The source document is skipped rather than searched, so its previous results
 //have to be dropped explicitly — otherwise the column keeps showing hits from
 //an earlier, unrelated search instead of "not searched this time".
 describe("searchStore.clearDocumentResults", () => {
-  it("drops the document's results, active index, and error state", () => {
+  it("drops the document's results, active index, error state, and last attempt", async () => {
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore.getState().runSearch(1, "doc-tei-1");
     useSearchStore.setState({
       resultsByDocument: { "doc-tei-1": [sampleResult], "doc-tei-2": [sampleResult] },
       activeResultIndexByDocument: { "doc-tei-1": 3, "doc-tei-2": 2 },
@@ -307,6 +466,7 @@ describe("searchStore.clearDocumentResults", () => {
     expect(state.activeResultIndexByDocument["doc-tei-1"]).toBeUndefined();
     expect(state.searchErrorByDocument["doc-tei-1"]).toBeUndefined();
     expect(state.isSearchingByDocument["doc-tei-1"]).toBeUndefined();
+    expect(state.lastAttemptByDocument["doc-tei-1"]).toBeUndefined();
   });
 
   //Test: clearing while that document's own search is still in flight. The
