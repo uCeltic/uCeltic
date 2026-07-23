@@ -18,12 +18,17 @@
     were typed).
   - `< 1.0` → window is shorter than the query (partial match, lower recall).
 
-  **Canonical default: `1.3`** (i.e. 130%). Aligned across all layers:
+  **Canonical default: `1.3`** (i.e. 130%). **Canonical range: `0.1`–`10.0`**
+  (i.e. 10 %–1000 %) — the backend request DTO rejects anything outside it with
+  a 400. On the frontend the Match Length slider's own bounds are what keep
+  requests inside that range; nothing clamps a ratio downstream of the control.
+
+  Aligned across all layers:
 
   | Layer | Location | Value |
   | --- | --- | --- |
   | UI control "Match Length" | `client/src/workspace/panels/AdvancedSearchPopover.tsx` | slider
-  0–300 %, reset → 130 |
+  10–300 %, reset → 130 |
   | Frontend store (initial) | `client/src/store/searchStore.ts` | `matchLength: 130` → ratio
   `1.3` |
   | Frontend API fallback | `client/src/api/search.ts` | `?? 1.3` |
@@ -37,6 +42,9 @@
   The user-facing name for `window_size_ratio`, shown as a percentage:
   `ratio = matchLength / 100`. So **100 % means the window equals the query
   length**, and values above 100 % give the fuzzy matcher room for insertions.
+
+  The slider therefore starts at 10 %, not 0 %: positions below that map to a
+  ratio the API rejects, and every search made from them failed (issue #120).
 
   History: see issue #19 — defaults previously disagreed across layers
   (`0.5` / `1.0` / `1.2` / `1.3`), and the backend `1.3` was dead code because
