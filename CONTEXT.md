@@ -129,6 +129,34 @@
   `client/src/workspace/panels/ScopeButton.tsx`; wiring it to actually group its
   Versions is the unfinished feature (not a modelling ambiguity — see below).
 
+  ### Manuscript
+
+  A **physical, non-digitized original source** — the handwritten book a Work
+  survives in — surfaced in the app only as **page images** through the IIIF
+  panel (`client/src/workspace/panels/IIIFPanel.tsx`, e.g. *Book of Lismore*).
+  Deliberately distinct from a Document: a Manuscript is the original artifact,
+  a Document is a digitized/transcribed text. The UI label stays the word
+  **"Manuscripts"** — it is a client-requirement term and must **not** be
+  renamed to "Books"; disambiguation from Documents is done with an **icon**
+  next to the label, never by changing the word (see
+  [ADR-0011](docs/adr/0011-desktop-only-responsive-scope.md) for the icon-driven
+  responsive treatment). _Avoid_: Book (a physical Manuscript is book-like but
+  "Book" is a forbidden UI rename); calling a digitized text a "manuscript".
+
+  ### Tag Filter
+
+  A toolbar control that filters by **TEI named-entity tag type** — the closed
+  set rendered in `client/src/tei/elements/names.tsx`: `persName`, `placeName`,
+  `geogName`, `orgName`, `rs`, `name`. Presented as a multi-select of those
+  predefined tag names (same interaction shape as the Work scope picker), so
+  it needs **no free-text search box of its own**. It **replaces** the removed
+  three-state Mode switcher (Search / People & Places / Personal), which never
+  did anything and read as a confusing "second search" next to the real search
+  bar — see [ADR-0010](docs/adr/0010-drop-workspace-mode-switcher.md). Its
+  functional effect (restrict search vs. restrict on-screen highlighting) is
+  **deliberately unwired for now** — the current round ships the control shell
+  only. _Avoid_: Mode, second search — the switcher it replaces is gone.
+
   ### Version (of a Work)
 
   One rendering of a Work in a particular language or manuscript witness — e.g.
