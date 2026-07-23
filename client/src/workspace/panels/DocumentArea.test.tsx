@@ -109,6 +109,7 @@ beforeEach(() => {
         activeResultIndexByDocument: {},
         isSearchingByDocument: {},
         searchErrorByDocument: {},
+        lastAttemptByDocument: {},
     });
 });
 
@@ -147,15 +148,142 @@ describe("DocumentArea search flow", () => {
         expect(screen.queryByText(result.snippet)).not.toBeInTheDocument();
     });
 
-    it("shows Search failed — retry when the column's search errored", () => {
+    it("shows Search failed and a Retry button when the column's search errored", () => {
         useSearchStore.setState({
             searchErrorByDocument: { "doc-1": true },
         });
 
         render(<DocumentArea />);
 
-        expect(screen.getByText("Search failed — retry")).toBeInTheDocument();
+        expect(screen.getByText("Search failed")).toBeInTheDocument();
+        expect(
+            screen.getByRole("button", { name: "Retry search in Acallam" }),
+        ).toBeInTheDocument();
         expect(screen.queryByText("No search results")).not.toBeInTheDocument();
+    });
+
+    //Test: the retry affordance belongs to the failure state alone — the empty,
+    //loading and results states each have their own controls.
+    it("offers no Retry button unless the column errored", () => {
+        useSearchStore.setState({
+            resultsByDocument: { "doc-1": [result] },
+        });
+
+        render(<DocumentArea />);
+
+        expect(
+            screen.queryByRole("button", { name: /^Retry search/ }),
+        ).not.toBeInTheDocument();
+    });
+
+    //Test: one click, one search, on that column only
+    it("re-runs only the failed column's search when Retry is clicked", async () => {
+        const doc2: Document = {
+            id: "doc-2",
+            title: "Cattle Raid",
+            format: "txt",
+            content: "the morrigan watches",
+        };
+        useDocumentStore.setState({
+            openDocuments: [doc, doc2],
+            visibleDocumentIds: ["doc-1", "doc-2"],
+            activeDocumentId: "doc-1",
+        });
+        mockedSearch.mockRejectedValueOnce(new Error("network down"));
+        await act(async () => {
+            useSearchStore.getState().setQuery("hound");
+            await useSearchStore.getState().runSearch(1, "doc-1");
+        });
+        useSearchStore.setState({ resultsByDocument: { "doc-2": [result] } });
+        mockedSearch.mockReset();
+        mockedSearch.mockResolvedValue([result]);
+
+        render(<DocumentArea />);
+        await act(async () => {
+            fireEvent.click(
+                screen.getByRole("button", { name: "Retry search in Acallam" }),
+            );
+        });
+
+        expect(mockedSearch).toHaveBeenCalledOnce();
+        expect(mockedSearch).toHaveBeenCalledWith(
+            expect.objectContaining({ docId: 1, query: "hound" }),
+        );
+        const state = useSearchStore.getState();
+        expect(state.searchErrorByDocument["doc-1"]).toBe(false);
+        expect(state.isSearchingByDocument["doc-2"]).toBeUndefined();
+        expect(state.resultsByDocument["doc-2"]).toEqual([result]);
+    });
+
+    //Test: a selection search's query lives nowhere but the recorded attempt
+    //(ADR-0008), so retrying one must not fall back to the search bar.
+    it("retries a failed selection search with the selected text", async () => {
+        mockedSearch.mockRejectedValueOnce(new Error("network down"));
+        await act(async () => {
+            useSearchStore.getState().setQuery("search bar text");
+            await useSearchStore.getState().runSearch(1, "doc-1", {
+                query: "selected text",
+                origin: "selection",
+            });
+        });
+        mockedSearch.mockReset();
+        mockedSearch.mockResolvedValue([]);
+
+        render(<DocumentArea />);
+        await act(async () => {
+            fireEvent.click(
+                screen.getByRole("button", { name: "Retry search in Acallam" }),
+            );
+        });
+
+        expect(mockedSearch).toHaveBeenCalledWith(
+            expect.objectContaining({ query: "selected text" }),
+        );
+    });
+
+    //Test: the column swaps its failure state for its loading state, which is
+    //what takes the button away — a second click has nothing to hit.
+    it("replaces the Retry button with the loading state while the retry is in flight", async () => {
+        mockedSearch.mockRejectedValueOnce(new Error("network down"));
+        await act(async () => {
+            useSearchStore.getState().setQuery("hound");
+            await useSearchStore.getState().runSearch(1, "doc-1");
+        });
+        mockedSearch.mockReset();
+        mockedSearch.mockReturnValue(new Promise<SearchResult[]>(() => {}));
+
+        render(<DocumentArea />);
+        await act(async () => {
+            fireEvent.click(
+                screen.getByRole("button", { name: "Retry search in Acallam" }),
+            );
+        });
+
+        expect(screen.getByText("Searching…")).toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: /^Retry search/ }),
+        ).not.toBeInTheDocument();
+        expect(mockedSearch).toHaveBeenCalledOnce();
+    });
+
+    //Test: a failure that repeats leaves the user with the same way out
+    it("keeps the Retry button available when the retry fails too", async () => {
+        mockedSearch.mockRejectedValue(new Error("network down"));
+        await act(async () => {
+            useSearchStore.getState().setQuery("hound");
+            await useSearchStore.getState().runSearch(1, "doc-1");
+        });
+
+        render(<DocumentArea />);
+        await act(async () => {
+            fireEvent.click(
+                screen.getByRole("button", { name: "Retry search in Acallam" }),
+            );
+        });
+
+        expect(
+            screen.getByRole("button", { name: "Retry search in Acallam" }),
+        ).toBeInTheDocument();
     });
 
     it("renders columns independently: one Searching… while another shows its result", () => {

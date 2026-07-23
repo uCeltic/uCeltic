@@ -50,6 +50,18 @@
   (`0.5` / `1.0` / `1.2` / `1.3`), and the backend `1.3` was dead code because
   the client always sent a value. Canonicalised to `1.3` everywhere.
 
+  ### Search Attempt
+
+  One column's search, recorded in full at the moment it is fired: the query,
+  its Query Origin (`typed` / `selection`), the excluded source document, and
+  the four parameters (Match Length, precision, dissimilarity, top-k). Kept per
+  column in `lastAttemptByDocument` so a failed column's **Retry** re-runs *that
+  search*, not a fresh one assembled from current state — a selection search's
+  query exists nowhere else (ADR-0008), and the search bar and sliders may have
+  moved on since the failure (issue #121).
+  _Avoid_: request, query — a Search Attempt is neither the HTTP call nor the
+  text searched for.
+
   ### Behavior Event
 
   A single, semantically meaningful user action, recorded for the behavior-logging
