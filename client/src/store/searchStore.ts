@@ -52,7 +52,7 @@ export interface RunSearchOptions {
   // The document left out of this search because the query was selected in it.
   // Recorded on every `search_performed` the search emits, so a logged search
   // says which documents it could have covered but deliberately did not.
-  excludedDocId?: DocumentId;
+  excludedDocId?: DocumentId | null;
   params?: SearchParams;
 }
 
@@ -62,6 +62,8 @@ export interface RunSearchOptions {
 // and the sliders may have moved on since. Replaying the whole attempt is what
 // keeps Retry meaning "that search again" rather than "some search now".
 export interface SearchAttempt {
+  // the searched document's *server* id, as `runSearch` takes it — unlike
+  // `excludedDocId` below, which is a client column id
   docId: number;
   query: string;
   origin: QueryOrigin;
@@ -70,15 +72,12 @@ export interface SearchAttempt {
 }
 
 //this store is used to store the search results/handle search operations for a given document
-interface SearchStore {
+//the store holds the live search parameters, so `runSearch` can fall back to
+//the store itself where a retry hands it a recorded set
+interface SearchStore extends SearchParams {
   query: string;
   resultsByDocument: Record<DocumentId, SearchResult[]>; //store the search results for a document
   activeResultIndexByDocument: Record<DocumentId, number>; //store the index of the current result
-  //search parameters
-  matchLength: number; 
-  precision: number;
-  dissimilarityScore: number;
-  topK: number;
 
   setQuery: (query: string) => void;
   setResultsByDocument: (
@@ -216,6 +215,12 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   // A column with nothing recorded has nothing to replay, and a column already
   // searching owns its request — the retry affordance is hidden behind the
   // loading state anyway, so both cases simply decline rather than reporting.
+  //
+  // What it deliberately does not touch is the query source highlight a
+  // selection search leaves on its source text (ADR-0008): that mark belongs to
+  // whatever search the workspace last ran, and a retry of one column is not a
+  // reason to move it — least of all back onto text a later search has moved on
+  // from.
   retrySearch: async (clientDocId) => {
     const state = get();
     const attempt = state.lastAttemptByDocument[clientDocId];
@@ -224,7 +229,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     await state.runSearch(attempt.docId, clientDocId, {
       query: attempt.query,
       origin: attempt.origin,
-      excludedDocId: attempt.excludedDocId ?? undefined,
+      excludedDocId: attempt.excludedDocId,
       params: attempt.params,
     });
   },

@@ -321,6 +321,9 @@ export default function DocumentArea() {
   const nextResult = useSearchStore((state) => state.nextResult);
   const prevResult = useSearchStore((state) => state.prevResult);
   const retrySearch = useSearchStore((state) => state.retrySearch);
+  const clearDocumentResults = useSearchStore(
+    (state) => state.clearDocumentResults,
+  );
 
   const visibleDocuments = visibleDocumentIds
     .map((id) => openDocuments.find((d) => d.id === id))
@@ -461,6 +464,11 @@ export default function DocumentArea() {
                 onRetry={() => retrySearch(doc.id)}
                 onClose={() => {
                   if (window.confirm(`Close "${doc.title}"?`)) {
+                    // A TEI column's id is derived from the document it shows,
+                    // so reopening that document lands on the same id. Leaving
+                    // this column's search state behind would hand the next one
+                    // a failure — and a Retry — belonging to a closed column.
+                    clearDocumentResults(doc.id);
                     removeDocument(doc.id);
                   }
                 }}

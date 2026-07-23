@@ -58,7 +58,8 @@
   column in `lastAttemptByDocument` so a failed column's **Retry** re-runs *that
   search*, not a fresh one assembled from current state — a selection search's
   query exists nowhere else (ADR-0008), and the search bar and sliders may have
-  moved on since the failure (issue #121).
+  moved on since the failure (issue #121, and
+  [ADR-0012](docs/adr/0012-retry-replays-the-recorded-search-attempt.md)).
   _Avoid_: request, query — a Search Attempt is neither the HTTP call nor the
   text searched for.
 

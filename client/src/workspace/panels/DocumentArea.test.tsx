@@ -266,6 +266,32 @@ describe("DocumentArea search flow", () => {
         expect(mockedSearch).toHaveBeenCalledOnce();
     });
 
+    //Test: TEI columns get a deterministic id from the document they show, so
+    //a closed column's search state would otherwise be inherited by the next
+    //column opened on the same document — handing it a Retry that re-runs a
+    //query from before the close.
+    it("clears the column's search state when it is closed", async () => {
+        const confirmSpy = vi
+            .spyOn(window, "confirm")
+            .mockReturnValue(true);
+        mockedSearch.mockRejectedValueOnce(new Error("network down"));
+        await act(async () => {
+            useSearchStore.getState().setQuery("hound");
+            await useSearchStore.getState().runSearch(1, "doc-1");
+        });
+
+        render(<DocumentArea />);
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: "✕" }));
+        });
+
+        const state = useSearchStore.getState();
+        expect(state.searchErrorByDocument["doc-1"]).toBeUndefined();
+        expect(state.lastAttemptByDocument["doc-1"]).toBeUndefined();
+        expect(state.resultsByDocument["doc-1"]).toBeUndefined();
+        confirmSpy.mockRestore();
+    });
+
     //Test: a failure that repeats leaves the user with the same way out
     it("keeps the Retry button available when the retry fails too", async () => {
         mockedSearch.mockRejectedValue(new Error("network down"));
