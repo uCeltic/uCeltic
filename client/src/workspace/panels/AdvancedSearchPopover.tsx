@@ -67,7 +67,9 @@ shadow-lg"
               </div>
               <input
                 type="range"
-                min={0}
+                aria-label="Match Length"
+                /* 10 % = the lowest window_size_ratio the API accepts (#120) */
+                min={10}
                 max={300}
                 step={1}
                 value={matchLength}
@@ -83,6 +85,7 @@ shadow-lg"
               </div>
               <input
                 type="range"
+                aria-label="Precision"
                 min={1}
                 max={10}
                 step={1}
@@ -99,6 +102,7 @@ shadow-lg"
               </div>
               <input
                 type="range"
+                aria-label="Dissimilarity Score"
                 min={0}
                 max={1}
                 step={0.01}
@@ -115,6 +119,7 @@ shadow-lg"
               </div>
               <input
                 type="range"
+                aria-label="Top K Results"
                 min={1}
                 max={20}
                 step={1}
