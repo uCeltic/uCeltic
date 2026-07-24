@@ -7,7 +7,7 @@ import {
 } from "../../store/documentStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
-import ModeButton from "./ModeButton";
+import TagFilterButton from "./TagFilterButton";
 import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
 import AccountMenu from "./AccountMenu";
@@ -72,7 +72,7 @@ export default function ToolBar({
 
   return (
     <header className="relative z-10 flex items-center justify-between gap-4 border-b border-[#D8D4C3] bg-[#E8E3CE] px-4 py-1 shadow-[0_1px_3px_rgba(82,82,79,0.08)]">
-      <ModeButton />
+      <TagFilterButton />
       <ScopeButton />
       <div className="flex items-center gap-3">
         <input

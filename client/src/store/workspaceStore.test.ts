@@ -8,7 +8,12 @@ const mockedLogEvent = vi.mocked(logEvent);
 
 beforeEach(() => {
     mockedLogEvent.mockReset();
-    useWorkspaceStore.setState({ fontSize: 14, showIIIF: true, mode: "search", selectedWorkIds: [] });
+    useWorkspaceStore.setState({
+        fontSize: 14,
+        showIIIF: true,
+        selectedWorkIds: [],
+        selectedTagTypes: [],
+    });
 });
 
 describe("workspaceStore", () => {
@@ -33,23 +38,27 @@ describe("workspaceStore", () => {
         useWorkspaceStore.getState().toggleIIIF();
         expect(useWorkspaceStore.getState().showIIIF).toBe(true);
     });
+
+    //Test: the Tag Filter starts empty — no tag type is filtered out by default
+    it("starts with no Tag Filter selection", () => {
+        expect(useWorkspaceStore.getState().selectedTagTypes).toEqual([]);
+    });
+
+    //Test: the Tag Filter selection is plain state — set it, read it back
+    it("setSelectedTagTypes stores the selection", () => {
+        useWorkspaceStore.getState().setSelectedTagTypes(["persName", "placeName"]);
+        expect(useWorkspaceStore.getState().selectedTagTypes).toEqual([
+            "persName",
+            "placeName",
+        ]);
+    });
 });
 
 describe("workspaceStore analytics", () => {
-    //Test: switching mode logs one mode_changed event with from/to
-    it("logs mode_changed when switching mode", () => {
-        useWorkspaceStore.getState().setMode("entities");
-
-        expect(mockedLogEvent).toHaveBeenCalledOnce();
-        expect(mockedLogEvent).toHaveBeenCalledWith("mode_changed", {
-            from: "search",
-            to: "entities",
-        });
-    });
-
-    //Test: re-selecting the current mode is a no-op — logs nothing
-    it("does not log mode_changed when the mode doesn't change", () => {
-        useWorkspaceStore.getState().setMode("search");
+    //Test: the Tag Filter is a shell — the closed taxonomy (ADR-0003) has no event
+    //for it, so changing the selection emits nothing
+    it("does not log anything when the Tag Filter selection changes", () => {
+        useWorkspaceStore.getState().setSelectedTagTypes(["persName"]);
         expect(mockedLogEvent).not.toHaveBeenCalled();
     });
 

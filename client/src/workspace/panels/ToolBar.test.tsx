@@ -86,6 +86,20 @@ describe("ToolBar re-entrancy guard", () => {
     });
 });
 
+describe("ToolBar entity controls", () => {
+    //Test: the Mode switcher is gone (ADR-0010) — its "Search ▾" label sat next to the
+    //real Search button and read as a second search; the Tag Filter has its slot now
+    it("shows the Tag Filter instead of the Mode switcher", () => {
+        renderToolBar();
+
+        expect(screen.getByRole("button", { name: /All Tags/ })).toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: /People & Places|Personal/ }),
+        ).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    });
+});
+
 describe("ToolBar search button", () => {
     it("searches every visible TEI document and skips uploaded text columns", () => {
         const runSearch = vi.fn();
