@@ -100,6 +100,26 @@ describe("ToolBar entity controls", () => {
     });
 });
 
+describe("ToolBar overflow menu (#123)", () => {
+  it("moves font-size and account off the bar and into the hamburger menu", () => {
+    renderToolBar();
+
+    // A hamburger button is on the bar...
+    expect(screen.getByRole("button", { name: /menu/i })).toBeInTheDocument();
+    // ...and the font-size controls are no longer direct toolbar buttons.
+    expect(screen.queryByRole("button", { name: "A+" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "A−" })).not.toBeInTheDocument();
+  });
+
+  it("keeps Show / Hide Manuscripts as a direct toolbar button", () => {
+    renderToolBar();
+
+    expect(
+      screen.getByRole("button", { name: /Manuscripts/ }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("ToolBar search button", () => {
     it("searches every visible TEI document and skips uploaded text columns", () => {
         const runSearch = vi.fn();

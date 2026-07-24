@@ -1,11 +1,14 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
-import { secondaryBtn } from "./buttonStyles";
+
+// A row inside the hamburger menu (#123) — the menu owns the dropdown chrome now, so
+// these are flat items, not a self-contained dropdown of their own.
+const menuItem =
+  "block w-full px-3 py-1.5 text-left text-sm text-[#52524F] hover:bg-[#F0EEE6]";
 
 /**
- * The account entry point in the toolbar. Shows the signed-in user's email — #64 collects
- * no display name, and #66 is where a real one arrives to replace this.
+ * The account section of the hamburger menu. Shows the signed-in user's email — #64
+ * collects no display name, and #66 is where a real one arrives to replace this.
  */
 export default function AccountMenu() {
   const status = useAuthStore((s) => s.status);
@@ -13,62 +16,42 @@ export default function AccountMenu() {
   const signOut = useAuthStore((s) => s.signOut);
   const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
-
-  // Say nothing until the probe lands: a "Sign in" button that flips to an email a beat
+  // Say nothing until the probe lands: a "Sign in" link that flips to an email a beat
   // later is worse than a beat of nothing.
   if (status === "unknown") return null;
 
   if (status === "anonymous") {
     return (
-      <Link to="/account/login" className={secondaryBtn}>
+      <Link to="/account/login" role="menuitem" className={menuItem}>
         Sign in
       </Link>
     );
   }
 
   async function handleSignOut() {
-    setOpen(false);
     await signOut();
     // Stay in the workspace: signing out costs you attribution, not the tool (ADR-0004).
     navigate("/workspace");
   }
 
   return (
-    <div className="relative">
+    <>
+      <div className="px-3 py-1.5 text-xs text-[#8A8778]">{user?.email}</div>
+      <Link
+        to="/account/profile"
+        role="menuitem"
+        className={menuItem}
+      >
+        Profile
+      </Link>
       <button
         type="button"
-        className={secondaryBtn}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        role="menuitem"
+        onClick={handleSignOut}
+        className={`${menuItem} cursor-pointer`}
       >
-        {user?.email} ▾
+        Sign out
       </button>
-
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 z-20 mt-1 min-w-full rounded-md border border-[#D8D4C3] bg-white py-1 shadow-md"
-        >
-          <Link
-            to="/account/profile"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block w-full px-3 py-1.5 text-left text-sm text-[#52524F] hover:bg-[#F0EEE6]"
-          >
-            Profile
-          </Link>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={handleSignOut}
-            className="w-full px-3 py-1.5 text-left text-sm text-[#52524F] cursor-pointer hover:bg-[#F0EEE6]"
-          >
-            Sign out
-          </button>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

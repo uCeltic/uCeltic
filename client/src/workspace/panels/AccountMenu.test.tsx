@@ -7,6 +7,8 @@ import * as auth from "../../api/auth";
 
 const USER = { id: 1, email: "visitor@example.com" };
 
+// AccountMenu now renders as flat menu items inside the hamburger menu — it no
+// longer owns a trigger or a dropdown of its own (#123).
 function renderMenu() {
   return render(
     <MemoryRouter>
@@ -25,7 +27,7 @@ describe("AccountMenu", () => {
   it("offers a signed-out visitor a way in", () => {
     renderMenu();
 
-    expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute(
+    expect(screen.getByRole("menuitem", { name: /sign in/i })).toHaveAttribute(
       "href",
       "/account/login",
     );
@@ -44,7 +46,18 @@ describe("AccountMenu", () => {
 
     renderMenu();
 
-    expect(screen.getByRole("button", { name: /visitor@example\.com/ })).toBeInTheDocument();
+    expect(screen.getByText(/visitor@example\.com/)).toBeInTheDocument();
+  });
+
+  it("reaches the profile from the menu", () => {
+    useAuthStore.setState({ status: "authenticated", user: USER });
+
+    renderMenu();
+
+    expect(screen.getByRole("menuitem", { name: /profile/i })).toHaveAttribute(
+      "href",
+      "/account/profile",
+    );
   });
 
   it("signs out from the menu and drops back to anonymous", async () => {
@@ -52,11 +65,12 @@ describe("AccountMenu", () => {
     vi.spyOn(auth, "logOut").mockResolvedValue(undefined);
 
     renderMenu();
-    fireEvent.click(screen.getByRole("button", { name: /visitor@example\.com/ }));
     fireEvent.click(screen.getByRole("menuitem", { name: /sign out/i }));
 
     await waitFor(() => expect(useAuthStore.getState().status).toBe("anonymous"));
     expect(auth.logOut).toHaveBeenCalled();
-    expect(await screen.findByRole("link", { name: /sign in/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("menuitem", { name: /sign in/i }),
+    ).toBeInTheDocument();
   });
 });

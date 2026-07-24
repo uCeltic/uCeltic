@@ -10,7 +10,7 @@ import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import TagFilterButton from "./TagFilterButton";
 import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
-import AccountMenu from "./AccountMenu";
+import HamburgerMenu from "./HamburgerMenu";
 import { secondaryBtn, toggleOnBtn } from "./buttonStyles";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
@@ -23,8 +23,6 @@ export default function ToolBar({
   const addDocument = useDocumentStore((state) => state.addDocument);
   const openDocuments = useDocumentStore((state) => state.openDocuments);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const increaseFontSize = useWorkspaceStore((state) => state.increaseFontSize);
-  const decreaseFontSize = useWorkspaceStore((state) => state.decreaseFontSize);
   const showIIIF = useWorkspaceStore((state) => state.showIIIF);
   const runSearch = useSearchStore((s) => s.runSearch);
   // disable Search while ANY column is still in flight (replaces the old global flag)
@@ -137,23 +135,8 @@ export default function ToolBar({
         {anySearching ? "..." : "Search"}
       </button>
       </div>
-      {/* Toggle IIIF button and font size buttons*/}
+      {/* Manuscript toggle stays top-level; low-frequency controls live in the menu (#123) */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={decreaseFontSize}
-          className={secondaryBtn}
-        >
-          A−
-        </button>
-        <button
-          type="button"
-          onClick={increaseFontSize}
-          className={secondaryBtn}
-        >
-          A+
-        </button>
-
         <button
           type="button"
           onClick={onToggleIIIF}
@@ -163,7 +146,7 @@ export default function ToolBar({
           {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
         </button>
 
-        <AccountMenu />
+        <HamburgerMenu />
       </div>
     </header>
   );

@@ -1,7 +1,7 @@
-import { useRef, useEffect, useState } from "react";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { TEI_ENTITY_TAGS, entityTagLabel } from "../../tei/entityTags";
 import type { TEIEntityTag } from "../../tei/entityTags";
+import { useDismissableDropdown } from "./useDismissableDropdown";
 
 const btnBase =
   "rounded-md border px-2.5 py-1.5 text-sm font-medium cursor-pointer transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
@@ -11,8 +11,7 @@ const btnOpen = `${btnBase} border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
 export default function TagFilterButton() {
   const selectedTagTypes = useWorkspaceStore((s) => s.selectedTagTypes);
   const setSelectedTagTypes = useWorkspaceStore((s) => s.setSelectedTagTypes);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const { open, setOpen, ref } = useDismissableDropdown<HTMLDivElement>();
 
   // an empty selection filters nothing, so it reads as "All Tags", not "0 Tags"
   const label =
@@ -29,15 +28,6 @@ export default function TagFilterButton() {
         : [...selectedTagTypes, tag],
     );
   };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
 
   return (
     <div ref={ref} className="relative">
