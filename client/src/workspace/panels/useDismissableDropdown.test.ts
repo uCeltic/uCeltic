@@ -20,7 +20,6 @@ describe("useDismissableDropdown", () => {
     const inside = document.createElement("div");
     document.body.appendChild(inside);
     act(() => {
-      // @ts-expect-error assigning to the hook's ref for the test
       result.current.ref.current = inside;
       result.current.setOpen(true);
     });
@@ -43,7 +42,6 @@ describe("useDismissableDropdown", () => {
     inside.appendChild(child);
     document.body.appendChild(inside);
     act(() => {
-      // @ts-expect-error assigning to the hook's ref for the test
       result.current.ref.current = inside;
       result.current.setOpen(true);
     });
