@@ -1,22 +1,10 @@
 import { create } from "zustand";
 import type { WorkspaceStatus } from "../types/panel";
+import type { TEIEntityTag } from "../tei/entityTags";
 import { logEvent } from "../api/log";
 
-export type WorkspaceMode = "search" | "entities" | "personal";
-
-export const MODE_LABELS: Record<WorkspaceMode, string> = {
-  search: "Search",
-  entities: "People & Places",
-  personal: "Personal",
-};
-
 // no-op guards, mirroring searchStore's logParamChange — skip logging when
-// the value didn't actually change (re-picked mode, clamped font size, same scope)
-function logModeChanged(from: WorkspaceMode, to: WorkspaceMode): void {
-  if (to === from) return;
-  logEvent("mode_changed", { from, to });
-}
-
+// the value didn't actually change (clamped font size, same scope)
 function logFontSizeChanged(from: number, to: number): void {
   if (to === from) return;
   logEvent("font_size_changed", { from, to });
@@ -42,11 +30,13 @@ interface WorkspaceStore {
   showIIIF: boolean
   toggleIIIF: () => void
 
-  // mode
-  mode: WorkspaceMode;
-  setMode: (mode: WorkspaceMode) => void;
   selectedWorkIds: string[];
   setSelectedWorkIds: (ids: string[]) => void;
+
+  // Tag Filter — a shell for now: nothing downstream reads the selection yet, and
+  // the closed event taxonomy (ADR-0003) has no event for it, so it logs nothing.
+  selectedTagTypes: TEIEntityTag[];
+  setSelectedTagTypes: (tags: TEIEntityTag[]) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
@@ -54,8 +44,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   statusText: "Ready",
   fontSize: 14,
   showIIIF: true,
-  mode: "search",
   selectedWorkIds: [],
+  selectedTagTypes: [],
 
   setStatus: (status, statusText) =>
     set({
@@ -85,10 +75,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       logEvent("iiif_toggled", { on: showIIIF });
       return { showIIIF };
     }),
-  setMode: (mode) => {
-    logModeChanged(get().mode, mode);
-    set({ mode });
-  },
+  setSelectedTagTypes: (tags) => set({ selectedTagTypes: tags }),
   setSelectedWorkIds: (ids) => {
     if (!sameWorkIds(get().selectedWorkIds, ids)) {
       logEvent("scope_changed", { selected_work_ids: ids });
