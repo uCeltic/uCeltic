@@ -5,6 +5,8 @@ import {
   MAX_OPEN_DOCUMENTS,
 } from "../../store/documentStore";
 import type { TEICatalogEntry } from "../../types/tei";
+import { secondaryBtn, toolbarLabel } from "./buttonStyles";
+import { FileTextIcon } from "./icons";
 
 // Dropdown panel for opening TEI documents from the catalog.
 //
@@ -84,10 +86,13 @@ export default function TEIPickerDropdown() {
       <button
         type="button"
         onClick={handleOpen}
-        className="rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-[#52524F]
-    cursor-pointer transition-all hover:bg-[#F0EEE6]"
+        aria-label="Open TEI"
+        title="Open TEI"
+        aria-expanded={open}
+        className={secondaryBtn}
       >
-        Open TEI
+        <FileTextIcon />
+        <span className={toolbarLabel}>Open TEI</span>
       </button>
 
       {open && (

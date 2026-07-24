@@ -1,5 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { useWorkspaceStore } from "../../store/workspaceStore";
+import { toolbarBtnBase, toolbarLabel } from "./buttonStyles";
+import { LayersIcon } from "./icons";
 
 const WORKS = [
   { id: "the_finn_cycle", name: "The Finn Cycle" },
@@ -7,8 +9,7 @@ const WORKS = [
   { id: "saltair", name: "Saltair na Rann" },
 ];
 
-const btnBase =
-  "rounded-md border px-2.5 py-1.5 text-sm font-medium cursor-pointer transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
+const btnBase = `${toolbarBtnBase} border`;
 const btnIdle = `${btnBase} border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
 const btnOpen = `${btnBase} border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
 
@@ -44,8 +45,15 @@ export default function ScopeButton() {
 
   return (
 <div ref={ref} className="relative">
-        <button type="button" className={open ? btnOpen : btnIdle} onClick={() => setOpen((v) => !v)}>
-          {label} ▾
+        <button
+          type="button"
+          className={open ? btnOpen : btnIdle}
+          onClick={() => setOpen((v) => !v)}
+          aria-label={label}
+          title={label}
+        >
+          <LayersIcon />
+          <span className={toolbarLabel}>{label} ▾</span>
         </button>
         {open && (
           <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-md border border-gray-200 bg-white py-1

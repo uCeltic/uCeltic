@@ -11,7 +11,13 @@ import TagFilterButton from "./TagFilterButton";
 import ScopeButton from "./ScopeButton";
 import TEIPickerDropdown from "./TEIPickerDropdown";
 import HamburgerMenu from "./HamburgerMenu";
-import { secondaryBtn, toggleOnBtn } from "./buttonStyles";
+import {
+  secondaryBtn,
+  toggleOnBtn,
+  toolbarBtnBase,
+  toolbarLabel,
+} from "./buttonStyles";
+import { BookIcon, FilePlusIcon, SearchIcon } from "./icons";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 
@@ -82,14 +88,17 @@ export default function ToolBar({
         />
         <button
           type="button"
+          aria-label="Add Text"
+          title="Add Text"
           className={
             openDocuments.length >= MAX_OPEN_DOCUMENTS
-              ? "rounded-md border border-[#E5E2D6] bg-white px-2.5 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed"
+              ? `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`
               : secondaryBtn
           }
           onClick={handleAddDocument}
         >
-          + Add Text
+          <FilePlusIcon />
+          <span className={toolbarLabel}>Add Text</span>
         </button>
       </div>
 
@@ -101,7 +110,7 @@ export default function ToolBar({
         <input
           type="text"
           placeholder="Search documents..."
-          className="w-full max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm
+          className="w-full min-w-0 max-w-lg rounded-md border border-gray-300 bg-white px-3 py-2 text-sm
   text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2
   focus:ring-[#52524F]/20 transition-all"
           onChange={(e) => setQuery(e.target.value)}
@@ -112,6 +121,7 @@ export default function ToolBar({
       <button
         type="button"
         aria-label="Search"
+        title="Search"
         className={toggleOnBtn}
         disabled={anySearching}
         onClick={() => {
@@ -132,7 +142,8 @@ export default function ToolBar({
           }
         }}
       >
-        {anySearching ? "..." : "Search"}
+        <SearchIcon />
+        <span className={toolbarLabel}>{anySearching ? "..." : "Search"}</span>
       </button>
       </div>
       {/* Manuscript toggle stays top-level; low-frequency controls live in the menu (#123) */}
@@ -142,8 +153,15 @@ export default function ToolBar({
           onClick={onToggleIIIF}
           className={showIIIF ? toggleOnBtn : secondaryBtn}
           aria-pressed={showIIIF}
+          // Client-requirement term: the label/tooltip stays "Manuscripts" and is
+          // distinguished by the book icon — never renamed "Books" (CONTEXT.md).
+          aria-label={showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
+          title={showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
         >
-          {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
+          <BookIcon />
+          <span className={toolbarLabel}>
+            {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
+          </span>
         </button>
 
         <HamburgerMenu />
