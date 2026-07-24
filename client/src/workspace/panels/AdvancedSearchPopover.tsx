@@ -1,5 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useSearchStore } from "../../store/searchStore";
+import { toolbarLabel } from "./buttonStyles";
+import { SlidersIcon } from "./icons";
 
 /* AdvancedSearchPopover: allows the user to adjust the search parameters */
 export default function AdvancedSearchPopover() {
@@ -41,13 +43,17 @@ export default function AdvancedSearchPopover() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`rounded-md px-2.5 py-1.5 text-sm font-medium cursor-pointer transition-colors ${
+        aria-label="Advanced"
+        title="Advanced"
+        aria-expanded={open}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium cursor-pointer transition-colors ${
           open
             ? "bg-[#E8E6DE] text-[#3a3a37]"
             : "bg-[#FAF9F3] text-[#52524F] hover:bg-[#F0EEE6]"
         }`}
       >
-        Advanced
+        <SlidersIcon />
+        <span className={toolbarLabel}>Advanced</span>
       </button>
 
       {open && (

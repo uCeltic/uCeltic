@@ -120,6 +120,23 @@ describe("ToolBar overflow menu (#123)", () => {
   });
 });
 
+// Icon-only collapse below the `xl` breakpoint must not drop the client-requirement
+// term: the manuscript control's accessible name/tooltip stays "Manuscripts", never
+// "Books" (ADR-0011, CONTEXT.md → Manuscript).
+describe("ToolBar manuscript control label (#124)", () => {
+  it("keeps an accessible name and tooltip of 'Manuscripts', never 'Books'", () => {
+    renderToolBar();
+
+    // showIIIF defaults on, so the control reads "Hide Manuscripts".
+    const btn = screen.getByRole("button", { name: /Manuscripts/ });
+    expect(btn).toHaveAttribute("title", expect.stringMatching(/Manuscripts/));
+    expect(btn.getAttribute("title")).not.toMatch(/Book/i);
+    expect(
+      screen.queryByRole("button", { name: /Books?/i }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("ToolBar search button", () => {
     it("searches every visible TEI document and skips uploaded text columns", () => {
         const runSearch = vi.fn();
