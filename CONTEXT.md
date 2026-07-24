@@ -219,3 +219,54 @@
   team and other scholars tag), and a reader has no action to take on an "invalid
   but readable" file. _Avoid_: saying a file is "valid" when you mean "opens and
   renders".
+
+  ### Error Report
+
+  A recorded **failure that broke the experience**, captured so a developer can
+  reproduce it — *not* a user action. Deliberately a **separate concept from a
+  Behavior Event**: a Behavior Event is something the visitor *did* (a closed
+  taxonomy of intents, ADR-0003); an Error Report is something that happened *to*
+  them. Folding it into that taxonomy would pollute the study cohort's action
+  timeline and break the closed-set invariant, so the two are separate tables that
+  line up only through a shared `session_id` (a best-effort join key).
+
+  Recorded from **both sides, backend-primary**
+  ([ADR-0013](docs/adr/0013-error-reports-backend-primary-scrubbed.md)): the
+  backend records every unhandled **5xx** with its traceback (the reproducible
+  core — a 500 the client only ever sees as `search failed: 500`); the frontend
+  records only failures it **could not handle specifically** — the generic
+  "Search failed" / "Something went wrong" fallback branches, `window.onerror`,
+  unhandled rejections, a white-screen error boundary. Expected outcomes the UI
+  already shows gracefully (a 400 "email taken", a 401, a 429) are **not** errors
+  and are not recorded.
+
+  Carries enough request context to reproduce — the search query and its
+  parameters, the path, the status — but **scrubs secrets (passwords) and stores
+  no email**: identity rides on the `user` FK, pseudonymised like every other
+  study model (#69). _Avoid_: log line, exception, crash — an Error Report is the
+  recorded, reproducible artifact, not the raw stack trace or the instant it
+  threw; and it is the deliberate opposite of a Behavior Event (a failure, not an
+  intent).
+
+  ### Feedback
+
+  A **message a visitor deliberately sends the team** from the workspace's
+  always-available floating button — a bug report, a feature request, or a
+  general remark (`category`: `bug` / `feature` / `other`). Free-text prose a
+  human reads and triages, kept in its own `Feedback` table and viewed in admin
+  ([ADR-0014](docs/adr/0014-user-feedback-dedicated-store.md)).
+
+  The third and distinct member of a triad with the two capture concepts above:
+  a **Behavior Event** is something the visitor *did* (a closed-taxonomy intent,
+  ADR-0003); an **Error Report** is a failure that happened *to* them (ADR-0013);
+  a Feedback is a message they *chose to write*. It is stored apart from both —
+  its prose must never enter the closed study taxonomy — and lines up with them
+  only through a shared `session_id`. A successful submission still emits one
+  `feedback_submitted` Behavior Event carrying **only** `{ category }`, so the
+  study timeline records that feedback happened without ingesting its content.
+
+  Carries an optional `contact` (so an anonymous submitter can be replied to) and
+  a `context` snapshot (open documents, scope, viewport, URL) that makes a bug
+  report reproducible. _Avoid_: bug report (only one of its categories), review,
+  survey, questionnaire (the questionnaire is a prompted purpose question, ADR-0007;
+  Feedback is visitor-initiated).
