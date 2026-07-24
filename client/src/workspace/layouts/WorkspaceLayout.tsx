@@ -4,6 +4,7 @@ import DocumentArea from "../panels/DocumentArea";
 import IIIFPanel from "../panels/IIIFPanel";
 import ToolBar from "../panels/ToolBar";
 import QuestionnaireModal from "../panels/QuestionnaireModal";
+import SpotlightTour from "../tour/SpotlightTour";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { IIIF_AUTOHIDE_QUERY } from "../responsive";
@@ -24,6 +25,10 @@ export default function WorkspaceLayout() {
       {/* Overlays the whole layout, once per session, for a signed-in visitor who hasn't
           answered or skipped yet (#67). Renders nothing for anonymous visitors. */}
       <QuestionnaireModal />
+
+      {/* First-run spotlight tour of the select-to-search flow; re-openable via the
+          toolbar Help button. Non-blocking, so it never traps the workspace (#125). */}
+      <SpotlightTour />
 
       <ToolBar onToggleIIIF={toggleIIIF} />
 

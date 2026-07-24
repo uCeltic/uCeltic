@@ -197,7 +197,7 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
                     : "N/A"}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" data-tour="result-nav">
                 <button
                   type="button"
                   className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"

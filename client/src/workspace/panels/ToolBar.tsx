@@ -20,6 +20,7 @@ import {
 import { BookIcon, FilePlusIcon, SearchIcon } from "./icons";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
+import { useTourStore } from "../../store/tourStore";
 
 export default function ToolBar({
   onToggleIIIF,
@@ -36,6 +37,7 @@ export default function ToolBar({
   const setQuery = useSearchStore((s) => s.setQuery);
   const query = useSearchStore((s) => s.query);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
+  const startTour = useTourStore((s) => s.start);
 
   //handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +92,7 @@ export default function ToolBar({
           type="button"
           aria-label="Add Text"
           title="Add Text"
+          data-tour="add-text"
           className={
             openDocuments.length >= MAX_OPEN_DOCUMENTS
               ? `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`
@@ -157,11 +160,24 @@ export default function ToolBar({
           // distinguished by the book icon — never renamed "Books" (CONTEXT.md).
           aria-label={showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
           title={showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
+          data-tour="manuscripts"
         >
           <BookIcon />
           <span className={toolbarLabel}>
             {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
           </span>
+        </button>
+
+        {/* Re-opens the onboarding tour on demand; icon-only, so it stays compact
+            at every breakpoint (#125). */}
+        <button
+          type="button"
+          onClick={startTour}
+          aria-label="Help"
+          title="Help"
+          className={secondaryBtn}
+        >
+          ?
         </button>
 
         <HamburgerMenu />
