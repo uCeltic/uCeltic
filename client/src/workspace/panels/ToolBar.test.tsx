@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { useTourStore } from "../../store/tourStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import type { Document } from "../../types/document";
 import type { TEIDoc } from "../../types/tei";
@@ -134,6 +135,19 @@ describe("ToolBar manuscript control label (#124)", () => {
     expect(
       screen.queryByRole("button", { name: /Books?/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("ToolBar Help button (#125)", () => {
+  it("re-opens the onboarding tour on demand", () => {
+    useTourStore.setState({ isOpen: false, stepIndex: 3 });
+
+    renderToolBar();
+    fireEvent.click(screen.getByRole("button", { name: /help/i }));
+
+    // start() opens the tour back at the first step, regardless of a prior run.
+    expect(useTourStore.getState().isOpen).toBe(true);
+    expect(useTourStore.getState().stepIndex).toBe(0);
   });
 });
 

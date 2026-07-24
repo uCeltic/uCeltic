@@ -108,6 +108,7 @@ export default function SelectionSearchButton() {
     <button
       type="button"
       aria-label="Search selected text"
+      data-tour="selection-search"
       className={`fixed z-50 shadow-lg ${toggleOnBtn}`}
       style={{ top: rect.bottom + OFFSET_PX, left: rect.left }}
       // Pressing a button clears the native selection before the click lands;

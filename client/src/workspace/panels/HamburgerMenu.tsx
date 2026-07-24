@@ -21,6 +21,7 @@ export default function HamburgerMenu() {
         aria-label="Menu"
         aria-haspopup="menu"
         aria-expanded={open}
+        data-tour="menu"
         onClick={() => setOpen((v) => !v)}
       >
         ☰

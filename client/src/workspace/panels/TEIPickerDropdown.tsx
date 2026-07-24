@@ -89,6 +89,7 @@ export default function TEIPickerDropdown() {
         aria-label="Open TEI"
         title="Open TEI"
         aria-expanded={open}
+        data-tour="open-tei"
         className={secondaryBtn}
       >
         <FileTextIcon />
