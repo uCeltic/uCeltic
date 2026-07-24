@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import AccountMenu from "./AccountMenu";
 import { secondaryBtn } from "./buttonStyles";
+import { useDismissableDropdown } from "./useDismissableDropdown";
 
 /**
  * The overflow menu on the right of the toolbar. It holds the low-frequency controls —
@@ -11,17 +11,7 @@ import { secondaryBtn } from "./buttonStyles";
 export default function HamburgerMenu() {
   const increaseFontSize = useWorkspaceStore((s) => s.increaseFontSize);
   const decreaseFontSize = useWorkspaceStore((s) => s.decreaseFontSize);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  const { open, setOpen, ref } = useDismissableDropdown<HTMLDivElement>();
 
   return (
     <div ref={ref} className="relative">
