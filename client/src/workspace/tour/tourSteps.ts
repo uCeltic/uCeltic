@@ -42,7 +42,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "navigate-results",
     anchors: ["result-nav"],
     title: "Move through the results",
-    body: "Each column steps through its own matches. Use ← and → to move between them, and “Jump” to scroll the text to the current one.",
+    body: "Each column steps through its own matches. Use ← and → to move between them — the text scrolls to each match as you go.",
   },
   {
     id: "font-size",
