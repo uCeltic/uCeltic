@@ -22,6 +22,16 @@ if (!globalThis.CSS.highlights) {
   globalThis.CSS.highlights = new Map() as unknown as typeof globalThis.CSS.highlights;
 }
 
+// jsdom has no ResizeObserver; stub it so components that observe their own
+// box (e.g. the IIIF viewer) mount instead of throwing.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // jsdom implements neither scroll method; stub them so smooth-scroll calls in
 // components are no-ops instead of throwing "Not implemented" during tests.
 Element.prototype.scrollIntoView = () => {};

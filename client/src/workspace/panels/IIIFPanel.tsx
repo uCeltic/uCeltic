@@ -64,7 +64,9 @@ const MANUSCRIPTS: ManuscriptConfig[] = [
 
 export default function IIIFPanel() {
   const [selectedId, setSelectedId] = useState(MANUSCRIPTS[0].id);
-  const [page, setPage] = useState(1);
+  // derived from the config, like the <select>'s onChange, so the first render
+  // lands on the default manuscript's own opening page rather than page 1
+  const [page, setPage] = useState(MANUSCRIPTS[0].source.initialPage);
   const [canvases, setCanvases] = useState<string[]>([]); // manifest mode: image service URLs
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
