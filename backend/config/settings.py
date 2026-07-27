@@ -270,6 +270,9 @@ REST_FRAMEWORK = {
           "rest_framework.authentication.SessionAuthentication",
       ],
       "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+      # Wraps DRF's default handler to record every unhandled 5xx as an ErrorReport
+      # (#135, ADR-0013). Behaviour of the responses themselves is unchanged.
+      "EXCEPTION_HANDLER": "apps.analytics.error_capture.exception_handler",
   }
 
 SPECTACULAR_SETTINGS = {

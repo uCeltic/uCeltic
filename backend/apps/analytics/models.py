@@ -45,6 +45,58 @@ class BehaviorEvent(models.Model):
         return f"{self.event_type} @ {self.server_ts:%Y-%m-%d %H:%M:%S}"
 
 
+# Small closed set, like EVENT_TYPES above — but for a different reason: not a study
+# taxonomy, just the capture points we know how to interpret. Slice 2 (#136) adds the
+# frontend kinds.
+ERROR_KINDS = [
+    "backend_5xx",
+]
+
+
+class ErrorReport(models.Model):
+    """A failure that broke the experience, stored so a developer can reproduce it.
+
+    Deliberately *not* a BehaviorEvent (ADR-0013): an event is something the visitor did,
+    drawn from a closed taxonomy; this is something that happened *to* them. The two
+    tables line up only through `session_id`, a best-effort join key.
+    """
+
+    # Blank for most server-side reports: search and auth requests don't carry the
+    # session id today (ADR-0013's stated consequence), so the join is by user/time.
+    session_id = models.CharField(max_length=64, blank=True)
+    kind = models.CharField(max_length=32, choices=[(k, k) for k in ERROR_KINDS])
+    summary = models.CharField(max_length=255)
+    status_code = models.PositiveIntegerField(null=True, blank=True)
+    request_path = models.CharField(max_length=500, blank=True)
+    method = models.CharField(max_length=10, blank=True)
+    # Everything needed to replay the request — for a search, its query and params.
+    # Scrubbed of passwords and email before it gets here (see error_capture.scrub).
+    context = models.JSONField(default=dict, blank=True)
+    traceback = models.TextField(null=True, blank=True)
+    # Groups like failures on the admin list page. Grouping only — reports are never
+    # deduplicated at write time, so the count of rows stays the count of failures.
+    fingerprint = models.CharField(max_length=255, blank=True)
+    client_ts = models.DateTimeField(null=True, blank=True)
+    server_ts = models.DateTimeField(auto_now_add=True)
+    app_version = models.CharField(max_length=32, blank=True)
+    # Stamped server-side from request.user, never trusted from the client — exactly as
+    # BehaviorEvent.user above. NULL for anonymous traffic.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="error_reports",
+    )
+
+    class Meta:
+        ordering = ["-server_ts"]
+
+    def __str__(self):
+        # No self.user, for the same reason QuestionnaireResponse.__str__ omits it (#69).
+        return f"{self.kind} {self.request_path} @ {self.server_ts:%Y-%m-%d %H:%M:%S}"
+
+
 # Single source of truth for question content (ADR-0004): the SPA fetches this via
 # GET /api/questionnaire/ rather than keeping its own copy, so a content swap after the
 # 2026-07-09 team meeting is a backend-only change. Bump the version whenever the
