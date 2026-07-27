@@ -132,7 +132,7 @@ describe("DocumentArea search flow", () => {
         expect(mockedSearch).toHaveBeenCalledOnce();
     });
 
-    it("shows Searching… and hides Jump/←/→ even when stale results exist", () => {
+    it("shows Searching… and hides ←/→ even when stale results exist", () => {
         // a column mid-search: it still has old results in the store, but the
         // searching flag must take precedence over rendering them.
         useSearchStore.setState({
@@ -144,7 +144,8 @@ describe("DocumentArea search flow", () => {
         render(<DocumentArea />);
 
         expect(screen.getByText("Searching…")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Jump" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "←" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "→" })).not.toBeInTheDocument();
         expect(screen.queryByText(result.snippet)).not.toBeInTheDocument();
     });
 
@@ -160,6 +161,23 @@ describe("DocumentArea search flow", () => {
             screen.getByRole("button", { name: "Retry search in Acallam" }),
         ).toBeInTheDocument();
         expect(screen.queryByText("No search results")).not.toBeInTheDocument();
+    });
+
+    //Test (#133): the nav row is ←/→ only. Jump was redundant — the text already
+    //scrolls to the active match on arrival and on every arrow step.
+    it("navigates results with ←/→ alone, without a Jump button", () => {
+        useSearchStore.setState({
+            resultsByDocument: { "doc-1": [result] },
+            activeResultIndexByDocument: { "doc-1": 0 },
+        });
+
+        render(<DocumentArea />);
+
+        expect(screen.getByRole("button", { name: "←" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "→" })).toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: "Jump" }),
+        ).not.toBeInTheDocument();
     });
 
     //Test: the retry affordance belongs to the failure state alone — the empty,
