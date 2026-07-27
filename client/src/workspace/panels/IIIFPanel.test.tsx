@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
+import IIIFPanel from "./IIIFPanel";
 
 // OpenSeadragon needs a real canvas/WebGL surface, so tests drive a stub viewer
 // and assert on the tile sources the panel asks it to open.
@@ -23,20 +24,20 @@ vi.mock("openseadragon", () => ({
   }),
 }));
 
-const { default: IIIFPanel } = await import("./IIIFPanel");
-
 function lastTileSource() {
   return opened[opened.length - 1]?.tileSource ?? "";
 }
 
 beforeEach(() => {
   opened.length = 0;
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
+  // the manifest-backed manuscript fetches on select; never resolve it so the
+  // tests stay on the tile sources the panel asks for
   vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("IIIFPanel", () => {
@@ -57,5 +58,14 @@ describe("IIIFPanel", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "book-of-lismore" } });
     expect(screen.getByText(/^325 \//)).toBeInTheDocument();
     expect(lastTileSource()).toContain("325.tif");
+  });
+
+  it("also honours the initial page of the manifest-backed manuscript", () => {
+    render(<IIIFPanel />);
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "bodleian-ms" } });
+
+    // no page count until the manifest resolves, so the indicator is bare
+    expect(screen.getByText("249")).toBeInTheDocument();
   });
 });
