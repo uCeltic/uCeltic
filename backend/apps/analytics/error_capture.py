@@ -9,6 +9,7 @@ Both funnel into `record`, which is best-effort by design: a failure while recor
 failure must never replace the original error with a different one.
 """
 import logging
+import re
 import sys
 import traceback as traceback_module
 from urllib.parse import parse_qsl, urlencode
@@ -22,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 BACKEND_5XX = "backend_5xx"
 
-# Dropped, not masked: the issue asks for the secret to be *gone* from the stored body.
-# `email` is here for a different reason — it isn't a secret, it's the PII ADR-0013 says
-# we never store, because identity rides on the `user` FK alone (#69).
-_SECRET_KEY_MARKERS = (
+# The two things ADR-0013 says must never reach the table, for two different reasons:
+# secrets, because storing a password anywhere is indefensible; `email`, because it isn't
+# a secret but is the PII identity rides past — that's the `user` FK's job alone (#69).
+# Matching keys are dropped, not masked: the issue asks for the value to be *gone*.
+_DROPPED_KEY_MARKERS = (
     "password",
     "passwd",
     "pwd",
@@ -38,19 +40,34 @@ _SECRET_KEY_MARKERS = (
     "email",
 )
 
+# An address can also reach a report without ever being a key: an SMTP refusal or a
+# duplicate-key IntegrityError puts what the visitor typed straight into the exception
+# message, which is what `summary` and `traceback` store. Key filtering can't see that,
+# so the free-text columns get a shape-based redaction on the way in.
+_EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]*\w")
+_EMAIL_PLACEHOLDER = "[email removed]"
+
 # Set on the underlying HttpRequest once a report is written, so a DRF exception that
 # escapes to Django's handler500 isn't recorded twice for the one request.
 _RECORDED_FLAG = "_error_report_recorded"
 
 
-def _is_secret(key):
+def _must_not_store(key):
     lowered = str(key).lower()
-    return any(marker in lowered for marker in _SECRET_KEY_MARKERS)
+    return any(marker in lowered for marker in _DROPPED_KEY_MARKERS)
+
+
+def _redact_emails(text):
+    return _EMAIL_PATTERN.sub(_EMAIL_PLACEHOLDER, text) if text else text
+
+
+def _max_length(field_name):
+    return ErrorReport._meta.get_field(field_name).max_length
 
 
 def _scrub_value(value):
     if isinstance(value, dict):
-        return {k: _scrub_value(v) for k, v in value.items() if not _is_secret(k)}
+        return {k: _scrub_value(v) for k, v in value.items() if not _must_not_store(k)}
     if isinstance(value, (list, tuple)):
         return [_scrub_value(item) for item in value]
     return value
@@ -67,23 +84,34 @@ def scrub(body):
     return _scrub_value(body)
 
 
-def _scrub_query_string(request):
-    """The full path, with any secret-named query parameter dropped.
+def _scrubbed_full_path(request):
+    """The path with its query string, minus any parameter the key filter drops.
 
     Reproducing a GET failure needs its query string, and `request.path` throws it away —
-    but a query string can carry a token, so it goes through the same key filter.
+    but a query string can carry a token, so it goes through the same filter as the body.
     """
     query = request.META.get("QUERY_STRING", "")
     if not query:
         return request.path
-    kept = [(k, v) for k, v in parse_qsl(query, keep_blank_values=True) if not _is_secret(k)]
+    kept = [
+        (k, v) for k, v in parse_qsl(query, keep_blank_values=True) if not _must_not_store(k)
+    ]
     return f"{request.path}?{urlencode(kept)}" if kept else request.path
 
 
 def _body(request):
-    """The parsed request body, best-effort — an unparseable one is not worth a second error."""
+    """The request body, best-effort — an unreadable one is not worth a second error.
+
+    `request.data` is DRF's parsed body and covers the API. Django's `handler500` hands us
+    a plain HttpRequest instead, which has no `.data` — there, the allauth/admin form
+    fields live in POST, and without this fallback those reports would carry no context.
+    """
     try:
         return request.data
+    except Exception:
+        pass
+    try:
+        return request.POST.dict()
     except Exception:
         return None
 
@@ -100,19 +128,20 @@ def _user(request):
 def _summary(exc, status_code):
     if exc is None:
         return f"HTTP {status_code}"
-    return f"{type(exc).__name__}: {exc}"[:255]
+    return _redact_emails(f"{type(exc).__name__}: {exc}")[: _max_length("summary")]
 
 
 def _fingerprint(exc, path):
     """`kind:what threw:where` — enough for the admin to group like failures."""
     marker = type(exc).__name__ if exc is not None else "unknown"
-    return f"{BACKEND_5XX}:{marker}:{path}"[:255]
+    return f"{BACKEND_5XX}:{marker}:{path}"[: _max_length("fingerprint")]
 
 
 def _traceback(exc):
     if exc is None:
         return None
-    return "".join(traceback_module.format_exception(type(exc), exc, exc.__traceback__))
+    formatted = traceback_module.format_exception(type(exc), exc, exc.__traceback__)
+    return _redact_emails("".join(formatted))
 
 
 def record(request, exc, status_code):
@@ -127,13 +156,13 @@ def record(request, exc, status_code):
         body = scrub(_body(request))
         # Left in `context` as well: it's a faithful (scrubbed) copy of what was sent.
         session_id = body.get("session_id", "")
-        path = _scrub_query_string(http_request)
+        path = _scrubbed_full_path(http_request)
         ErrorReport.objects.create(
             session_id=session_id if isinstance(session_id, str) else "",
             kind=BACKEND_5XX,
             summary=_summary(exc, status_code),
             status_code=status_code,
-            request_path=path[:500],
+            request_path=path[: _max_length("request_path")],
             method=http_request.method or "",
             context=body,
             traceback=_traceback(exc),

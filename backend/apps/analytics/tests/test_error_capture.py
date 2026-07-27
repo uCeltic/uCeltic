@@ -58,6 +58,17 @@ class BackendErrorCaptureTests(APITestCase):
 
         self.assertNotIn("leak@example.com", str(ErrorReport.objects.get().context))
 
+    def test_an_email_inside_the_exception_message_is_redacted_too(self):
+        # The body isn't the only way an address reaches the row: an SMTP refusal or a
+        # duplicate-key IntegrityError puts the visitor's address in the message itself,
+        # which lands in both `summary` and `traceback` (ADR-0013: store no email).
+        self.client.get("/leaky-boom/")
+
+        report = ErrorReport.objects.get()
+        self.assertNotIn("leak@example.com", report.summary)
+        self.assertNotIn("leak@example.com", report.traceback)
+        self.assertIn("SMTP refused recipient", report.summary)
+
     def test_a_5xx_drf_turns_into_a_response_is_still_recorded(self):
         resp = self.client.post("/upstream-failed/", {"query": "x"}, format="json")
 
@@ -127,6 +138,15 @@ class BackendErrorCaptureTests(APITestCase):
         self.assertEqual(report.request_path, "/plain-boom/")
         self.assertEqual(report.method, "GET")
         self.assertIn("plain boom", report.traceback)
+
+    def test_a_non_drf_form_post_still_captures_a_scrubbed_body(self):
+        # handler500's request is a plain HttpRequest — no `.data` — so the form fields
+        # have to come from POST, or the allauth pages the hook exists for record nothing.
+        self.client.post("/plain-boom/", {"login": "ada", "password": "hunter2"})
+
+        report = ErrorReport.objects.get()
+        self.assertEqual(report.context["login"], "ada")
+        self.assertNotIn("password", report.context)
 
     def test_capture_failure_never_masks_the_original_error(self):
         # An ErrorReport that raises while being written must not turn a 500 into a

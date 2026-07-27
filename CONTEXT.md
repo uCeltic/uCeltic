@@ -240,10 +240,17 @@
   already shows gracefully (a 400 "email taken", a 401, a 429) are **not** errors
   and are not recorded.
 
+  Each report names its **kind** — which capture point produced it, a small closed
+  set that starts at `backend_5xx` and grows one entry per capture point added.
+  Deliberately *not* called a type: `event_type` is the study taxonomy a Behavior
+  Event is drawn from, and the two must not read as the same idea.
+
   Carries enough request context to reproduce — the search query and its
   parameters, the path, the status — but **scrubs secrets (passwords) and stores
   no email**: identity rides on the `user` FK, pseudonymised like every other
-  study model (#69). _Avoid_: log line, exception, crash — an Error Report is the
+  study model (#69). Scrubbing drops secret- and email-named keys from the stored
+  body and query string, and redacts any address that reaches the free-text
+  `summary`/`traceback` inside an exception message. _Avoid_: log line, exception, crash — an Error Report is the
   recorded, reproducible artifact, not the raw stack trace or the instant it
   threw; and it is the deliberate opposite of a Behavior Event (a failure, not an
   intent).

@@ -81,8 +81,7 @@ class BehaviorEventAdmin(StudyDataAdminMixin, admin.ModelAdmin):
 
 @admin.register(ErrorReport)
 class ErrorReportAdmin(StudyDataAdminMixin, admin.ModelAdmin):
-    """The developer's failure dashboard (#135, ADR-0013). Read-only and pseudonymised
-    like the study models — a report is recorded data, never something an admin authors."""
+    """The dashboard a developer reproduces a failure from (#135, ADR-0013)."""
 
     list_display = ("server_ts", "kind", "status_code", "request_path", "user_display", "fingerprint")
     list_filter = (UserListFilter, "kind", "status_code")

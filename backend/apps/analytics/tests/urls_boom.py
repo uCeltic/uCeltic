@@ -43,11 +43,18 @@ def plain_boom(request):
     raise RuntimeError("plain boom")
 
 
+def leaky_boom(request):
+    """The real allauth shape: an exception whose *message* carries the address the
+    visitor typed (an SMTP refusal, a duplicate-key IntegrityError)."""
+    raise RuntimeError("SMTP refused recipient leak@example.com (550)")
+
+
 urlpatterns = [
     path("boom/", BoomView.as_view()),
     path("bad-request/", BadRequestView.as_view()),
     path("upstream-failed/", UpstreamFailedView.as_view()),
     path("plain-boom/", plain_boom),
+    path("leaky-boom/", leaky_boom),
 ]
 
 handler500 = "apps.analytics.error_capture.handler500"
