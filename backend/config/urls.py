@@ -30,3 +30,7 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
+
+# The DRF exception handler (REST_FRAMEWORK["EXCEPTION_HANDLER"]) covers the API; this
+# covers everything else that can 500 — allauth's pages and the admin (#135, ADR-0013).
+handler500 = "apps.analytics.error_capture.handler500"

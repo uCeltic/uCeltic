@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 
-from .models import BehaviorEvent, QuestionnaireResponse
+from .models import BehaviorEvent, ErrorReport, QuestionnaireResponse
 
 
 def _display_name(user):
@@ -77,6 +77,31 @@ class BehaviorEventAdmin(StudyDataAdminMixin, admin.ModelAdmin):
     # forces every field readonly here (has_change_permission is False), so without
     # this override the raw FK would render via User.__str__ same as the old filter did.
     fields = ("session_id", "event_type", "payload", "client_ts", "server_ts", "app_version", "user_display")
+
+
+@admin.register(ErrorReport)
+class ErrorReportAdmin(StudyDataAdminMixin, admin.ModelAdmin):
+    """The dashboard a developer reproduces a failure from (#135, ADR-0013)."""
+
+    list_display = ("server_ts", "kind", "status_code", "request_path", "user_display", "fingerprint")
+    list_filter = (UserListFilter, "kind", "status_code")
+    search_fields = ("session_id", "fingerprint")
+    ordering = ("-server_ts",)
+    fields = (
+        "server_ts",
+        "kind",
+        "summary",
+        "status_code",
+        "method",
+        "request_path",
+        "context",
+        "traceback",
+        "fingerprint",
+        "session_id",
+        "client_ts",
+        "app_version",
+        "user_display",
+    )
 
 
 @admin.register(QuestionnaireResponse)

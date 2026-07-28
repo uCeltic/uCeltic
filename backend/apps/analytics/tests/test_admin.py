@@ -5,8 +5,13 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Profile
-from apps.analytics.admin import BehaviorEventAdmin, QuestionnaireResponseAdmin, UserListFilter
-from apps.analytics.models import BehaviorEvent, QuestionnaireResponse
+from apps.analytics.admin import (
+    BehaviorEventAdmin,
+    ErrorReportAdmin,
+    QuestionnaireResponseAdmin,
+    UserListFilter,
+)
+from apps.analytics.models import BehaviorEvent, ErrorReport, QuestionnaireResponse
 
 User = get_user_model()
 
@@ -22,6 +27,22 @@ def _make_event(**overrides):
     return BehaviorEvent.objects.create(**fields)
 
 
+def _make_report(**overrides):
+    fields = {
+        "session_id": "s1",
+        "kind": "backend_5xx",
+        "summary": "RuntimeError: boom",
+        "status_code": 500,
+        "request_path": "/api/search/",
+        "method": "POST",
+        "context": {"query": "brigit"},
+        "traceback": "Traceback (most recent call last): RuntimeError: boom",
+        "fingerprint": "backend_5xx:RuntimeError:/api/search/",
+    }
+    fields.update(overrides)
+    return ErrorReport.objects.create(**fields)
+
+
 class AdminConfigTests(TestCase):
     """Acceptance criteria are literal list_display/list_filter/search_fields shapes."""
 
@@ -34,6 +55,14 @@ class AdminConfigTests(TestCase):
 
     def test_questionnaire_response_admin_filters(self):
         self.assertEqual(QuestionnaireResponseAdmin.list_filter, (UserListFilter, "skipped"))
+
+    def test_error_report_admin_columns_and_filters(self):
+        self.assertEqual(
+            ErrorReportAdmin.list_display,
+            ("server_ts", "kind", "status_code", "request_path", "user_display", "fingerprint"),
+        )
+        self.assertEqual(ErrorReportAdmin.list_filter, (UserListFilter, "kind", "status_code"))
+        self.assertEqual(ErrorReportAdmin.search_fields, ("session_id", "fingerprint"))
 
 
 class UserDisplayTests(TestCase):
@@ -87,6 +116,33 @@ class UserDisplayTests(TestCase):
 
         self.assertEqual(qa.user_display(response), "Ada")
 
+    def test_error_report_shows_display_name(self):
+        Profile.objects.create(user=self.user, display_name="Ada")
+        report = _make_report(user=self.user)
+
+        ea = ErrorReportAdmin(ErrorReport, self.site)
+
+        self.assertEqual(ea.user_display(report), "Ada")
+
+    def test_error_report_shows_dash_for_anonymous_traffic(self):
+        report = _make_report(user=None)
+
+        ea = ErrorReportAdmin(ErrorReport, self.site)
+
+        self.assertEqual(ea.user_display(report), "—")
+
+
+class ErrorReportStrTests(TestCase):
+    """Same #69 leak class as QuestionnaireResponse below: __str__ feeds the change
+    page's title/breadcrumb/heading verbatim."""
+
+    def test_str_does_not_embed_the_user(self):
+        user = User.objects.create_user(
+            username="signed-in", email="signed-in@example.com", password="pw-12345678"
+        )
+
+        self.assertNotIn("signed-in", str(_make_report(user=user)))
+
 
 class QuestionnaireResponseStrTests(TestCase):
     """__str__ feeds the admin change page's <title>/breadcrumb/heading verbatim, so it
@@ -119,6 +175,7 @@ class ReadOnlyPermissionTests(TestCase):
         self.response = QuestionnaireResponse.objects.create(
             user=self.subject, session_id="s1", questionnaire_version=1, skipped=True
         )
+        self.report = _make_report(user=self.subject)
 
     def test_behavior_event_add_is_forbidden(self):
         resp = self.client.get(reverse("admin:analytics_behaviorevent_add"))
@@ -173,6 +230,33 @@ class ReadOnlyPermissionTests(TestCase):
         # Bare substring, not just the readonly-field link: the username must not leak
         # anywhere on the page — title, breadcrumb, and heading all render it unescaped
         # via str(obj) if a model's __str__ embeds it (#69).
+        self.assertNotIn("signed-in", html)
+
+    def test_error_report_add_is_forbidden(self):
+        resp = self.client.get(reverse("admin:analytics_errorreport_add"))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_error_report_changelist_renders(self):
+        resp = self.client.get(reverse("admin:analytics_errorreport_changelist"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context["has_add_permission"])
+
+    def test_error_report_change_view_is_read_only_not_forbidden(self):
+        resp = self.client.get(
+            reverse("admin:analytics_errorreport_change", args=[self.report.pk])
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context["has_change_permission"])
+
+    def test_error_report_change_view_shows_display_name_not_username(self):
+        Profile.objects.create(user=self.subject, display_name="Ada Lovelace")
+
+        resp = self.client.get(
+            reverse("admin:analytics_errorreport_change", args=[self.report.pk])
+        )
+
+        html = resp.content.decode()
+        self.assertIn("Ada Lovelace", html)
         self.assertNotIn("signed-in", html)
 
 
