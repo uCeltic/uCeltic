@@ -34,6 +34,13 @@ def parse_tei(xml_bytes: bytes) -> tuple[dict, list[dict], list[dict]]:
 
 # recursively walk the lxml object
 def _walk(el, parent_id, state, in_skip=False):
+    # lxml gives comments, processing instructions and entities a callable .tag
+    # instead of a string. Drop them before an anchor id is allocated, so that
+    # backend _walk and frontend assignAnchorIds keep traversing the same node
+    # set. The caller still tokenises the node's tail, so no text is lost.
+    if not isinstance(el.tag, str):
+        return None
+
     tag = _strip_ns(el.tag)
     skip_words = in_skip or (tag in SKIP_TAGS)
 

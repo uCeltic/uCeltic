@@ -18,6 +18,52 @@ SIMPLE_TEI = b"""<?xml version="1.0" encoding="UTF-8"?>
   </TEI>"""
 
 
+COMMENTED_TEI = b"""<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text>
+    <body>
+      <!-- editorial note -->
+      <l n="1">first line</l>
+      <?oxygen RNGSchema="tei.rng"?>
+      <l n="2">second line</l>
+      <p>before <!-- inline remark --> after</p>
+    </body>
+  </text>
+</TEI>"""
+
+
+class ParseTEICommentsTest(TestCase):
+    """Comments and processing instructions are well-formed XML, so they must
+    not break the parse (#142). They are dropped from parsed_json; xml_file
+    stays the source of truth for the original document."""
+
+    def test_comment_and_pi_do_not_break_parse(self):
+        tree, _, _ = parse_tei(COMMENTED_TEI)
+
+        self.assertEqual(tree["tag"], "TEI")
+
+    def test_comments_and_pis_are_dropped_from_the_tree(self):
+        tree, _, _ = parse_tei(COMMENTED_TEI)
+
+        body = tree["children"][0]["children"][0]
+        self.assertEqual([c.get("tag") for c in body["children"]], ["l", "l", "p"])
+
+    def test_text_after_a_comment_is_still_tokenised(self):
+        _, _, word_array = parse_tei(COMMENTED_TEI)
+
+        words = [w["w"] for w in word_array]
+        self.assertEqual(
+            words, ["first", "line", "second", "line", "before", "after"]
+        )
+
+    def test_no_anchor_is_allocated_for_a_comment(self):
+        _, anchors, _ = parse_tei(COMMENTED_TEI)
+
+        self.assertEqual(
+            [a["tag"] for a in anchors], ["TEI", "text", "body", "l", "l", "p"]
+        )
+
+
 class ParseTEITest(TestCase):
 
     def test_root_tag(self):
