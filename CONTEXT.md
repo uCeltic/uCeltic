@@ -186,8 +186,21 @@
   `xml_file` is the **source of truth** for the original document; `parsed_json`
   (with `word_array` and `anchors`) is a **projection** of it built for rendering
   and search, not a round-trippable serialisation — it strips namespaces, drops
-  whitespace-only text and never sees the XML prolog. Anything the projection
-  omits is still recoverable from `xml_file`.
+  comments and processing instructions, and never sees the XML prolog. Anything
+  the projection omits is still recoverable from `xml_file`.
+
+  ### Word (index term)
+
+  A word is decided by the **character stream**, not by the markup. The parser
+  flattens the document into one continuous run of characters and splits it on
+  whitespace and punctuation, so an element boundary is not a word boundary:
+  `tal<expan>am</expan>` — an editorially expanded scribal abbreviation, and the
+  commonest shape in real manuscript TEI — is the single word `talam`, spanning
+  two anchors. A quarter to a half of the words in a research file are like this,
+  so **a word maps to a list of anchors**; `word_array[i].a` names only the one it
+  starts in. The one thing a word may never span is the edge of a subtree excluded
+  from the index (`teiHeader`, `note`), because the manuscript text and the
+  editor's English commentary are not one sentence.
 
   **Work → Version → TEI Document** is a one-to-many-to-one chain: a Work has many
   Versions, each Version is one TEI Document. Search scope (`selected_work_ids`)

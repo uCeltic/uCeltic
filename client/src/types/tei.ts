@@ -1,7 +1,10 @@
 // Type definitions for TEI data used by the frontend.
 // These types describe the JSON shape returned by the backend TEI API.
 
-// text segment is a word or a separator, idx is the index of the words in the text
+// text segment is a word or a separator, idx is the index of the word in the
+// document. A word that inline markup splits (`tal<expan>am</expan>`) leaves one
+// segment in each element it passes through, so `text` may be a fragment and the
+// same `idx` may appear in several segments.
 export type TEITextSegment =
   | { kind: "word"; text: string; idx: number }
   | { kind: "sep"; text: string };
@@ -32,6 +35,9 @@ export interface TEIMeta {
 
 // Anchor is a backend-generated "map location" in the TEI document.
 // Its id locates rendered TEI tags; word_char_offsets support result highlighting.
+// Offsets are against the element's OWN text — the text nodes that are its direct
+// children, with child subtrees skipped over — which is what a TreeWalker
+// restricted to direct children sees in the DOM.
 export interface TEIAnchor {
   id: number;
   tag: string;
@@ -43,7 +49,7 @@ export interface TEIAnchor {
 //word arry from the backend
 export interface TEIWordEntry {
   w: string;
-  a: number; // anchor_id
+  a: number; // anchor_id the word STARTS in; it may run on into others
   sep: string;
 }
 

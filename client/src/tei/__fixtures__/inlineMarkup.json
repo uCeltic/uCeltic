@@ -1,0 +1,548 @@
+{
+  "parsed_json": {
+    "tag": "TEI",
+    "children": [
+      {
+        "type": "text",
+        "segments": [
+          {
+            "kind": "sep",
+            "text": "\n  "
+          }
+        ]
+      },
+      {
+        "tag": "text",
+        "children": [
+          {
+            "tag": "body",
+            "children": [
+              {
+                "type": "text",
+                "segments": [
+                  {
+                    "kind": "sep",
+                    "text": "\n    "
+                  }
+                ]
+              },
+              {
+                "tag": "l",
+                "attrs": {
+                  "n": "1"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "IS",
+                        "idx": 0
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "a",
+                        "idx": 1
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "n",
+                            "idx": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "n",
+                        "idx": 1
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "si",
+                            "idx": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "n",
+                        "idx": 1
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "ro",
+                        "idx": 2
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "fīarf",
+                        "idx": 3
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "aig",
+                            "idx": 3
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "name",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "Eoch",
+                            "idx": 4
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "aid",
+                        "idx": 4
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "segments": [
+                  {
+                    "kind": "sep",
+                    "text": "\n    "
+                  }
+                ]
+              },
+              {
+                "tag": "l",
+                "attrs": {
+                  "n": "2"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "ro",
+                        "idx": 5
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "gab",
+                        "idx": 6
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "i",
+                        "idx": 7
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "n",
+                            "idx": 7
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "tal",
+                        "idx": 8
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "am",
+                            "idx": 8
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "note",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "sep",
+                            "text": "Sic"
+                          },
+                          {
+                            "kind": "sep",
+                            "text": "."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "trochull",
+                        "idx": 9
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "segments": [
+                  {
+                    "kind": "sep",
+                    "text": "\n  "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "segments": [
+          {
+            "kind": "sep",
+            "text": "\n"
+          }
+        ]
+      }
+    ]
+  },
+  "anchors": [
+    {
+      "id": 0,
+      "tag": "TEI",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": []
+    },
+    {
+      "id": 1,
+      "tag": "text",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": []
+    },
+    {
+      "id": 2,
+      "tag": "body",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": []
+    },
+    {
+      "id": 3,
+      "tag": "l",
+      "attrs": {
+        "n": "1"
+      },
+      "line_no": "1",
+      "word_char_offsets": [
+        [
+          0,
+          0,
+          2
+        ],
+        [
+          1,
+          3,
+          6
+        ],
+        [
+          2,
+          7,
+          9
+        ],
+        [
+          3,
+          10,
+          15
+        ],
+        [
+          4,
+          16,
+          19
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          1,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          1,
+          0,
+          2
+        ]
+      ]
+    },
+    {
+      "id": 6,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          3,
+          0,
+          3
+        ]
+      ]
+    },
+    {
+      "id": 7,
+      "tag": "name",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          4,
+          0,
+          4
+        ]
+      ]
+    },
+    {
+      "id": 8,
+      "tag": "l",
+      "attrs": {
+        "n": "2"
+      },
+      "line_no": "2",
+      "word_char_offsets": [
+        [
+          5,
+          0,
+          2
+        ],
+        [
+          6,
+          3,
+          6
+        ],
+        [
+          7,
+          7,
+          8
+        ],
+        [
+          8,
+          9,
+          12
+        ],
+        [
+          9,
+          13,
+          21
+        ]
+      ]
+    },
+    {
+      "id": 9,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          7,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 10,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          8,
+          0,
+          2
+        ]
+      ]
+    },
+    {
+      "id": 11,
+      "tag": "note",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": []
+    }
+  ],
+  "word_array": [
+    {
+      "w": "IS",
+      "a": 3,
+      "sep": " "
+    },
+    {
+      "w": "annsin",
+      "a": 3,
+      "sep": " "
+    },
+    {
+      "w": "ro",
+      "a": 3,
+      "sep": " "
+    },
+    {
+      "w": "fīarfaig",
+      "a": 3,
+      "sep": " "
+    },
+    {
+      "w": "Eochaid",
+      "a": 7,
+      "sep": "\n    "
+    },
+    {
+      "w": "ro",
+      "a": 8,
+      "sep": " "
+    },
+    {
+      "w": "gab",
+      "a": 8,
+      "sep": " "
+    },
+    {
+      "w": "in",
+      "a": 8,
+      "sep": " "
+    },
+    {
+      "w": "talam",
+      "a": 8,
+      "sep": " "
+    },
+    {
+      "w": "trochull",
+      "a": 8,
+      "sep": "\n  \n"
+    }
+  ]
+}

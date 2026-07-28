@@ -6,7 +6,7 @@ import TEIRenderer from "../../tei/TEIRenderer";
 import TEIErrorBoundary from "../../tei/ErrorBoundary";
 import type { TEIDoc } from "../../types/tei";
 import type { SearchResult } from "../../types/search";
-import { buildAnchorsById, buildWordToAnchor, buildRangesForWordSpan } from "../../tei/wordRange";
+import { buildAnchorsById, buildWordToAnchors, buildRangesForWordSpan } from "../../tei/wordRange";
 import { rebuildHighlights } from "../../tei/highlight";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
@@ -91,11 +91,11 @@ function scrollToResult(docId: string, result: SearchResult, teiDoc: TEIDoc) {
   }
   // backup plan: jump to the first range of the word span
   const anchorsById = buildAnchorsById(teiDoc.anchors);
-  const wordToAnchor = buildWordToAnchor(teiDoc.word_array);
+  const wordToAnchors = buildWordToAnchors(teiDoc.anchors);
   const ranges = buildRangesForWordSpan(
     columnEl,
     anchorsById,
-    wordToAnchor,
+    wordToAnchors,
     result.word_start,
     result.word_end,
   );

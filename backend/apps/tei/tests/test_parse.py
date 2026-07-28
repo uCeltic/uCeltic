@@ -4,6 +4,18 @@ from lxml import etree
 
 from apps.tei.services.parse import parse_tei
 
+
+# Navigate by tag, not by position: XML indentation is preserved as text nodes
+# (#145), so an element's children are interleaved with whitespace.
+def child(node, tag):
+    return next(c for c in node["children"] if c.get("tag") == tag)
+
+
+def descend(node, *tags):
+    for tag in tags:
+        node = child(node, tag)
+    return node
+
 SIMPLE_TEI = b"""<?xml version="1.0" encoding="UTF-8"?>
   <TEI xmlns="http://www.tei-c.org/ns/1.0">
     <teiHeader>
@@ -48,8 +60,9 @@ class ParseTEICommentsTest(TestCase):
     def test_comments_and_pis_are_dropped_from_the_tree(self):
         tree, _, _ = parse_tei(COMMENTED_TEI)
 
-        body = tree["children"][0]["children"][0]
-        self.assertEqual([c.get("tag") for c in body["children"]], ["l", "l", "p"])
+        body = descend(tree, "text", "body")
+        tags = [c.get("tag") for c in body["children"] if c.get("tag")]
+        self.assertEqual(tags, ["l", "l", "p"])
 
     def test_text_after_a_comment_is_still_tokenised(self):
         _, _, word_array = parse_tei(COMMENTED_TEI)
@@ -126,10 +139,9 @@ class ParseTEITest(TestCase):
         tree, _, _ = parse_tei(SIMPLE_TEI)
 
   
-        body = tree["children"][1]["children"][0]["children"][0]
+        paragraph = descend(tree, "text", "body", "p")
 
-        self.assertEqual(body["tag"], "p")
-        first_child = body["children"][0]
+        first_child = paragraph["children"][0]
         self.assertEqual(first_child["type"], "text")
         words = [s["text"] for s in first_child["segments"]]       # text 改成读 segments
         self.assertIn("Hello", words)
