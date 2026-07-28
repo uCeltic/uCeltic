@@ -10,8 +10,8 @@ SLUG = "acallam-na-senorach"
 
 def create_acallam(apps, schema_editor):
     Work = apps.get_model("tei", "Work")
-    # save() is the plain model save under a historical model, so the slug
-    # derivation on the real model does not run here — pass it explicitly.
+    # Historical models carry no custom save(), so the slug derivation on the
+    # real Work does not run here — hence the literal slug above.
     Work.objects.get_or_create(slug=SLUG, defaults={"name": NAME})
 
 

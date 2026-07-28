@@ -13,6 +13,12 @@ import type { TEICatalogEntry, TEIWork } from "../types/tei";
 export const UNASSIGNED_WORK_LABEL = "Unassigned";
 
 export interface WorkGroup {
+  /**
+   * Identifies the branch. Derived from the work id rather than its name,
+   * because a work the corpus happens to call "Unassigned" must not fuse with
+   * the branch of documents that have no work at all.
+   */
+  key: string;
   /** `null` for the unassigned branch. */
   work: TEIWork | null;
   /** What the branch is called on screen. */
@@ -37,6 +43,7 @@ export function groupCatalogueByWork(
       group.documents.push(entry);
     } else {
       byWorkId.set(entry.work.id, {
+        key: `work-${entry.work.id}`,
         work: entry.work,
         label: entry.work.name,
         documents: [entry],
@@ -55,6 +62,7 @@ export function groupCatalogueByWork(
   // material anyone came for.
   if (unassigned.length > 0) {
     groups.push({
+      key: "unassigned",
       work: null,
       label: UNASSIGNED_WORK_LABEL,
       documents: unassigned,

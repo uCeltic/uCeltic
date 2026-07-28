@@ -76,4 +76,18 @@ describe("groupCatalogueByWork", () => {
   it("returns nothing for an empty catalogue", () => {
     expect(groupCatalogueByWork([])).toEqual([]);
   });
+
+  // Branch identity comes from the work id, so a work the corpus happens to
+  // name "Unassigned" stays its own branch rather than fusing with the
+  // documents that have no work at all.
+  it("keeps a work named like the unassigned branch separate from it", () => {
+    const namesake = { id: 9, name: UNASSIGNED_WORK_LABEL, slug: "unassigned-work" };
+    const groups = groupCatalogueByWork([
+      entry(1, "Odd one out"),
+      entry(2, "A real document", namesake),
+    ]);
+
+    expect(groups).toHaveLength(2);
+    expect(new Set(groups.map((g) => g.key)).size).toBe(2);
+  });
 });

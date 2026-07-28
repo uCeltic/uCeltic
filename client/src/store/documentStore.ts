@@ -87,8 +87,15 @@ export function teiDocumentId(backendId: number): DocumentId {
 }
 
 export interface TEIOpenPlan {
-  /** Backend ids to fetch and open, in request order. */
+  /** Backend ids that need a column, and have one, in request order. */
   toOpen: number[];
+  /**
+   * Requested ids that are on screen already. They need no column and no
+   * fetch — re-opening one only re-focuses it — and they are counted apart
+   * from `toOpen` so a report of what happened cannot claim to have opened a
+   * document that was open before the click.
+   */
+  alreadyOpen: number[];
   /** Requested ids there was no room for. */
   skipped: number[];
 }
@@ -111,19 +118,20 @@ export function planTEIOpen(
   const alreadyOpen = new Set(state.openDocuments.map((doc) => doc.id));
   let free = MAX_OPEN_DOCUMENTS - state.openDocuments.length;
 
-  const toOpen: number[] = [];
-  const skipped: number[] = [];
+  const plan: TEIOpenPlan = { toOpen: [], alreadyOpen: [], skipped: [] };
+  // A repeated id is one document: it must not be fetched twice, nor inflate
+  // the "opened 3 of 5" the caller reports.
   for (const id of new Set(requestedIds)) {
     if (alreadyOpen.has(teiDocumentId(id))) {
-      toOpen.push(id);
+      plan.alreadyOpen.push(id);
     } else if (free > 0) {
       free -= 1;
-      toOpen.push(id);
+      plan.toOpen.push(id);
     } else {
-      skipped.push(id);
+      plan.skipped.push(id);
     }
   }
-  return { toOpen, skipped };
+  return plan;
 }
 
 const initialDocuments: Document[] = [];

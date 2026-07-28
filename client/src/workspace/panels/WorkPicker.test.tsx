@@ -202,6 +202,23 @@ describe("WorkPicker", () => {
         expect(useWorkspaceStore.getState().selectedWorkId).toBeNull();
     });
 
+    //Test: a document already on screen is re-focused, not fetched again — and
+    //never counted as one this action opened
+    it("does not claim to have opened a document that was already open", async () => {
+        useDocumentStore.getState().addTEIDocument(doc(1, "Laud Misc. 610"));
+
+        await openMenu();
+        await expandWork(/Acallam na Senórach/);
+        fireEvent.click(screen.getByLabelText("Laud Misc. 610"));
+        fireEvent.click(screen.getByRole("button", { name: /open selected/i }));
+
+        await waitFor(() =>
+            expect(useWorkspaceStore.getState().statusText).toBe("Already open."),
+        );
+        expect(mockedFetch).not.toHaveBeenCalled();
+        expect(useDocumentStore.getState().openDocuments).toHaveLength(1);
+    });
+
     //Test: the trigger reports which work is being worked on
     it("labels the trigger with the chosen work", async () => {
         await openMenu();

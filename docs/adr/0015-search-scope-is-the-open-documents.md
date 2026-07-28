@@ -24,7 +24,7 @@ The merged control means *what to open*, which is not the same claim.
 ## Decision
 
 **Search scope is the documents currently open.** A Work is an **opener**: it
-groups the catalogue into work → its manuscripts, and the reader ticks which
+groups the catalogue into work → its Versions, and the reader ticks which
 witnesses to put on screen. Nothing filters search by work.
 
 The Work→Document relationship moves into the database (`apps.tei.Work` plus a

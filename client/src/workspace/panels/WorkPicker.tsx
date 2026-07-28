@@ -10,15 +10,24 @@ import { useWorkspaceStore } from "../../store/workspaceStore";
 import { groupCatalogueByWork, type WorkGroup } from "../../tei/workCatalog";
 import type { TEICatalogEntry } from "../../types/tei";
 import { useDismissableDropdown } from "./useDismissableDropdown";
-import { toolbarBtnBase, toolbarLabel } from "./buttonStyles";
+import {
+  dropdownTriggerIdle,
+  dropdownTriggerOpen,
+  toolbarLabel,
+} from "./buttonStyles";
 import { LayersIcon } from "./icons";
 
 /**
- * The Works opener: one control, two levels — a work, then the manuscripts that
- * carry it. It replaces the toolbar's "All Works" (a hard-coded list of three
- * works that named nothing in the database) and "Open TEI" (a flat list of every
- * document, one click one document) with the shape a reader actually works in:
- * pick the story, open the witnesses you want to compare (#152).
+ * The Works opener: one control, two levels — a work, then its Versions, the
+ * digitized texts that carry it. It replaces the toolbar's "All Works" (a
+ * hard-coded list of three works that named nothing in the database) and
+ * "Open TEI" (a flat list of every document, one click one document) with the
+ * shape a reader actually works in: pick the story, open the versions you want
+ * to compare (#152).
+ *
+ * "Version" and not "manuscript": a Manuscript here is the physical book, shown
+ * as page images in the IIIF panel, and the toolbar already has a control by
+ * that name (CONTEXT.md → Manuscript).
  *
  * It is an **opener**, not a search scope: search runs over the columns that end
  * up on screen (ADR-0015). The one thing the selection does beyond opening is
@@ -30,20 +39,19 @@ import { LayersIcon } from "./icons";
  * from the corpus the way the list it replaces did.
  */
 
-const btnBase = `${toolbarBtnBase} border`;
-const btnIdle = `${btnBase} border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
-const btnOpen = `${btnBase} border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
 const actionBtn =
   "rounded border border-[#E5E2D6] px-2 py-1 text-xs font-medium text-[#52524F] cursor-pointer hover:bg-[#F0EEE6] disabled:cursor-not-allowed disabled:text-gray-300";
+
+const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
 export default function WorkPicker() {
   const { open, setOpen, ref } = useDismissableDropdown<HTMLDivElement>();
   const [catalogue, setCatalogue] = useState<TEICatalogEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  // Which branch is showing its manuscripts. Held here rather than in the store
+  // Which branch is showing its versions. Held here rather than in the store
   // because it is disclosure, not a choice about the corpus; the work *choice*
   // it carries with it does go to the store, for the Tag Filter to read.
-  const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [ticked, setTicked] = useState<number[]>([]);
 
   const selectedWorkId = useWorkspaceStore((s) => s.selectedWorkId);
@@ -51,6 +59,7 @@ export default function WorkPicker() {
   const setStatusText = useWorkspaceStore((s) => s.setStatusText);
   const openDocuments = useDocumentStore((s) => s.openDocuments);
   const addTEIDocument = useDocumentStore((s) => s.addTEIDocument);
+  const setActiveDocumentId = useDocumentStore((s) => s.setActiveDocumentId);
 
   const groups = groupCatalogueByWork(catalogue);
   const label =
@@ -77,8 +86,8 @@ export default function WorkPicker() {
   }
 
   function handleExpand(group: WorkGroup) {
-    const collapsing = expandedLabel === group.label;
-    setExpandedLabel(collapsing ? null : group.label);
+    const collapsing = expandedKey === group.key;
+    setExpandedKey(collapsing ? null : group.key);
     setTicked([]);
     // The unassigned branch is not a work, so opening it chooses no work — the
     // Tag Filter has nothing to narrow to and goes back to every open column.
@@ -98,12 +107,19 @@ export default function WorkPicker() {
    * what happened. The cap is answered once, before the first fetch, so the
    * report is accurate — the control this replaces discovered the limit one
    * document at a time and could only `alert()` about it.
+   *
+   * The count reported is documents that were actually opened: one that was on
+   * screen already is re-focused, not fetched, and never claimed as opened.
    */
   async function openDocs(ids: number[]) {
     const plan = planTEIOpen({ openDocuments }, ids);
-    if (plan.toOpen.length === 0) {
+    // How many of the request needed a column at all — the denominator of the
+    // shortfall, so re-ticking an open document cannot inflate it.
+    const needingColumn = plan.toOpen.length + plan.skipped.length;
+
+    if (plan.toOpen.length === 0 && plan.skipped.length > 0) {
       setStatusText(
-        `No room for ${plan.skipped.length} more document${plan.skipped.length === 1 ? "" : "s"} — close a column first.`,
+        `No room for ${plural(plan.skipped.length, "document")} — close a column first.`,
       );
       return;
     }
@@ -115,10 +131,17 @@ export default function WorkPicker() {
       setStatusText("Could not open every document — please try again.");
       return;
     }
+    // Already-open documents cost no fetch; bringing the last one forward is
+    // what the reader asked for by ticking it.
+    const refocused = plan.alreadyOpen.at(-1);
+    if (refocused !== undefined) setActiveDocumentId(teiDocumentId(refocused));
+
     setStatusText(
       plan.skipped.length === 0
-        ? `Opened ${plan.toOpen.length} document${plan.toOpen.length === 1 ? "" : "s"}.`
-        : `Opened ${plan.toOpen.length} of ${ids.length} — close a column to open more.`,
+        ? plan.toOpen.length === 0
+          ? "Already open."
+          : `Opened ${plural(plan.toOpen.length, "document")}.`
+        : `Opened ${plan.toOpen.length} of ${needingColumn} — close a column to open more.`,
     );
     setOpen(false);
     setTicked([]);
@@ -128,7 +151,7 @@ export default function WorkPicker() {
     <div ref={ref} className="relative">
       <button
         type="button"
-        className={open ? btnOpen : btnIdle}
+        className={open ? dropdownTriggerOpen : dropdownTriggerIdle}
         onClick={handleToggleMenu}
         aria-expanded={open}
         aria-label={label}
@@ -150,9 +173,9 @@ export default function WorkPicker() {
           ) : (
             groups.map((group) => (
               <WorkBranch
-                key={group.label}
+                key={group.key}
                 group={group}
-                expanded={expandedLabel === group.label}
+                expanded={expandedKey === group.key}
                 onExpand={() => handleExpand(group)}
                 ticked={ticked}
                 onTick={toggleTick}
@@ -212,7 +235,11 @@ function WorkBranch({
           {group.documents.map((entry) => (
             <label
               key={entry.id}
-              className="flex cursor-pointer items-center gap-2 py-1.5 pl-6 pr-3 text-sm text-gray-600 hover:bg-[#F0EEE6]"
+              // `items-start` + wrapping, not truncation: a title carries what
+              // tells two witnesses of one work apart — "Laud Misc. 610 —
+              // Acallam na Senórach, ll. 2400–3106" — and the line range is at
+              // the end, exactly where a single truncated line would cut.
+              className="flex cursor-pointer items-start gap-2 py-1.5 pl-6 pr-3 text-sm text-gray-600 hover:bg-[#F0EEE6]"
             >
               <input
                 type="checkbox"
@@ -220,11 +247,13 @@ function WorkBranch({
                 checked={ticked.includes(entry.id)}
                 disabled={!canTick(entry.id) && !ticked.includes(entry.id)}
                 onChange={() => onTick(entry.id)}
-                className="accent-[#52524F] disabled:cursor-not-allowed"
+                className="mt-0.5 accent-[#52524F] disabled:cursor-not-allowed"
               />
-              <span className="min-w-0 flex-1 truncate">{entry.title}</span>
+              <span className="min-w-0 flex-1">{entry.title}</span>
               {isOpen(entry.id) && (
-                <span className="shrink-0 text-xs text-gray-400">open</span>
+                <span className="mt-0.5 shrink-0 text-xs text-gray-400">
+                  open
+                </span>
               )}
             </label>
           ))}

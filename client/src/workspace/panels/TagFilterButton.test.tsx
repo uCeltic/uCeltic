@@ -234,23 +234,14 @@ describe("TagFilterButton narrowed by the selected work", () => {
         tain,
     );
 
-    it("offers only the entries of the columns belonging to the selected work", () => {
+    // Fionn is named in the Acallam column, Caílte only in the Táin one; the
+    // narrowed menu counts one column, not two, so the numbers on screen belong
+    // to the same set of documents the menu was built from.
+    it("counts only the columns belonging to the selected work", () => {
         openDocs(acallamDoc, tainDoc);
         useWorkspaceStore.setState({ selectedWorkId: acallam.id });
         open();
 
-        // Fionn is named in the Acallam column; Caílte only in the Táin one, so
-        // he is declared but never referenced within the narrowed set.
-        const fionn = screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ });
-        expect(fionn).toHaveTextContent(/^Find mac Cumaill1$/);
-    });
-
-    it("counts one column per document in the work, not per open column", () => {
-        openDocs(acallamDoc, tainDoc);
-        useWorkspaceStore.setState({ selectedWorkId: acallam.id });
-        open();
-
-        // one number, not two — the Táin column is not part of this menu
         expect(
             screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }),
         ).toHaveTextContent(/^Find mac Cumaill1$/);

@@ -251,7 +251,8 @@ describe("planTEIOpen", () => {
   });
 
   // An already-open document is re-focused rather than opened again, so it
-  // costs no slot — counting it as one would refuse an open that fits.
+  // costs no slot — counting it as one would refuse an open that fits — and it
+  // is reported apart from the documents that really were opened.
   it("does not spend a slot on a document that is already open", () => {
     fillWith(MAX_OPEN_DOCUMENTS - 2);
     useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
@@ -259,7 +260,8 @@ describe("planTEIOpen", () => {
 
     const plan = planTEIOpen(useDocumentStore.getState(), [1, 2, 3]);
 
-    expect(plan.toOpen).toEqual([1, 2]);
+    expect(plan.alreadyOpen).toEqual([1]);
+    expect(plan.toOpen).toEqual([2]);
     expect(plan.skipped).toEqual([3]);
   });
 

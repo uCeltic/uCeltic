@@ -5,8 +5,9 @@
  * All are 16×16 line icons drawn in `currentColor` and marked `aria-hidden`: the
  * accessible name comes from the button's own label/tooltip, never the glyph. In
  * particular the Manuscript control pairs {@link BookIcon} (a physical book) with
- * the word "Manuscripts" and must never be renamed "Books"; the Document/TEI
- * control uses {@link FileTextIcon} so the two read as distinct kinds of source.
+ * the word "Manuscripts" and must never be renamed "Books"; the Works opener
+ * uses {@link LayersIcon} so the physical original and the digitized texts that
+ * carry a Work read as distinct kinds of source.
  */
 type IconProps = { className?: string };
 
@@ -63,16 +64,6 @@ export function FilePlusIcon({ className }: IconProps) {
   );
 }
 
-// Open TEI (Document = digitized text) — a text file with lines.
-export function FileTextIcon({ className }: IconProps) {
-  return (
-    <Svg className={className}>
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
-      <path d="M14 3v5h5" />
-      <path d="M8.5 13h7M8.5 16.5h7" />
-    </Svg>
-  );
-}
 
 // Advanced search parameters — sliders.
 export function SlidersIcon({ className }: IconProps) {
@@ -95,7 +86,8 @@ export function SearchIcon({ className }: IconProps) {
   );
 }
 
-// Manuscript — a physical book. Distinct from FileTextIcon (a Document); never "Books".
+// Manuscript — a physical book. Distinct from LayersIcon (Works, i.e. digitized
+// texts); never "Books".
 export function BookIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

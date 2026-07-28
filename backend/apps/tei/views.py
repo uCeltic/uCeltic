@@ -7,10 +7,16 @@ from .serializers import TEIDocumentListSerializer, TEIDocumentDetailSerializer
 
 # get all the TEI documents
 class TEIDocumentListView(ListAPIView):
-    queryset = TEIDocument.objects.exclude(parsed_json=None)
+    # select_related: every row now serializes its work, and the catalogue is
+    # fetched whole each time the opener is used — one join beats one query
+    # per document.
+    queryset = TEIDocument.objects.select_related("work").exclude(parsed_json=None)
     serializer_class = TEIDocumentListSerializer
 
 # get a single TEI document
 class TEIDocumentDetailView(RetrieveAPIView):
-    queryset = TEIDocument.objects.exclude(parsed_json=None)
+    # select_related: every row now serializes its work, and the catalogue is
+    # fetched whole each time the opener is used — one join beats one query
+    # per document.
+    queryset = TEIDocument.objects.select_related("work").exclude(parsed_json=None)
     serializer_class = TEIDocumentDetailSerializer

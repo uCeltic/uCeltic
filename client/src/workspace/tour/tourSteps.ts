@@ -30,7 +30,9 @@ export const TOUR_STEPS: TourStep[] = [
     id: "open-documents",
     anchors: ["open-works", "add-text"],
     title: "Open two documents",
-    body: "Open “Works”, pick a story, and tick the manuscripts you want side by side — or add your own file with “+ Add Text”. Open two: the next step searches one against the others.",
+    // "versions", not "manuscripts": the toolbar's Manuscripts button means the
+    // physical originals' page images, and these are digitized texts (CONTEXT.md).
+    body: "Open “Works”, pick a story, and tick the versions you want side by side — or add your own file with “+ Add Text”. Open two: the next step searches one against the others.",
   },
   {
     id: "select-to-search",

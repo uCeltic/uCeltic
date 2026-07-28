@@ -152,8 +152,9 @@
   *Laud Misc. 610 — Acallam na Senórach, ll. 2400–3106* happen to embed the Work
   name, but the first document titled otherwise would silently leave its Work.
   An admin assigns the Work when uploading. A Document with **no** Work is
-  normal (the corpus's `shakespear.xml` and `serafin*.xml` samples) and stays
-  openable, under its own branch; a Work with no Documents is not shown, because
+  normal (the corpus's non-Acallam samples — `shakespear.xml`, `let695.xml`,
+  `serafin*.xml`) and stays openable, under its own branch labelled
+  *Unassigned*; a Work with no Documents is not shown, because
   the menu is grouped from the document catalogue and so cannot express one.
   _Avoid_: Work as a search filter — that was the hard-coded `All Works`
   control, removed with #152.
