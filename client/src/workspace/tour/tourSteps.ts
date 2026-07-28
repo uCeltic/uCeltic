@@ -2,12 +2,12 @@
  * The first-run spotlight tour (#125): a single select-to-search walkthrough.
  *
  * Each step points at one or more live anchors by their `data-tour` attribute.
- * The elements carrying these attributes live in ToolBar, TEIPickerDropdown,
+ * The elements carrying these attributes live in ToolBar, WorkPicker,
  * SelectionSearchButton, HamburgerMenu, and DocumentArea — keep the ids here in
  * step with the markup there.
  *
  * A step may name several selectors: the spotlight rings the box that encloses
- * all of them (step 1 rings `Open TEI` and `+ Add Text` together). A selector
+ * all of them (step 1 rings `Works` and `+ Add Text` together). A selector
  * that matches nothing right now — the floating select-to-search button before
  * any text is selected, the result nav before any search has run — is simply not
  * ringed; the card still shows, because the tour is non-blocking and the user is
@@ -28,9 +28,11 @@ export interface TourStep {
 export const TOUR_STEPS: TourStep[] = [
   {
     id: "open-documents",
-    anchors: ["open-tei", "add-text"],
+    anchors: ["open-works", "add-text"],
     title: "Open two documents",
-    body: "Open a text from the built-in corpus with “Open TEI”, and add your own file with “+ Add Text”. Open two — the next step searches one against the others.",
+    // "versions", not "manuscripts": the toolbar's Manuscripts button means the
+    // physical originals' page images, and these are digitized texts (CONTEXT.md).
+    body: "Open “Works”, pick a story, and tick the versions you want side by side — or add your own file with “+ Add Text”. Open two: the next step searches one against the others.",
   },
   {
     id: "select-to-search",

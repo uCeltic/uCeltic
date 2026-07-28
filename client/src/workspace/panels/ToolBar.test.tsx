@@ -13,6 +13,7 @@ const teiContent: TEIDoc = {
     id: 1,
     title: "t",
     language: "ga",
+    work: null,
     parsed_json: { tag: "body", children: [] },
     created_at: "",
     meta: { title: "", author: "", language: "", pbCount: 0 },

@@ -11,7 +11,7 @@ beforeEach(() => {
     useWorkspaceStore.setState({
         fontSize: 14,
         showIIIF: true,
-        selectedWorkIds: [],
+        selectedWorkId: null,
         selectedEntityId: null,
         entityIndexByDocument: {},
     });
@@ -173,21 +173,45 @@ describe("workspaceStore analytics", () => {
         expect(mockedLogEvent).not.toHaveBeenCalled();
     });
 
-    //Test: changing the Work scope logs one scope_changed event with selected_work_ids
+    //Test: choosing a Work logs one scope_changed event carrying that work's id
     it("logs scope_changed with the new selection", () => {
-        useWorkspaceStore.getState().setSelectedWorkIds(["tain"]);
+        useWorkspaceStore.getState().setSelectedWorkId(7);
         expect(mockedLogEvent).toHaveBeenCalledOnce();
         expect(mockedLogEvent).toHaveBeenCalledWith("scope_changed", {
-            selected_work_ids: ["tain"],
+            selected_work_ids: [7],
+        });
+    });
+
+    //Test: clearing the selection is still a scope_changed, with an empty list
+    it("logs an empty selection when the work is cleared", () => {
+        useWorkspaceStore.getState().setSelectedWorkId(7);
+        mockedLogEvent.mockClear();
+
+        useWorkspaceStore.getState().setSelectedWorkId(null);
+        expect(mockedLogEvent).toHaveBeenCalledWith("scope_changed", {
+            selected_work_ids: [],
         });
     });
 
     //Test: setting an identical scope again is a no-op — logs nothing
     it("does not log scope_changed when the selection doesn't change", () => {
-        useWorkspaceStore.getState().setSelectedWorkIds(["tain"]);
+        useWorkspaceStore.getState().setSelectedWorkId(7);
         mockedLogEvent.mockClear();
 
-        useWorkspaceStore.getState().setSelectedWorkIds(["tain"]);
+        useWorkspaceStore.getState().setSelectedWorkId(7);
         expect(mockedLogEvent).not.toHaveBeenCalled();
+    });
+
+    //Test: a new work is a new set of documents, so the followed entity is dropped
+    it("clears the followed entity when the work changes", () => {
+        useWorkspaceStore.setState({
+            selectedEntityId: "fionn",
+            entityIndexByDocument: { "doc-tei-1": 3 },
+        });
+
+        useWorkspaceStore.getState().setSelectedWorkId(7);
+
+        expect(useWorkspaceStore.getState().selectedEntityId).toBeNull();
+        expect(useWorkspaceStore.getState().entityIndexByDocument).toEqual({});
     });
 });

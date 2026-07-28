@@ -81,6 +81,59 @@ export function getVisibleTEIDocuments(
     .filter((doc): doc is SearchableDocument => doc?.format === "tei");
 }
 
+/** The workspace column id a backend TEI document id is opened under. */
+export function teiDocumentId(backendId: number): DocumentId {
+  return `doc-tei-${backendId}`;
+}
+
+export interface TEIOpenPlan {
+  /** Backend ids that need a column, and have one, in request order. */
+  toOpen: number[];
+  /**
+   * Requested ids that are on screen already. They need no column and no
+   * fetch — re-opening one only re-focuses it — and they are counted apart
+   * from `toOpen` so a report of what happened cannot claim to have opened a
+   * document that was open before the click.
+   */
+  alreadyOpen: number[];
+  /** Requested ids there was no room for. */
+  skipped: number[];
+}
+
+/**
+ * Which of the requested TEI documents the workspace has room for.
+ *
+ * Opening a work is one action over several documents, so the cap has to be
+ * answered once, up front — the alternative is fetching all of them and letting
+ * `addTEIDocument` quietly drop the ones that no longer fit, leaving nobody able
+ * to say what was opened and what was not (#152).
+ *
+ * A document that is already open costs nothing: re-opening it re-focuses its
+ * existing column rather than adding one.
+ */
+export function planTEIOpen(
+  state: Pick<DocumentStore, "openDocuments">,
+  requestedIds: number[],
+): TEIOpenPlan {
+  const alreadyOpen = new Set(state.openDocuments.map((doc) => doc.id));
+  let free = MAX_OPEN_DOCUMENTS - state.openDocuments.length;
+
+  const plan: TEIOpenPlan = { toOpen: [], alreadyOpen: [], skipped: [] };
+  // A repeated id is one document: it must not be fetched twice, nor inflate
+  // the "opened 3 of 5" the caller reports.
+  for (const id of new Set(requestedIds)) {
+    if (alreadyOpen.has(teiDocumentId(id))) {
+      plan.alreadyOpen.push(id);
+    } else if (free > 0) {
+      free -= 1;
+      plan.toOpen.push(id);
+    } else {
+      plan.skipped.push(id);
+    }
+  }
+  return plan;
+}
+
 const initialDocuments: Document[] = [];
 
 export const useDocumentStore = create<DocumentStore>((set) => ({

@@ -3,12 +3,12 @@ import { useWorkspaceStore } from "../../store/workspaceStore";
 import type { EntityKind, EntityMenuEntry } from "../../tei/authority";
 import { useEntityMenu } from "../../tei/useEntityMenu";
 import { useDismissableDropdown } from "./useDismissableDropdown";
-import { toolbarBtnBase, toolbarLabel } from "./buttonStyles";
+import {
+  dropdownTriggerIdle,
+  dropdownTriggerOpen,
+  toolbarLabel,
+} from "./buttonStyles";
 import { TagIcon } from "./icons";
-
-const btnBase = `${toolbarBtnBase} border`;
-const btnIdle = `${btnBase} border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
-const btnOpen = `${btnBase} border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
 
 const GROUPS: { kind: EntityKind; label: string }[] = [
   { kind: "person", label: "Person" },
@@ -70,7 +70,7 @@ export default function TagFilterButton() {
     <div ref={ref} className="relative">
       <button
         type="button"
-        className={open ? btnOpen : btnIdle}
+        className={open ? dropdownTriggerOpen : dropdownTriggerIdle}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={label}

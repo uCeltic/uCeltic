@@ -10,9 +10,6 @@ function logFontSizeChanged(from: number, to: number): void {
   logEvent("font_size_changed", { from, to });
 }
 
-function sameWorkIds(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((id, i) => id === b[i]);
-}
 
 interface WorkspaceStore {
   // status
@@ -30,8 +27,15 @@ interface WorkspaceStore {
   showIIIF: boolean
   toggleIIIF: () => void
 
-  selectedWorkIds: string[];
-  setSelectedWorkIds: (ids: string[]) => void;
+  // The Work whose manuscripts the opener is showing (#152). Single-select:
+  // the menu shows one work's manuscripts expanded at a time, and the same
+  // choice narrows the Tag Filter, which can only narrow to one work.
+  // `null` is "no work chosen" — every work is listed, nothing is narrowed.
+  //
+  // Not a search scope: search runs over the open columns (ADR-0015). This
+  // says which documents are on offer, not which are searched.
+  selectedWorkId: number | null;
+  setSelectedWorkId: (id: number | null) => void;
 
   // Tag Filter — the id of the one person or place the reader is following, as
   // declared by the open documents' own authority lists (#147). Single-select:
@@ -53,7 +57,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   statusText: "Ready",
   fontSize: 14,
   showIIIF: true,
-  selectedWorkIds: [],
+  selectedWorkId: null,
   selectedEntityId: null,
   entityIndexByDocument: {},
 
@@ -118,10 +122,15 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       };
     }),
 
-  setSelectedWorkIds: (ids) => {
-    if (!sameWorkIds(get().selectedWorkIds, ids)) {
-      logEvent("scope_changed", { selected_work_ids: ids });
-    }
-    set({ selectedWorkIds: ids });
+  setSelectedWorkId: (id) => {
+    if (get().selectedWorkId === id) return;
+    // Still `scope_changed` with a `selected_work_ids` list: the taxonomy is
+    // closed (ADR-0003) and this is the same signal it always recorded — which
+    // work the reader is working on — so historical rows stay comparable.
+    logEvent("scope_changed", { selected_work_ids: id === null ? [] : [id] });
+    // A different work is a different set of documents, so the entity the Tag
+    // Filter was following may no longer be on offer; drop it rather than leave
+    // a selection the narrowed menu cannot show.
+    set({ selectedWorkId: id, selectedEntityId: null, entityIndexByDocument: {} });
   },
 }));

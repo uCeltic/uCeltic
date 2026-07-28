@@ -136,11 +136,28 @@
 
   A named story (e.g. *Snow White*, *Táin Bó Cúailnge*), independent of the
   language or manuscript it survives in. A Work is a **container of one or more
-  Versions**; it holds no text itself. Search **scope** is a Work: searching
-  *Snow White* searches across all of its Versions at once, never across an
-  unrelated Work. Currently the Work list is **hard-coded** in
-  `client/src/workspace/panels/ScopeButton.tsx`; wiring it to actually group its
-  Versions is the unfinished feature (not a modelling ambiguity — see below).
+  Versions**; it holds no text itself.
+
+  A Work is what the workspace **opens documents by**: the toolbar's `Works`
+  control (`client/src/workspace/panels/WorkPicker.tsx`) lists the Works the
+  database declares, and expanding one offers its Versions to open — several at
+  once, or all of them. A Work is **not** a search scope; search runs over the
+  columns that are open ([ADR-0015](docs/adr/0015-search-scope-is-the-open-documents.md)).
+  Choosing one does one thing beyond opening: it narrows the **Tag Filter** to
+  that Work's entries. The link runs one way — choosing an entity never changes
+  the Work.
+
+  The relationship is held in the database (`apps.tei.Work`, and a nullable FK
+  on `TEIDocument`), **never parsed out of a document title**: titles like
+  *Laud Misc. 610 — Acallam na Senórach, ll. 2400–3106* happen to embed the Work
+  name, but the first document titled otherwise would silently leave its Work.
+  An admin assigns the Work when uploading. A Document with **no** Work is
+  normal (the corpus's non-Acallam samples — `shakespear.xml`, `let695.xml`,
+  `serafin*.xml`) and stays openable, under its own branch labelled
+  *Unassigned*; a Work with no Documents is not shown, because
+  the menu is grouped from the document catalogue and so cannot express one.
+  _Avoid_: Work as a search filter — that was the hard-coded `All Works`
+  control, removed with #152.
 
   ### Manuscript
 
@@ -178,6 +195,10 @@
   reading pane are not click targets, because the reading pane stays a reading
   pane. A Document with no Authority List contributes no options and gets no
   navigation card; there is no fallback to matching by element name.
+
+  While a **Work** is chosen in the `Works` opener, the menu is built from that
+  Work's open columns only, and its per-column counts narrow with it. The two
+  toolbar dropdowns are linked one way: Work → entities, never back.
 
   It **replaces** the removed three-state Mode switcher (Search / People &
   Places / Personal), which never did anything and read as a confusing "second
@@ -248,11 +269,12 @@
   sentence.
 
   **Work → Version → TEI Document** is a one-to-many-to-one chain: a Work has many
-  Versions, each Version is one TEI Document. Search scope (`selected_work_ids`)
-  is keyed on the **Work**; it expands to every TEI Document under that Work's
-  Versions. This relationship is *modelled and agreed* — only the wiring in
-  `ScopeButton.tsx` (hard-coded list → real Work→Version grouping) remains to
-  build.
+  Versions, each Version is one TEI Document. It is stored as one nullable FK
+  (`TEIDocument.work`) — the Version has no row of its own, being the same thing
+  as the TEI Document under a domain name. The `Works` menu reads that FK back
+  off the catalogue to group it. `scope_changed` still records which Work the
+  reader chose, now as a single database id; it names what they are reading, not
+  what is searched.
 
   ### Built-in Corpus
 

@@ -23,6 +23,7 @@ function makeTEIDoc(id: number): TEIDoc {
     id,
     title: `Doc ${id}`,
     language: "ga",
+    work: null,
     parsed_json: { tag: "body", children: [] },
     created_at: "",
     meta: { title: "", author: "", language: "", pbCount: 0 },

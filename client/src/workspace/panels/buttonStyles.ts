@@ -16,6 +16,12 @@ export const secondaryBtn = `${toolbarBtnBase} border border-[#E5E2D6] bg-white 
 // The "on" state, for the Search and manuscript toggles.
 export const toggleOnBtn = `${toolbarBtnBase} border border-[#52524F] bg-[#52524F] text-white hover:bg-[#3F3F3C]`;
 
+// The two two-level toolbar dropdowns (Tag Filter, Works) share one trigger:
+// same shape closed, same darkened border while their panel is open. Kept here
+// so the pair cannot drift apart — they sit side by side.
+export const dropdownTriggerIdle = `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
+export const dropdownTriggerOpen = `${toolbarBtnBase} border border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
+
 // The label that sits beside a toolbar icon: shown wide, hidden (icon-only) below `xl`.
 // The button still carries an `aria-label`/`title`, so hiding the text keeps the
 // control both tooltipped and named for assistive tech.
