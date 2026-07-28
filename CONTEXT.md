@@ -191,6 +191,12 @@
   highlight's orange: both features are allowed on screen at once and must stay
   telling apart (`client/src/tei/highlight.ts`, `client/src/index.css`).
 
+  These tiers are the **only** thing that marks a named entity on the page. The
+  reading pane renders the document as plain text and the TEI markup lives in
+  the DOM as `data-tei-*` attributes rather than as styling — see
+  [ADR-0016](docs/adr/0016-reading-pane-renders-plain-text.md) — so an entity is
+  unmarked until this control asks for it.
+
   Entities are selectable **only from this menu** — named entities in the
   reading pane are not click targets, because the reading pane stays a reading
   pane. A Document with no Authority List contributes no options and gets no
