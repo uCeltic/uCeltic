@@ -40,8 +40,14 @@ def run_search(doc_id: int, query: str, *,
 
         word_end = min(word_idx + window_size, len(word_array))
 
-        # Rebuild snippet from word_array preserving separators.
-        snippet = "".join(word_array[i]["w"] + (word_array[i].get("sep") or " ") for i in range(word_idx, word_end)).strip()
+        # Rebuild snippet from word_array preserving separators. An empty
+        # separator means the source has nothing between the two words, so it
+        # must stay empty — inventing a space there is how the old fragmented
+        # index turned every fragment boundary into a visible gap (#145).
+        snippet = "".join(
+            word_array[i]["w"] + word_array[i].get("sep", "")
+            for i in range(word_idx, word_end)
+        ).strip()
 
         anchor = anchors_by_id.get(word_array[word_idx]["a"])
         results.append({

@@ -1,13 +1,28 @@
-import type { TEIAnchor, TEIWordEntry } from "../types/tei";
+import type { TEIAnchor } from "../types/tei";
 
 /**
- * Build a Map<wordIdx, anchorId> from word_array.
- * Means this is the ith word in the document, and it belongs to this anchor: "anchorId"
+ * Build a Map<wordIdx, anchorId[]> — every anchor the ith word has characters in.
+ *
+ * Editorial TEI marks up inside words, so `tal<expan>am</expan>` is the single
+ * word `talam` with `tal` in the line and `am` in the expan (#145). A quarter to
+ * a half of the words in a real manuscript file are like this, so one word maps
+ * to a list of anchors, not to one.
+ *
+ * The anchors are the authority here, not word_array. `word_array[i].a` names
+ * only the anchor a word STARTS in — enough to label a result with a line
+ * number, not enough to paint it.
+ *
  * Compute once per doc; cache in store.
  */
-export function buildWordToAnchor(wordArray: TEIWordEntry[]): Map<number, number> {
-  const m = new Map<number, number>();
-  wordArray.forEach((entry, idx) => m.set(idx, entry.a));
+export function buildWordToAnchors(anchors: TEIAnchor[]): Map<number, number[]> {
+  const m = new Map<number, number[]>();
+  for (const anchor of anchors) {
+    for (const [wordIdx] of anchor.word_char_offsets) {
+      const ids = m.get(wordIdx);
+      if (ids) ids.push(anchor.id);
+      else m.set(wordIdx, [anchor.id]);
+    }
+  }
   return m;
 }
 
@@ -22,6 +37,26 @@ export function buildAnchorsById(anchors: TEIAnchor[]): Map<number, TEIAnchor> {
 }
 
 /**
+ * The whole path from a document's anchors to the DOM ranges covering one word
+ * span: both callers (painting the highlight, scrolling a result into view)
+ * want exactly this and nothing else.
+ */
+export function rangesForWordSpan(
+  columnEl: Element,
+  anchors: TEIAnchor[],
+  wordStart: number,
+  wordEnd: number,
+): Range[] {
+  return buildRangesForWordSpan(
+    columnEl,
+    buildAnchorsById(anchors),
+    buildWordToAnchors(anchors),
+    wordStart,
+    wordEnd,
+  );
+}
+
+/**
  * Given a word range [wordStart, wordEnd) inside a text viewer column,
  * return one or more DOM Ranges that exactly cover those words.
  *
@@ -31,22 +66,24 @@ export function buildAnchorsById(anchors: TEIAnchor[]): Map<number, TEIAnchor> {
 export function buildRangesForWordSpan(
   columnEl: Element, // means the text viewer column/doc_id
   anchorsById: Map<number, TEIAnchor>,
-  wordToAnchor: Map<number, number>,
+  wordToAnchors: Map<number, number[]>,
   wordStart: number,
   wordEnd: number,
 ): Range[] {
   // Group hit word indices by anchor.
   // Build a byAnchor Map<anchorId, result word indices> for each anchor
+  // A word contributes to every anchor it has characters in, so a single word
+  // can open several groups.
   const byAnchor = new Map<number, number[]>();
   for (let i = wordStart; i < wordEnd; i++) {
-    const aId = wordToAnchor.get(i);
-    if (aId === undefined) continue;
-    let arr = byAnchor.get(aId);
-    if (!arr) {
-      arr = [];
-      byAnchor.set(aId, arr);
+    for (const aId of wordToAnchors.get(i) ?? []) {
+      let arr = byAnchor.get(aId);
+      if (!arr) {
+        arr = [];
+        byAnchor.set(aId, arr);
+      }
+      arr.push(i);
     }
-    arr.push(i);
   }
 
   const ranges: Range[] = [];

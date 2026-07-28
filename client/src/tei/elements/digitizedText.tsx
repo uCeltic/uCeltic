@@ -34,7 +34,14 @@ export function Supplied({ node, children, anchorId }: TEIElementProps) {
       data-tei-anchor-id={anchorId}
       title={`supplied${node.attrs?.reason ? ": " + node.attrs.reason : ""}`}
     >
-      ⟨{children}⟩
+      {/* The brackets are the editor's mark, not the manuscript's text, so they
+          are kept out of this anchor's direct text children. Highlighting reads
+          a word's character offsets against exactly those children (wordRange
+          .ts), and the backend counted only what the manuscript has. Inlining
+          these back into the span shifts every offset inside a `supplied` by
+          one — `supplied` cuts a word in half 35 times in the built-in corpus
+          alone. */}
+      <span>⟨</span>{children}<span>⟩</span>
     </span>
   );
 }

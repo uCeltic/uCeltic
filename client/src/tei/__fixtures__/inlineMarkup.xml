@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source of inlineMarkup.json. Markup shapes taken from the research corpus:
+     words split two, three and four ways, a word split across a `name`, and a
+     word flush against a `note` that leaves the search index (#145).
+
+     Regenerate the JSON after any change to the parser's output contract:
+
+       cd backend && .venv/bin/python -c "
+       import json, sys; sys.path.insert(0, '.')
+       from apps.tei.services.parse import parse_tei
+       p = '../client/src/tei/__fixtures__/'
+       t, a, w = parse_tei(open(p + 'inlineMarkup.xml', 'rb').read())
+       json.dump({'parsed_json': t, 'anchors': a, 'word_array': w},
+                 open(p + 'inlineMarkup.json', 'w'), indent=2, ensure_ascii=False)"
+-->
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text><body>
+    <l n="1">IS a<expan>n</expan>n<expan>si</expan>n ro fīarf<expan>aig</expan> <name>Eoch</name>aid</l>
+    <l n="2">L<expan>et</expan>h<expan>d</expan>er<supplied>g</supplied> rí Laigen</l>
+    <l n="3">ro gab i<expan>n</expan> tal<expan>am</expan><note>Sic.</note> trochull</l>
+  </body></text>
+</TEI>
