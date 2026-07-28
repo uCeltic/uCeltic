@@ -29,13 +29,19 @@ const ATTRS = {
   extent: "2 words",
 };
 
+// Every way a Tailwind class can change how the text itself looks. Margins,
+// padding, `display` and line-height are absent on purpose: layout and spacing
+// are what the elements are still allowed to say.
 const BANNED: [string, RegExp][] = [
   ["colour", /^(?:text|decoration|border|bg)-[a-z]+-\d{2,3}$/],
   ["arbitrary colour or size", /^(?:text|font|bg|decoration)-\[/],
   ["font size", /^text-(?:xs|sm|base|lg|[2-9]?xl)$/],
+  ["font family", /^font-(?:sans|serif|mono)$/],
   ["font weight", /^font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/],
   ["font style", /^(?:italic|not-italic)$/],
   ["text decoration", /^(?:underline|overline|line-through|no-underline)$|^decoration-/],
+  ["letter case or spacing", /^(?:uppercase|lowercase|capitalize)$|^tracking-/],
+  ["raised or lowered text", /^align-(?:super|sub)$/],
   ["opacity", /^opacity-\d+$/],
   ["rule", /^border(?:-[xytrbl])?-\d+$/],
 ];
@@ -46,37 +52,37 @@ const BANNED: [string, RegExp][] = [
 // the manuscript's own characters.
 const UI_CHROME = new Set(["note"]);
 
-function offendingClasses(el: Element): string[] {
-  return [...el.classList].filter((cls) => BANNED.some(([, re]) => re.test(cls)));
+/** What `el` is doing to the text, named — `[]` when it is doing nothing. */
+function offences(el: Element): string[] {
+  return [...el.classList].flatMap((cls) =>
+    BANNED.filter(([, re]) => re.test(cls)).map(([kind]) => `${kind} (${cls})`),
+  );
+}
+
+/** One mapped element, rendered the way `TEIRenderer` renders it. */
+function renderTag(tag: string, attrs: Record<string, string> = ATTRS) {
+  const Component = elementMap[tag];
+  const node: TEIElementNode = { tag, attrs, children: [] };
+  return render(
+    <Component node={node} anchorId={1}>
+      uerbum
+    </Component>,
+  );
 }
 
 describe("no mapped TEI element decorates the document's text", () => {
   const tags = Object.keys(elementMap).filter((tag) => !UI_CHROME.has(tag));
 
   it.each(tags)("%s", (tag) => {
-    const Component = elementMap[tag];
-    const node: TEIElementNode = { tag, attrs: ATTRS, children: [] };
-    const { container } = render(
-      <Component node={node} anchorId={1}>
-        uerbum
-      </Component>,
-    );
+    const { container } = renderTag(tag);
 
     for (const el of container.querySelectorAll("*")) {
-      expect(offendingClasses(el), `<${el.tagName.toLowerCase()}> in ${tag}`).toEqual([]);
+      expect(offences(el), `<${el.tagName.toLowerCase()}> in ${tag}`).toEqual([]);
     }
   });
 });
 
 describe("what the elements still carry", () => {
-  function renderTag(tag: string, attrs: Record<string, string> = ATTRS) {
-    const Component = elementMap[tag];
-    return render(
-      <Component node={{ tag, attrs, children: [] }} anchorId={1}>
-        uerbum
-      </Component>,
-    );
-  }
 
   it("keeps @rend on the DOM even though nothing styles it any more", () => {
     for (const tag of ["hi", "del", "c"]) {
@@ -104,6 +110,10 @@ describe("what the elements still carry", () => {
       ["gap", "[…2 words…]"],
       ["lacunaStart", "[*"],
       ["lacunaEnd", "*]"],
+      // `‖` is now the whole of what marks a column break, so nothing about it
+      // is incidental: with the locator gone from an unlabelled `cb`, this is
+      // the only thing left on the page saying the column changed.
+      ["cb", "‖p.35"],
     ] as const) {
       const { container, unmount } = renderTag(tag);
       expect(container.textContent, tag).toBe(mark);

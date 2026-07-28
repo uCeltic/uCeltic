@@ -83,7 +83,7 @@ export function LacunaEnd({ anchorId }: TEIElementProps) {
 
 export function Damage({ children, anchorId }: TEIElementProps) {
   return (
-    <span data-tei-tag="damage" data-tei-anchor-id={anchorId} title="damaged">
+    <span data-tei-tag="damage" data-tei-anchor-id={anchorId}>
       {children}
     </span>
   );

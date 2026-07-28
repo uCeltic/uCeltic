@@ -36,5 +36,4 @@ color: #1F2937;
    element's own colour. */
 [data-entity-focus] [data-tei-entity] {
 color: #9CA3AF;
-text-decoration-color: #D1D5DB;
 }
