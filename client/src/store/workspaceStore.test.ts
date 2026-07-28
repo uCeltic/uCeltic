@@ -12,7 +12,8 @@ beforeEach(() => {
         fontSize: 14,
         showIIIF: true,
         selectedWorkIds: [],
-        selectedTagTypes: [],
+        selectedEntityId: null,
+        entityIndexByDocument: {},
     });
 });
 
@@ -39,26 +40,92 @@ describe("workspaceStore", () => {
         expect(useWorkspaceStore.getState().showIIIF).toBe(true);
     });
 
-    //Test: the Tag Filter starts empty — no tag type is filtered out by default
-    it("starts with no Tag Filter selection", () => {
-        expect(useWorkspaceStore.getState().selectedTagTypes).toEqual([]);
+    //Test: the Tag Filter starts with nothing selected — every entity reads normally
+    it("starts with no entity selected", () => {
+        expect(useWorkspaceStore.getState().selectedEntityId).toBeNull();
     });
 
-    //Test: the Tag Filter selection is plain state — set it, read it back
-    it("setSelectedTagTypes stores the selection", () => {
-        useWorkspaceStore.getState().setSelectedTagTypes(["persName", "placeName"]);
-        expect(useWorkspaceStore.getState().selectedTagTypes).toEqual([
-            "persName",
-            "placeName",
-        ]);
+    //Test: the Tag Filter is single-select — one entity id at a time (#147)
+    it("setSelectedEntityId replaces the selection rather than adding to it", () => {
+        useWorkspaceStore.getState().setSelectedEntityId("fionn");
+        expect(useWorkspaceStore.getState().selectedEntityId).toBe("fionn");
+
+        useWorkspaceStore.getState().setSelectedEntityId("cailte");
+        expect(useWorkspaceStore.getState().selectedEntityId).toBe("cailte");
+
+        useWorkspaceStore.getState().setSelectedEntityId(null);
+        expect(useWorkspaceStore.getState().selectedEntityId).toBeNull();
+    });
+
+    //Test: each column navigates its own occurrences, clamped at both ends —
+    //the same shape searchStore's result navigation already has
+    it("navigates one column's occurrences without touching another's", () => {
+        const { nextEntityOccurrence } = useWorkspaceStore.getState();
+
+        nextEntityOccurrence("doc-a", 12);
+        nextEntityOccurrence("doc-a", 12);
+        expect(useWorkspaceStore.getState().entityIndexByDocument).toEqual({
+            "doc-a": 2,
+        });
+
+        nextEntityOccurrence("doc-b", 3);
+        expect(useWorkspaceStore.getState().entityIndexByDocument).toEqual({
+            "doc-a": 2,
+            "doc-b": 1,
+        });
+    });
+
+    it("clamps at the last occurrence rather than wrapping", () => {
+        const { nextEntityOccurrence } = useWorkspaceStore.getState();
+
+        nextEntityOccurrence("doc-a", 2);
+        nextEntityOccurrence("doc-a", 2);
+        expect(useWorkspaceStore.getState().entityIndexByDocument["doc-a"]).toBe(1);
+    });
+
+    it("clamps at the first occurrence rather than wrapping", () => {
+        useWorkspaceStore.getState().prevEntityOccurrence("doc-a");
+        expect(useWorkspaceStore.getState().entityIndexByDocument["doc-a"]).toBe(0);
+    });
+
+    //Test: a new entity starts every column at its own first occurrence
+    it("resets every column's position when the selected entity changes", () => {
+        useWorkspaceStore.setState({ entityIndexByDocument: { "doc-a": 5 } });
+
+        useWorkspaceStore.getState().setSelectedEntityId("fionn");
+        expect(useWorkspaceStore.getState().entityIndexByDocument).toEqual({});
     });
 });
 
 describe("workspaceStore analytics", () => {
-    //Test: the Tag Filter is a shell — the closed taxonomy (ADR-0003) has no event
-    //for it, so changing the selection emits nothing
-    it("does not log anything when the Tag Filter selection changes", () => {
-        useWorkspaceStore.getState().setSelectedTagTypes(["persName"]);
+    //Test: which person or place a reader singles out is the Tag Filter's whole
+    //signal, so selecting one emits tag_entity_selected (ADR-0003)
+    it("logs tag_entity_selected with the chosen entity", () => {
+        useWorkspaceStore.getState().setSelectedEntityId("fionn");
+        expect(mockedLogEvent).toHaveBeenCalledOnce();
+        expect(mockedLogEvent).toHaveBeenCalledWith("tag_entity_selected", {
+            entity_id: "fionn",
+        });
+    });
+
+    //Test: clearing is a change of intent too — the reader stopped following
+    //that person, which is exactly what the study wants to see
+    it("logs tag_entity_selected when the selection is cleared", () => {
+        useWorkspaceStore.getState().setSelectedEntityId("fionn");
+        mockedLogEvent.mockClear();
+
+        useWorkspaceStore.getState().setSelectedEntityId(null);
+        expect(mockedLogEvent).toHaveBeenCalledWith("tag_entity_selected", {
+            entity_id: null,
+        });
+    });
+
+    //Test: re-selecting the same entity is a no-op — logs nothing
+    it("does not log tag_entity_selected when the selection doesn't change", () => {
+        useWorkspaceStore.getState().setSelectedEntityId("fionn");
+        mockedLogEvent.mockClear();
+
+        useWorkspaceStore.getState().setSelectedEntityId("fionn");
         expect(mockedLogEvent).not.toHaveBeenCalled();
     });
 

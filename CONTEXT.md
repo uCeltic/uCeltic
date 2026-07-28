@@ -158,20 +158,60 @@
 
   ### Tag Filter
 
-  A toolbar control that filters by **TEI named-entity tag type** — the closed
-  set rendered in `client/src/tei/elements/names.tsx`: `persName`, `placeName`,
-  `geogName`, `orgName`, `rs`, `name`. That file also renders `addName` (#146),
-  which the filter deliberately does **not** offer — #147 replaces this
-  element-name vocabulary with `name/@type` categories and folds `addName` in
-  there. Presented as a multi-select of those
-  predefined tag names (same interaction shape as the Work scope picker), so
-  it needs **no free-text search box of its own**. It **replaces** the removed
-  three-state Mode switcher (Search / People & Places / Personal), which never
-  did anything and read as a confusing "second search" next to the real search
-  bar — see [ADR-0010](docs/adr/0010-drop-workspace-mode-switcher.md). Its
-  functional effect (restrict search vs. restrict on-screen highlighting) is
-  **deliberately unwired for now** — the current round ships the control shell
-  only. _Avoid_: Mode, second search — the switcher it replaces is gone.
+  A toolbar control for **following one named entity — a person or a place —
+  through every open manuscript at once**. Its options are the entries of the
+  open Documents' own **Authority Lists**, never a hard-coded vocabulary, so no
+  option is ever offered that cannot match anything. Selecting one is
+  **single-select**: each visible column then highlights and navigates *its own*
+  occurrences of that entity (`Find mac Cumaill · 1 / 12 · ← →`), independently
+  of every other column. Because the three Acallam manuscripts share one set of
+  `xml:id`s, one selection resolves in all of them — which is what makes
+  side-by-side comparison worth having.
+
+  Three visual tiers, matching the ctrl+F convention: the current occurrence is
+  solid, the entity's other occurrences in that column are tinted, and every
+  other named entity greys out. They are violet, deliberately not the search
+  highlight's orange: both features are allowed on screen at once and must stay
+  telling apart (`client/src/tei/highlight.ts`, `client/src/index.css`).
+
+  Entities are selectable **only from this menu** — named entities in the
+  reading pane are not click targets, because the reading pane stays a reading
+  pane. A Document with no Authority List contributes no options and gets no
+  navigation card; there is no fallback to matching by element name.
+
+  It **replaces** the removed three-state Mode switcher (Search / People &
+  Places / Personal), which never did anything and read as a confusing "second
+  search" next to the real search bar — see
+  [ADR-0010](docs/adr/0010-drop-workspace-mode-switcher.md). _Avoid_: Mode,
+  second search — the switcher it replaces is gone; "tag type" — the filter is
+  over entities the corpus declares, not over TEI element names.
+
+  ### Authority List
+
+  A Document's own register of the people and places it names, carried in
+  `standOff` as `listPerson` / `listPlace` (`<person xml:id="fionn">`). Each
+  entry gives one **Headword** and its spelling variants, and every named entity
+  in the body points back at an entry with `ref="#fionn"`. It is **apparatus,
+  not text**: it is parsed and kept in `parsed_json`, but never rendered and
+  never tokenised into the search index (#151) — so a spelling that occurs only
+  in the list is not searchable, and `persName` counts exclude it (Franciscan
+  A 4 has 486 `persName` elements, 353 of them in `<text>`).
+
+  Read by `client/src/tei/authority.ts`. Two traps it absorbs, both a
+  consequence of how `parse.py` projects the XML: `xml:id` arrives as plain
+  `id`, and a body reference keeps its leading `#`. _Avoid_: index, glossary —
+  it is a name authority in the TEI sense, and "index" already means the search
+  index here.
+
+  ### Headword
+
+  The canonical form of an Authority List entry — the `type="canonical"` child
+  of a `person`/`place`, e.g. *Find mac Cumaill* for the variants *Find*,
+  *Finn*, *Ḟinn*, *Fhionn*. It is what the Tag Filter shows the reader, and the
+  grouping it implies ("these four spellings are one man") is **the corpus's
+  claim, not ours** — the app never infers it from the text. Which child is
+  canonical is stated by the attribute and must not be inferred from position.
+  _Avoid_: lemma, preferred name, canonical name (say Headword).
 
   ### Version (of a Work)
 

@@ -16,6 +16,7 @@ export const EVENT_TYPES = [
   "mode_changed",
   "iiif_toggled",
   "font_size_changed",
+  "tag_entity_selected",
   "feedback_submitted",
 ] as const;
 

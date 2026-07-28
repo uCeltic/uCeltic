@@ -1,6 +1,7 @@
 # 10. Drop the three-state workspace Mode switcher in favour of a Tag Filter
 
-- Status: Accepted
+- Status: Accepted; the Tag Filter it introduced was reshaped by #147 — see the
+  Update below and CONTEXT.md → Tag Filter
 - Date: 2026-07-21
 - Deciders: Zhou Dejian
 
@@ -30,3 +31,19 @@ slot actually wants.
   finds `mode_changed` with no Mode UI should land here.
 - The Tag Filter ships as a **UI shell only** this round — its functional wiring
   (restrict search vs. restrict highlighting) is intentionally deferred.
+
+## Update (2026-07-28, #147)
+
+The shell was wired, and the vocabulary above did not survive contact with the
+corpus. A multi-select over the six named-entity *elements* offered four options
+that occur only in sample files or not at all, and the two real ones
+(`persName`, `placeName`) matched hundreds of names indiscriminately. The
+research manuscripts carry their own **Authority List** in `standOff`, which is
+a better answer to the same question: the control is now a single-select over
+the people and places the open documents declare, with per-column highlighting
+and navigation of one entity's occurrences. The toolbar slot and the reasoning
+for reusing it are unchanged; only what the menu is a menu *of* changed.
+
+`tag_entity_selected` was added to the closed taxonomy at the same time
+([ADR-0003](0003-behavior-logging-for-requirements.md)) — the wired control has
+a signal worth recording, which the shell did not.

@@ -4,7 +4,9 @@
   [ADR-0004](0004-public-tool-with-optional-accounts.md) — session-only
   attribution and the "data is anonymous" consent wording; and by
   [ADR-0007](0007-questionnaire-for-guests-and-idle-session-expiry.md) — a
-  Session now also ends after 6 hours of inactivity, not only on app load
+  Session now also ends after 6 hours of inactivity, not only on app load.
+  Extended 2026-07-28 with `tag_entity_selected` (see below), taking the
+  taxonomy to 12 event types
 - Date: 2026-07-06
 - Deciders: Zhou Dejian
 
@@ -46,12 +48,22 @@ id, no name**. This is enough to reconstruct each sitting's sequence
 "Is the same person hitting this repeatedly across days?" is answered *socially*
 (ask the 4 people), not from the data.
 
-**What is recorded — ~11 semantic events, not raw interaction.** A closed taxonomy
+**What is recorded — ~12 semantic events, not raw interaction.** A closed taxonomy
 of meaningful actions (`search_performed`, `search_param_changed`, `result_navigated`,
 `document_opened`/`_closed`, `mode_changed`, `iiif_toggled`, `font_size_changed`,
-`scope_changed`, `feedback_submitted`, `session_started`). Anything not in the set is
-not logged. Each event maps to one interpretable intent. NFR signal
-(`latency_ms`, `result_count`, `error`) rides along on the events that produce it.
+`scope_changed`, `tag_entity_selected`, `feedback_submitted`, `session_started`).
+Anything not in the set is not logged. Each event maps to one interpretable intent.
+NFR signal (`latency_ms`, `result_count`, `error`) rides along on the events that
+produce it.
+
+`tag_entity_selected` (added 2026-07-28, #147) carries `{entity_id}` — the
+Authority List id of the person or place the reader chose to follow, `null` when
+they stopped following anyone. It was added when the Tag Filter stopped being a
+shell: *which people and places a reader singles out, and in which manuscripts*
+is a first-class requirement signal for a project whose subject is the Acallam's
+cast, and it is not recoverable from any other event. The taxonomy is closed, not
+frozen — adding a type is a deliberate, documented act, and this is the first
+since the original set.
 
 **Architecture — self-built, reusing the existing Django + Postgres.** A client-side
 emitter POSTs to a new `POST /api/events/` endpoint in a new `apps/analytics` Django
@@ -98,7 +110,7 @@ plus a corroborating qualitative source.
 ## Rejected alternatives
 
 - **Third-party analytics (PostHog / Plausible / Umami).** Session replay and funnels
-  are overkill for N=4 and ~11 semantic events; PostHog adds containers (incl.
+  are overkill for N=4 and ~12 semantic events; PostHog adds containers (incl.
   ClickHouse) and a privacy surface; page-view tools handle parameterized semantic
   events poorly. A black box also can't be *described and owned* as a thesis
   contribution the way a self-designed schema can.

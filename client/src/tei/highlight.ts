@@ -80,3 +80,59 @@ export function setQuerySourceHighlight(range: Range | null): void {
   if (!sourceHL || !range || range.collapsed) return;
   sourceHL.add(range);
 }
+// One visible TEI column's Tag Filter state: which entity the workspace is
+// following (the same id in every column — the manuscripts share their
+// authority list) and which of THIS column's occurrences it is sitting on.
+export interface EntityHighlightColumn {
+  docId: string;
+  entityId: string | null;
+  activeIndex: number;
+}
+
+/**
+ * Every occurrence of one authority entry in one column, in reading order.
+ *
+ * Occurrences are found by the pointer into the authority list, not by text:
+ * `Find`, `Finn`, `Ḟinn` and `Fhionn` all carry `ref="#fionn"`, so all four
+ * spellings answer to one selection and no other person's name does. The
+ * authority list itself is never rendered (#151), so nothing inside `standOff`
+ * can be found here.
+ */
+export function entityOccurrences(docId: string, entityId: string): Element[] {
+  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
+  if (!columnEl) return [];
+  return [...columnEl.querySelectorAll(`[data-tei-ref="#${CSS.escape(entityId)}"]`)];
+}
+
+/**
+ * Repaint the Tag Filter's two highlight tiers for every visible column at once
+ * — the current occurrence, and that entity's other occurrences in the same
+ * column. The third tier, dimming every *other* named entity, is plain CSS on
+ * `data-tei-entity` and needs nothing here.
+ *
+ * Same shape and same reason as `rebuildHighlights` above: one global Highlight
+ * per tier holds every column's ranges, so this clears and repaints from all
+ * the supplied columns rather than editing one column's share in place.
+ *
+ * The names are deliberately not the search ones. Both features can be on
+ * screen at once, and clearing is by name — sharing a name would make each
+ * repaint wipe the other feature's highlight.
+ */
+export function rebuildEntityHighlights(columns: EntityHighlightColumn[]): void {
+  const activeHL = getHighlight("tag-entity-active");
+  const otherHL = getHighlight("tag-entity-other");
+  activeHL?.clear();
+  otherHL?.clear();
+  if (!activeHL || !otherHL) return;
+
+  for (const col of columns) {
+    if (!col.entityId) continue;
+    const occurrences = entityOccurrences(col.docId, col.entityId);
+
+    occurrences.forEach((el, i) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      (i === col.activeIndex ? activeHL : otherHL).add(range);
+    });
+  }
+}

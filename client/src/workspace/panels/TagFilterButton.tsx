@@ -1,6 +1,10 @@
+import { useMemo, useState } from "react";
 import { useWorkspaceStore } from "../../store/workspaceStore";
-import { TEI_ENTITY_TAGS, entityTagLabel } from "../../tei/entityTags";
-import type { TEIEntityTag } from "../../tei/entityTags";
+import {
+  getVisibleTEIDocuments,
+  useDocumentStore,
+} from "../../store/documentStore";
+import { buildEntityMenu, type EntityKind, type EntityMenuEntry } from "../../tei/authority";
 import { useDismissableDropdown } from "./useDismissableDropdown";
 import { toolbarBtnBase, toolbarLabel } from "./buttonStyles";
 import { TagIcon } from "./icons";
@@ -9,26 +13,74 @@ const btnBase = `${toolbarBtnBase} border`;
 const btnIdle = `${btnBase} border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
 const btnOpen = `${btnBase} border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
 
+const GROUPS: { kind: EntityKind; label: string }[] = [
+  { kind: "person", label: "Person" },
+  { kind: "place", label: "Place" },
+];
+
+// One authority entry: its headword, and how often each visible column
+// references it — `12 · 111 · 72`, in the order the columns are on screen.
+function EntryRow({
+  entry,
+  selected,
+  onSelect,
+}: {
+  entry: EntityMenuEntry;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={`flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-sm cursor-pointer
+        ${selected ? "bg-[#F0EEE6] font-medium text-[#52524F]" : "text-gray-600 hover:bg-[#F0EEE6]"}`}
+    >
+      <span className="min-w-0 flex-1 truncate">{entry.headword}</span>
+      <span className="shrink-0 font-mono text-xs tabular-nums text-gray-400">
+        {entry.counts.join(" · ")}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * The Tag Filter: pick one person or place, and every open column highlights
+ * and navigates its own occurrences of them.
+ *
+ * The options are read from the open documents' `standOff` authority lists, so
+ * nothing is offered that cannot match anything — that property holds by
+ * construction here, not by keeping a hard-coded list in step with the corpus,
+ * which is the mistake the element-name vocabulary this replaces made (#147).
+ *
+ * `getVisibleTEIDocuments` is the seam #152 will narrow: once a work can be
+ * chosen, the menu is built from that work's documents instead of every visible
+ * one. Selecting an entity here never changes the opener — the link runs one
+ * way, work → entities.
+ */
 export default function TagFilterButton() {
-  const selectedTagTypes = useWorkspaceStore((s) => s.selectedTagTypes);
-  const setSelectedTagTypes = useWorkspaceStore((s) => s.setSelectedTagTypes);
+  const selectedEntityId = useWorkspaceStore((s) => s.selectedEntityId);
+  const setSelectedEntityId = useWorkspaceStore((s) => s.setSelectedEntityId);
+  const openDocuments = useDocumentStore((s) => s.openDocuments);
+  const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const { open, setOpen, ref } = useDismissableDropdown<HTMLDivElement>();
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  // an empty selection filters nothing, so it reads as "All Tags", not "0 Tags"
-  const label =
-    selectedTagTypes.length === 0
-      ? "All Tags"
-      : selectedTagTypes.length === 1
-        ? entityTagLabel(selectedTagTypes[0])
-        : `${selectedTagTypes.length} Tags`;
+  const entries = useMemo(
+    () =>
+      buildEntityMenu(
+        getVisibleTEIDocuments({ openDocuments, visibleDocumentIds }).map(
+          (doc) => doc.content.parsed_json,
+        ),
+      ),
+    [openDocuments, visibleDocumentIds],
+  );
 
-  const toggle = (tag: TEIEntityTag) => {
-    setSelectedTagTypes(
-      selectedTagTypes.includes(tag)
-        ? selectedTagTypes.filter((t) => t !== tag)
-        : [...selectedTagTypes, tag],
-    );
-  };
+  const selected = entries.find((e) => e.id === selectedEntityId);
+  // nothing selected filters nothing, so it reads as "All Tags", not "0 Tags"
+  const label = selected?.headword ?? "All Tags";
 
   return (
     <div ref={ref} className="relative">
@@ -44,21 +96,51 @@ export default function TagFilterButton() {
         <span className={toolbarLabel}>{label} ▾</span>
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-md">
-          {TEI_ENTITY_TAGS.map((t) => (
-            <label
-              key={t.tag}
-              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-[#F0EEE6]"
-            >
-              <input
-                type="checkbox"
-                checked={selectedTagTypes.includes(t.tag)}
-                onChange={() => toggle(t.tag)}
-                className="accent-[#52524F]"
-              />
-              {t.label}
-            </label>
-          ))}
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-50 mt-1 max-h-96 w-72 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-md"
+        >
+          {entries.length === 0 ? (
+            <p className="px-3 py-1.5 text-sm text-gray-400">
+              No named entities in the open manuscripts
+            </p>
+          ) : (
+            GROUPS.map(({ kind, label: groupLabel }) => {
+              const group = entries.filter((e) => e.kind === kind);
+              if (group.length === 0) return null;
+              const isCollapsed = collapsed[kind] ?? false;
+              return (
+                <div key={kind}>
+                  <button
+                    type="button"
+                    aria-expanded={!isCollapsed}
+                    onClick={() =>
+                      setCollapsed((c) => ({ ...c, [kind]: !isCollapsed }))
+                    }
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer hover:bg-[#F0EEE6]"
+                  >
+                    <span aria-hidden="true">{isCollapsed ? "▸" : "▾"}</span>
+                    {groupLabel} ({group.length})
+                  </button>
+                  {!isCollapsed &&
+                    group.map((entry) => (
+                      <EntryRow
+                        key={entry.id}
+                        entry={entry}
+                        selected={entry.id === selectedEntityId}
+                        // clicking the entry you are already following stops
+                        // following it, which is the only way back to "All Tags"
+                        onSelect={() =>
+                          setSelectedEntityId(
+                            entry.id === selectedEntityId ? null : entry.id,
+                          )
+                        }
+                      />
+                    ))}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
     </div>
