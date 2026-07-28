@@ -160,7 +160,10 @@
 
   A toolbar control that filters by **TEI named-entity tag type** — the closed
   set rendered in `client/src/tei/elements/names.tsx`: `persName`, `placeName`,
-  `geogName`, `orgName`, `rs`, `name`. Presented as a multi-select of those
+  `geogName`, `orgName`, `rs`, `name`. That file also renders `addName` (#146),
+  which the filter deliberately does **not** offer — #147 replaces this
+  element-name vocabulary with `name/@type` categories and folds `addName` in
+  there. Presented as a multi-select of those
   predefined tag names (same interaction shape as the Work scope picker), so
   it needs **no free-text search box of its own**. It **replaces** the removed
   three-state Mode switcher (Search / People & Places / Personal), which never

@@ -411,6 +411,168 @@
                 "segments": [
                   {
                     "kind": "sep",
+                    "text": "\n    "
+                  }
+                ]
+              },
+              {
+                "tag": "l",
+                "attrs": {
+                  "n": "4"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "ro",
+                        "idx": 13
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "sc",
+                        "idx": 14
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "hi",
+                    "attrs": {
+                      "rend": "decor"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "r",
+                            "idx": 14
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "ib",
+                        "idx": 14
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "del",
+                    "attrs": {
+                      "rend": "strikethrough"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "rand",
+                            "idx": 15
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "addName",
+                    "attrs": {
+                      "nymRef": "E15"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "Find",
+                            "idx": 16
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "cb",
+                    "attrs": {
+                      "n": "2",
+                      "id": "fol.27vb"
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "to",
+                        "idx": 17
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "c",
+                    "attrs": {
+                      "type": "kk"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "r",
+                            "idx": 17
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "ad",
+                        "idx": 17
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "segments": [
+                  {
+                    "kind": "sep",
                     "text": "\n  "
                   }
                 ]
@@ -670,6 +832,101 @@
       "attrs": {},
       "line_no": null,
       "word_char_offsets": []
+    },
+    {
+      "id": 16,
+      "tag": "l",
+      "attrs": {
+        "n": "4"
+      },
+      "line_no": "4",
+      "word_char_offsets": [
+        [
+          13,
+          0,
+          2
+        ],
+        [
+          14,
+          3,
+          7
+        ],
+        [
+          17,
+          10,
+          14
+        ]
+      ]
+    },
+    {
+      "id": 17,
+      "tag": "hi",
+      "attrs": {
+        "rend": "decor"
+      },
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          14,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 18,
+      "tag": "del",
+      "attrs": {
+        "rend": "strikethrough"
+      },
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          15,
+          0,
+          4
+        ]
+      ]
+    },
+    {
+      "id": 19,
+      "tag": "addName",
+      "attrs": {
+        "nymRef": "E15"
+      },
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          16,
+          0,
+          4
+        ]
+      ]
+    },
+    {
+      "id": 20,
+      "tag": "cb",
+      "attrs": {
+        "n": "2",
+        "id": "fol.27vb"
+      },
+      "line_no": null,
+      "word_char_offsets": []
+    },
+    {
+      "id": 21,
+      "tag": "c",
+      "attrs": {
+        "type": "kk"
+      },
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          17,
+          0,
+          1
+        ]
+      ]
     }
   ],
   "word_array": [
@@ -736,6 +993,31 @@
     {
       "w": "trochull",
       "a": 12,
+      "sep": "\n    "
+    },
+    {
+      "w": "ro",
+      "a": 16,
+      "sep": " "
+    },
+    {
+      "w": "scrib",
+      "a": 16,
+      "sep": " "
+    },
+    {
+      "w": "rand",
+      "a": 18,
+      "sep": " "
+    },
+    {
+      "w": "Find",
+      "a": 19,
+      "sep": " "
+    },
+    {
+      "w": "torad",
+      "a": 16,
       "sep": "\n  \n"
     }
   ]
