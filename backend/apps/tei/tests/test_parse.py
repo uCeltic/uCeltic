@@ -1,5 +1,8 @@
+from django.conf import settings
 from django.test import TestCase
-from apps.tei.services.parse import parse_tei  
+from lxml import etree
+
+from apps.tei.services.parse import parse_tei
 
 SIMPLE_TEI = b"""<?xml version="1.0" encoding="UTF-8"?>
   <TEI xmlns="http://www.tei-c.org/ns/1.0">
@@ -62,6 +65,49 @@ class ParseTEICommentsTest(TestCase):
         self.assertEqual(
             [a["tag"] for a in anchors], ["TEI", "text", "body", "l", "l", "p"]
         )
+
+
+class ParseTEIEntityTest(TestCase):
+    """Entities never reach _walk: lxml resolves them while building the tree.
+    A declared entity becomes ordinary text; an undeclared one is not
+    well-formed, so rejecting it is the documented contract, not a defect."""
+
+    def test_declared_entity_is_expanded_into_the_index(self):
+        xml = b"""<?xml version="1.0"?>
+<!DOCTYPE TEI [<!ENTITY tir "Tir na nOg">]>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text><body><p>go &tir; now</p></body></text>
+</TEI>"""
+
+        _, _, word_array = parse_tei(xml)
+
+        self.assertEqual(
+            [w["w"] for w in word_array], ["go", "Tir", "na", "nOg", "now"]
+        )
+
+    def test_undeclared_entity_is_rejected_as_not_well_formed(self):
+        xml = b"""<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text><body><p>go &tir; now</p></body></text>
+</TEI>"""
+
+        with self.assertRaises(etree.XMLSyntaxError):
+            parse_tei(xml)
+
+
+class ParseBuiltInCorpusTest(TestCase):
+    """The built-in corpus is the app's primary content, so every file in it
+    must stay parseable — that is the regression this guards (#142)."""
+
+    def test_every_built_in_file_parses_into_words(self):
+        corpus = sorted((settings.BASE_DIR / "tei").glob("*.xml"))
+        self.assertEqual(len(corpus), 12)
+
+        for path in corpus:
+            with self.subTest(path.name):
+                tree, anchors, word_array = parse_tei(path.read_bytes())
+                self.assertEqual(tree["tag"], "TEI")
+                self.assertTrue(anchors)
+                self.assertTrue(word_array)
 
 
 class ParseTEITest(TestCase):

@@ -223,14 +223,18 @@
   still enters the search index. Rationale: the app *consumes* TEI, it does not
   *author* it — schema validation is a creation-tool concern (Oxygen, where the
   team and other scholars tag), and a reader has no action to take on an "invalid
-  but readable" file. _Avoid_: saying a file is "valid" when you mean "opens and
-  renders".
+  but readable" file.
 
-  XML comments and processing instructions are well-formed, so a file carrying
-  them must parse — files exported from Oxygen routinely contain both. The parser
-  **ignores** them: they are dropped from `parsed_json` rather than kept, so that
-  backend and frontend allocate anchor ids over the same node set. Text following
-  a comment is still indexed.
+  This cuts both ways. XML comments and processing instructions are well-formed,
+  so a file carrying them must parse — files exported from Oxygen routinely
+  contain both. The parser **ignores** them: they are dropped from `parsed_json`
+  rather than kept, so backend and frontend allocate anchor ids over the same
+  node set. Text following a comment is still indexed. A **declared** entity is
+  resolved into ordinary text before the parser ever sees it; an **undeclared**
+  one is not well-formed, so the file is rejected outright — that is the contract
+  working, not a bug.
+
+  _Avoid_: saying a file is "valid" when you mean "opens and renders".
 
   ### Error Report
 
