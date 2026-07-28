@@ -11,13 +11,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import TEIRenderer from "./TEIRenderer";
 import type { TEINode } from "../types/tei";
-
-function text(...parts: string[]): TEINode {
-  return {
-    type: "text",
-    segments: parts.map((t, i) => ({ kind: "word", text: t, idx: i })),
-  };
-}
+import { text } from "./__fixtures__/nodes";
 
 // The markup shape of the research corpus: a standOff sibling of teiHeader and
 // text, holding one person with a canonical headword and one spelling variant.

@@ -37,10 +37,13 @@ const SKIP_TAGS = new Set(["teiHeader", "standOff"]);
 
 
 // What one pre-order pass over a document works out: where each element's
-// anchor is, and which number each editorial note answers to (#154).
+// anchor is, and which number each editorial note answers to (#154). The
+// counters are part of it because they are what the maps are being filled from.
 interface Numbering {
   ids: Map<TEINode, number>;
   noteNumbers: Map<TEINode, number>;
+  nextAnchor: number;
+  nextNote: number;
 }
 
 // pre-order DFS traversal to assign anchor ids to the nodes in the tei document
@@ -51,25 +54,23 @@ interface Numbering {
 // The same walk numbers the notes, because a note's place in a pre-order walk IS
 // its place in the document (#154). The two counters run on different rules:
 // every element takes an anchor id, including the ones inside `SKIP_TAGS`, so
-// this walk stays in step with the backend's `_flatten`; only notes that reach
-// the screen take a number. `teiHeader` carries notes of its own — catalogue
-// metadata the reader never sees — and letting those count would start the
-// first visible note somewhere in the middle.
-function walkDocument(
-  node: TEINode,
-  out: Numbering,
-  counter: { anchor: number; note: number },
-  painted: boolean,
-) {
+// this walk stays in step with the backend's `_flatten`; a note takes a number
+// only if it is outside them. `teiHeader` carries notes of its own — catalogue
+// metadata the reader never sees, 8 of the 28 in one research file — and letting
+// those count would start the first visible note somewhere in the middle.
+//
+// `SKIP_TAGS` is the whole of the rule, which is the same rule `NodeRenderer`
+// renders by, so the two cannot disagree about which notes are on screen.
+function walkDocument(node: TEINode, state: Numbering, insideSkipped: boolean) {
   if ("type" in node && node.type === "text") return;
   const el = node as TEIElementNode;
-  out.ids.set(node, counter.anchor++);
+  state.ids.set(node, state.nextAnchor++);
 
-  const childrenPainted = painted && !SKIP_TAGS.has(el.tag);
-  if (childrenPainted && el.tag === "note") out.noteNumbers.set(node, counter.note++);
+  const skipped = insideSkipped || SKIP_TAGS.has(el.tag);
+  if (!skipped && el.tag === "note") state.noteNumbers.set(node, state.nextNote++);
 
   for (const child of el.children ?? []) {
-    walkDocument(child, out, counter, childrenPainted);
+    walkDocument(child, state, skipped);
   }
 }
 
@@ -83,9 +84,14 @@ export default function TEIRenderer({ node }: Props) {
   // document, so two manuscripts side by side each number from 1 without
   // knowing about each other.
   const numbering = useMemo(() => {
-    const out: Numbering = { ids: new Map(), noteNumbers: new Map() };
-    walkDocument(node, out, { anchor: 0, note: 1 }, true);
-    return out;
+    const state: Numbering = {
+      ids: new Map(),
+      noteNumbers: new Map(),
+      nextAnchor: 0,
+      nextNote: 1,
+    };
+    walkDocument(node, state, false);
+    return state;
   }, [node]);
   return <NodeRenderer node={node} numbering={numbering} />;
 }

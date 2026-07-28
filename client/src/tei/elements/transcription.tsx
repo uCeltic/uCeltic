@@ -64,10 +64,17 @@ export function Rdg({ node, children, anchorId }: TEIElementProps) {
 // anchor, so a marker one level down counts toward neither the note's own
 // offsets nor the enclosing `l`'s. `leading-none` keeps the larger size from
 // opening up the verse lines it sits at the start of.
+//
+// `TEIRenderer` numbers every note it paints, so the `*` is only what an
+// unnumbered note falls back to. It is there because the alternative is an empty
+// `sup`: a marker with no glyph is nothing to hover, and the note would go
+// missing silently rather than reading the way it used to.
 export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
   return (
     <span className="group relative inline-block" data-tei-tag="note" data-tei-anchor-id={anchorId}>
-      <sup className="cursor-help select-none text-sm leading-none text-blue-500">{noteNumber}</sup>
+      <sup className="cursor-help select-none text-sm leading-none text-blue-500">
+        {noteNumber ?? "*"}
+      </sup>
       <span
         className="pointer-events-none absolute bottom-full left-0 z-10 hidden w-48 rounded
           bg-gray-800 p-2 text-xs leading-4 text-white shadow-lg group-hover:block"

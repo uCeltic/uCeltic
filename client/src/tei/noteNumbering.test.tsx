@@ -12,13 +12,8 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import TEIRenderer from "./TEIRenderer";
 import type { TEINode } from "../types/tei";
-
-function text(...parts: string[]): TEINode {
-  return {
-    type: "text",
-    segments: parts.map((t, i) => ({ kind: "word", text: t, idx: i })),
-  };
-}
+import { text } from "./__fixtures__/nodes";
+import { Note } from "./elements/transcription";
 
 function note(body: string): TEINode {
   return { tag: "note", children: [text(body)] };
@@ -137,6 +132,20 @@ describe("note markers", () => {
     );
 
     expect(markers(container)).toEqual(["1"]);
+  });
+
+  it("keep something to hover on a note that was handed no number", () => {
+    // Only reachable by rendering `Note` outside the renderer, which is what the
+    // suite does elsewhere. It is the degradation that matters: an empty `sup`
+    // is nothing to point at, so the note would vanish rather than read the way
+    // it used to.
+    const { container } = render(
+      <Note node={{ tag: "note" }} anchorId={1}>
+        A patronymic.
+      </Note>,
+    );
+
+    expect(container.querySelector("sup")?.textContent).toBe("*");
   });
 
   it("stay a superscript one step larger than the text-xs they were", () => {
