@@ -49,9 +49,13 @@ Four things are kept, because they are not decoration:
 - **Semantic elements the browser already styles.** `del` and `surplus` stay
   `<del>`, so the user agent's own strike-through survives with no class of ours.
 
-One exemption: **`note`'s superscript marker keeps its colour.** It is not the
-manuscript's text — it is the affordance saying a note is there to hover — and
-the panel it opens is floating chrome.
+One exemption: **`note`'s superscript marker is styled as the control it is —
+colour and size both.** It is not the manuscript's text — it is the affordance
+saying a note is there to hover — and the panel it opens is floating chrome. It
+carries the note's number rather than an asterisk (#154), which is why the size
+is in the exemption: a two-digit number at `text-xs` is hard to read and hard to
+hit. The marker still answers to the reading pane in one way — it takes its own
+`leading-none`, so growing it does not open up the verse lines it sits in.
 
 `pb` and `cb` emit `@n` verbatim and prefix nothing; `cb` still prefers `xml:id`
 when it has one, because that names the folio *and* the column.
