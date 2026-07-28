@@ -15,7 +15,7 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { render } from "@testing-library/react";
 import TEIRenderer from "./TEIRenderer";
-import { buildAnchorsById, buildWordToAnchors, buildRangesForWordSpan } from "./wordRange";
+import { buildWordToAnchors, rangesForWordSpan } from "./wordRange";
 import type { TEIAnchor, TEINode, TEIWordEntry } from "../types/tei";
 import fixture from "./__fixtures__/inlineMarkup.json";
 
@@ -23,20 +23,36 @@ const parsedJson = fixture.parsed_json as unknown as TEINode;
 const anchors = fixture.anchors as unknown as TEIAnchor[];
 const wordArray = fixture.word_array as unknown as TEIWordEntry[];
 
-// Concatenate what the highlight actually paints, in document order.
+// Where a range sits in the column's text, as a [start, end) character interval.
+function span(columnEl: Element, range: Range): [number, number] {
+  const preceding = document.createRange();
+  preceding.setStart(columnEl, 0);
+  preceding.setEnd(range.startContainer, range.startOffset);
+  const start = preceding.toString().length;
+  return [start, start + range.toString().length];
+}
+
+/**
+ * Every character the highlight paints for one word, in document order.
+ *
+ * The ranges overlap rather than tile — a line's own range stretches across the
+ * inline elements sitting between its characters — so what the reader sees is
+ * their union, not any one of them. Reading the union back off the page is also
+ * the only way to catch the failure this file exists for: offsets that resolve
+ * cleanly but against the wrong characters.
+ */
 function highlighted(columnEl: Element, word: string): string {
   const start = wordArray.findIndex((w) => w.w === word);
-  const ranges = buildRangesForWordSpan(
-    columnEl,
-    buildAnchorsById(anchors),
-    buildWordToAnchors(anchors),
-    start,
-    start + 1,
-  );
-  return ranges
-    .map((r) => r.toString())
-    .sort((a, b) => b.length - a.length)
-    .join("");
+  const ranges = rangesForWordSpan(columnEl, anchors, start, start + 1);
+
+  const covered = new Set<number>();
+  for (const range of ranges) {
+    const [from, to] = span(columnEl, range);
+    for (let i = from; i < to; i++) covered.add(i);
+  }
+
+  const text = columnEl.textContent ?? "";
+  return [...covered].sort((a, b) => a - b).map((i) => text[i]).join("");
 }
 
 describe("highlighting a word that inline markup splits", () => {
@@ -63,8 +79,26 @@ describe("highlighting a word that inline markup splits", () => {
     expect(columnEl.textContent).toContain("Sic.");
   });
 
+  it("assigns the anchor ids the backend assigned", () => {
+    // Preserving whitespace-only text put new text nodes into the render tree.
+    // assignAnchorIds must still walk the same node set the backend did, or
+    // every offset in the document resolves against the wrong element.
+    const rendered = [...columnEl.querySelectorAll("[data-tei-anchor-id]")].map(
+      (el) => Number(el.getAttribute("data-tei-anchor-id")),
+    );
+    const byId = new Map(anchors.map((a) => [a.id, a.tag]));
+
+    for (const id of rendered) expect(byId.has(id)).toBe(true);
+    // The line the backend numbered "2" is the one the DOM shows `Lethderg` in.
+    const line2 = anchors.find((a) => a.line_no === "2")!;
+    expect(
+      columnEl.querySelector(`[data-tei-anchor-id="${line2.id}"]`)?.textContent,
+    ).toContain("Lethder⟨g⟩");
+  });
+
   it.each([
     ["annsin", 3],
+    ["Lethderg", 4],
     ["fīarfaig", 2],
     ["Eochaid", 2],
     ["talam", 2],
@@ -72,9 +106,10 @@ describe("highlighting a word that inline markup splits", () => {
     const start = wordArray.findIndex((w) => w.w === word);
     expect(buildWordToAnchors(anchors).get(start)).toHaveLength(anchorCount);
 
-    // The line's own range stretches across the elements sitting inside it, so
-    // the ranges overlap rather than tile — the longest one is the whole word.
-    expect(highlighted(columnEl, word)).toContain(word);
+    // Exactly the word — no more and no less. `Lethderg` ends in an editorially
+    // supplied letter, and the brackets the page wraps it in are the editor's
+    // mark rather than the manuscript's text, so they stay unhighlighted.
+    expect(highlighted(columnEl, word)).toBe(word);
   });
 
   it("does not highlight a note's text as part of the word before it", () => {

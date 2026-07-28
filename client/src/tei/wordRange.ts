@@ -37,6 +37,26 @@ export function buildAnchorsById(anchors: TEIAnchor[]): Map<number, TEIAnchor> {
 }
 
 /**
+ * The whole path from a document's anchors to the DOM ranges covering one word
+ * span: both callers (painting the highlight, scrolling a result into view)
+ * want exactly this and nothing else.
+ */
+export function rangesForWordSpan(
+  columnEl: Element,
+  anchors: TEIAnchor[],
+  wordStart: number,
+  wordEnd: number,
+): Range[] {
+  return buildRangesForWordSpan(
+    columnEl,
+    buildAnchorsById(anchors),
+    buildWordToAnchors(anchors),
+    wordStart,
+    wordEnd,
+  );
+}
+
+/**
  * Given a word range [wordStart, wordEnd) inside a text viewer column,
  * return one or more DOM Ranges that exactly cover those words.
  *

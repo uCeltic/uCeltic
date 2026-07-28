@@ -1,10 +1,6 @@
 import type { TEIDoc } from "../types/tei";
 import type { SearchResult } from "../types/search";
-import {
-  buildAnchorsById,
-  buildWordToAnchors,
-  buildRangesForWordSpan,
-} from "./wordRange";
+import { rangesForWordSpan } from "./wordRange";
 
 // One visible TEI column's highlight inputs. The anchors carry both which words
 // they hold and where those words sit in their text, so that is all we need.
@@ -50,12 +46,9 @@ export function rebuildHighlights(columns: HighlightColumn[]): void {
     );
     if (!columnEl) continue;
 
-    const anchorsById = buildAnchorsById(col.teiDoc.anchors);
-    const wordToAnchors = buildWordToAnchors(col.teiDoc.anchors);
-    const ranges = buildRangesForWordSpan(
+    const ranges = rangesForWordSpan(
       columnEl,
-      anchorsById,
-      wordToAnchors,
+      col.teiDoc.anchors,
       active.word_start,
       active.word_end,
     );

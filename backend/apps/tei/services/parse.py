@@ -4,9 +4,9 @@
 - word_array:   flat list of words for search (each carries its anchor_id)
 
 Tokenisation runs on a flattened character stream, not on one text node at a
-time. Editorial TEI marks up *inside* words -- `tal<expan>am</expan>` records an
+time. Editorial TEI marks up *inside* words — `tal<expan>am</expan>` records an
 expanded scribal abbreviation, and is the single most common shape in real
-manuscript files -- so an element boundary is not a word boundary. Splitting
+manuscript files — so an element boundary is not a word boundary. Splitting
 per text node shattered `talam` into `tal` and `am`, and search could never
 match it again (#145).
 
@@ -16,6 +16,8 @@ several anchors, and each anchor records the character range the word occupies
 inside its own text.
 """
 import re
+from typing import NamedTuple
+
 from lxml import etree
 
 # Subtrees whose text stays on screen but leaves the search index. `note` holds
@@ -54,7 +56,7 @@ class _Stream:
     """One document's flattened text, plus the bookkeeping to write results back.
 
     `text` is every character of the document in reading order. A `run` is one
-    contiguous piece of that stream belonging to a single anchor -- an element's
+    contiguous piece of that stream belonging to a single anchor — an element's
     own `el.text`, or the `tail` that follows one of its children. Runs are the
     bridge between the two coordinate systems in play: positions in the flat
     stream, which is where words are decided, and positions inside one anchor's
@@ -119,7 +121,7 @@ class _Stream:
 # stream, and build the render tree around the text nodes the stream hands back.
 def _flatten(el, stream: _Stream, in_skip: bool = False):
     # Drop before an anchor id is allocated, so backend _flatten and frontend
-    # assignAnchorIds keep traversing the same node set -- otherwise every
+    # assignAnchorIds keep traversing the same node set — otherwise every
     # anchor after the first comment shifts and highlighting lands on the
     # wrong line. The caller still streams the tail, so no text is lost.
     if not _is_element(el):
@@ -189,6 +191,21 @@ def _islands(runs: list[dict]) -> list[list[dict]]:
     return islands
 
 
+class _Piece(NamedTuple):
+    """As much of one token as fell inside a single run.
+
+    A token that inline markup interrupts arrives here in several pieces, each
+    already translated out of flat-stream coordinates and into the coordinates
+    of the anchor that owns it.
+    """
+
+    anchor: dict
+    segments: list      # the render tree's text node for this piece's run
+    char_start: int     # against the anchor's own text, not the flat stream
+    char_end: int
+    text: str
+
+
 def _tokenise_island(flat: str, runs: list[dict], word_array: list[dict]) -> None:
     skip = runs[0]["skip"]
     start, end = runs[0]["start"], runs[-1]["end"]
@@ -198,11 +215,11 @@ def _tokenise_island(flat: str, runs: list[dict], word_array: list[dict]) -> Non
         chunk = match.group(0)
         pieces, cursor = _pieces(flat, runs, cursor, match.start(), match.end())
 
-        # Skipped text still renders, so it still needs segments -- it just has
+        # Skipped text still renders, so it still needs segments — it just has
         # no words in it as far as search is concerned.
         if skip or not chunk[0].isalnum():
-            for run, _, _, text in pieces:
-                run["segments"].append({"kind": "sep", "text": text})
+            for piece in pieces:
+                piece.segments.append({"kind": "sep", "text": piece.text})
             if not skip and word_array:
                 # Accumulate: the punctuation closing one element and the
                 # punctuation opening the next both belong to the word before
@@ -211,13 +228,13 @@ def _tokenise_island(flat: str, runs: list[dict], word_array: list[dict]) -> Non
             continue
 
         idx = len(word_array)
-        word_array.append({"w": chunk, "a": pieces[0][0]["anchor"]["id"], "sep": ""})
+        word_array.append({"w": chunk, "a": pieces[0].anchor["id"], "sep": ""})
 
         # One segment per run, because each run is its own text node in the
         # render tree; one offset entry per anchor, because that is what the
         # frontend resolves into a DOM range.
-        for run, _, _, text in pieces:
-            run["segments"].append({"kind": "word", "text": text, "idx": idx})
+        for piece in pieces:
+            piece.segments.append({"kind": "word", "text": piece.text, "idx": idx})
         for anchor, char_start, char_end in _offsets(pieces):
             anchor["word_char_offsets"].append([idx, char_start, char_end])
 
@@ -225,7 +242,9 @@ def _tokenise_island(flat: str, runs: list[dict], word_array: list[dict]) -> Non
 # Cut a flat range into the runs it covers, translating each piece into the
 # owning anchor's own coordinates. Matches arrive in stream order, so `cursor`
 # only ever moves forward.
-def _pieces(flat: str, runs, cursor: int, start: int, end: int) -> tuple[list, int]:
+def _pieces(
+    flat: str, runs: list[dict], cursor: int, start: int, end: int
+) -> tuple[list[_Piece], int]:
     while cursor < len(runs) and runs[cursor]["end"] <= start:
         cursor += 1
 
@@ -236,12 +255,15 @@ def _pieces(flat: str, runs, cursor: int, start: int, end: int) -> tuple[list, i
         piece_start = max(start, run["start"])
         piece_end = min(end, run["end"])
         if piece_end > piece_start:
+            # Where this run's text sits in the anchor, minus where it sits in
+            # the stream: add it to a flat position to get an anchor position.
             offset = run["char_pos"] - run["start"]
-            pieces.append((
-                run,
-                piece_start + offset,
-                piece_end + offset,
-                flat[piece_start:piece_end],
+            pieces.append(_Piece(
+                anchor=run["anchor"],
+                segments=run["segments"],
+                char_start=piece_start + offset,
+                char_end=piece_end + offset,
+                text=flat[piece_start:piece_end],
             ))
         i += 1
     return pieces, cursor
@@ -254,13 +276,12 @@ def _pieces(flat: str, runs, cursor: int, start: int, end: int) -> tuple[list, i
 # Those returns are always contiguous in the anchor's own coordinates — child
 # subtrees do not advance them — so however many times the word leaves and comes
 # back, it occupies one unbroken character range there.
-def _offsets(pieces: list) -> list[tuple]:
+def _offsets(pieces: list[_Piece]) -> list[tuple]:
     spans: dict[int, list] = {}
-    for run, char_start, char_end, _ in pieces:
-        anchor = run["anchor"]
-        span = spans.get(id(anchor))
+    for piece in pieces:
+        span = spans.get(piece.anchor["id"])
         if span is None:
-            spans[id(anchor)] = [anchor, char_start, char_end]
+            spans[piece.anchor["id"]] = [piece.anchor, piece.char_start, piece.char_end]
         else:
-            span[2] = char_end
+            span[2] = piece.char_end
     return [tuple(span) for span in spans.values()]

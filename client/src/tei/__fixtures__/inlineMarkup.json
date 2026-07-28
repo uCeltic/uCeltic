@@ -190,16 +190,86 @@
                     "segments": [
                       {
                         "kind": "word",
-                        "text": "ro",
+                        "text": "L",
                         "idx": 5
-                      },
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "et",
+                            "idx": 5
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "h",
+                        "idx": 5
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "expan",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "d",
+                            "idx": 5
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "er",
+                        "idx": 5
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "supplied",
+                    "children": [
+                      {
+                        "type": "text",
+                        "segments": [
+                          {
+                            "kind": "word",
+                            "text": "g",
+                            "idx": 5
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "segments": [
                       {
                         "kind": "sep",
                         "text": " "
                       },
                       {
                         "kind": "word",
-                        "text": "gab",
+                        "text": "rí",
                         "idx": 6
                       },
                       {
@@ -208,8 +278,53 @@
                       },
                       {
                         "kind": "word",
-                        "text": "i",
+                        "text": "Laigen",
                         "idx": 7
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "segments": [
+                  {
+                    "kind": "sep",
+                    "text": "\n    "
+                  }
+                ]
+              },
+              {
+                "tag": "l",
+                "attrs": {
+                  "n": "3"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "segments": [
+                      {
+                        "kind": "word",
+                        "text": "ro",
+                        "idx": 8
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "gab",
+                        "idx": 9
+                      },
+                      {
+                        "kind": "sep",
+                        "text": " "
+                      },
+                      {
+                        "kind": "word",
+                        "text": "i",
+                        "idx": 10
                       }
                     ]
                   },
@@ -222,7 +337,7 @@
                           {
                             "kind": "word",
                             "text": "n",
-                            "idx": 7
+                            "idx": 10
                           }
                         ]
                       }
@@ -238,7 +353,7 @@
                       {
                         "kind": "word",
                         "text": "tal",
-                        "idx": 8
+                        "idx": 11
                       }
                     ]
                   },
@@ -251,7 +366,7 @@
                           {
                             "kind": "word",
                             "text": "am",
-                            "idx": 8
+                            "idx": 11
                           }
                         ]
                       }
@@ -285,7 +400,7 @@
                       {
                         "kind": "word",
                         "text": "trochull",
-                        "idx": 9
+                        "idx": 12
                       }
                     ]
                   }
@@ -435,27 +550,17 @@
         [
           5,
           0,
-          2
+          4
         ],
         [
           6,
-          3,
-          6
+          5,
+          7
         ],
         [
           7,
-          7,
-          8
-        ],
-        [
           8,
-          9,
-          12
-        ],
-        [
-          9,
-          13,
-          21
+          14
         ]
       ]
     },
@@ -466,9 +571,9 @@
       "line_no": null,
       "word_char_offsets": [
         [
-          7,
+          5,
           0,
-          1
+          2
         ]
       ]
     },
@@ -479,14 +584,88 @@
       "line_no": null,
       "word_char_offsets": [
         [
+          5,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 11,
+      "tag": "supplied",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          5,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 12,
+      "tag": "l",
+      "attrs": {
+        "n": "3"
+      },
+      "line_no": "3",
+      "word_char_offsets": [
+        [
           8,
+          0,
+          2
+        ],
+        [
+          9,
+          3,
+          6
+        ],
+        [
+          10,
+          7,
+          8
+        ],
+        [
+          11,
+          9,
+          12
+        ],
+        [
+          12,
+          13,
+          21
+        ]
+      ]
+    },
+    {
+      "id": 13,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          10,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 14,
+      "tag": "expan",
+      "attrs": {},
+      "line_no": null,
+      "word_char_offsets": [
+        [
+          11,
           0,
           2
         ]
       ]
     },
     {
-      "id": 11,
+      "id": 15,
       "tag": "note",
       "attrs": {},
       "line_no": null,
@@ -520,28 +699,43 @@
       "sep": "\n    "
     },
     {
-      "w": "ro",
+      "w": "Lethderg",
       "a": 8,
+      "sep": " "
+    },
+    {
+      "w": "rí",
+      "a": 8,
+      "sep": " "
+    },
+    {
+      "w": "Laigen",
+      "a": 8,
+      "sep": "\n    "
+    },
+    {
+      "w": "ro",
+      "a": 12,
       "sep": " "
     },
     {
       "w": "gab",
-      "a": 8,
+      "a": 12,
       "sep": " "
     },
     {
       "w": "in",
-      "a": 8,
+      "a": 12,
       "sep": " "
     },
     {
       "w": "talam",
-      "a": 8,
+      "a": 12,
       "sep": " "
     },
     {
       "w": "trochull",
-      "a": 8,
+      "a": 12,
       "sep": "\n  \n"
     }
   ]

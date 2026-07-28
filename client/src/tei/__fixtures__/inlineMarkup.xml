@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Source of inlineMarkup.json. Markup shapes taken from the research corpus:
-     a word split four ways, a word split across a `name`, and a word flush
-     against a `note` that leaves the search index (#145).
+     words split two, three and four ways, a word split across a `name`, and a
+     word flush against a `note` that leaves the search index (#145).
 
      Regenerate the JSON after any change to the parser's output contract:
 
@@ -16,6 +16,7 @@
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
   <text><body>
     <l n="1">IS a<expan>n</expan>n<expan>si</expan>n ro fīarf<expan>aig</expan> <name>Eoch</name>aid</l>
-    <l n="2">ro gab i<expan>n</expan> tal<expan>am</expan><note>Sic.</note> trochull</l>
+    <l n="2">L<expan>et</expan>h<expan>d</expan>er<supplied>g</supplied> rí Laigen</l>
+    <l n="3">ro gab i<expan>n</expan> tal<expan>am</expan><note>Sic.</note> trochull</l>
   </body></text>
 </TEI>

@@ -12,11 +12,7 @@ from django.conf import settings
 from django.test import TestCase
 from lxml import etree
 
-from apps.tei.services.parse import parse_tei
-
-
-def _strip_ns(tag: str) -> str:
-    return tag.split("}")[-1] if "}" in tag else tag
+from apps.tei.services.parse import _strip_ns, parse_tei
 
 
 def source_text(el, skip_tags=()) -> str:
@@ -268,13 +264,14 @@ class BuiltInCorpusReconstructionTest(TestCase):
     def test_mid_word_markup_in_the_built_in_corpus_is_joined(self):
         # 168 elements in this corpus cut a word in half (`supplied` 35,
         # `c` 32, `ex` 7, `placeName` 78). Each one used to shatter its word;
-        # each one now yields a single word spanning more than one anchor.
+        # each one now yields a single word spanning more than one anchor —
+        # 183 such words, because a few carry two inline elements at once.
         total = sum(
             len(_multi_anchor_words(parse_tei(path.read_bytes())[1]))
             for path in self._corpus()
         )
 
-        self.assertGreaterEqual(total, 100)
+        self.assertEqual(total, 183)
 
 
 def _multi_anchor_words(anchors) -> set[int]:
