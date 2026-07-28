@@ -53,16 +53,27 @@ export interface TEIWordEntry {
   sep: string;
 }
 
+// The named story a document is one witness of — a container, holding no text
+// itself. Stated by the database (`apps.tei.Work`), never parsed out of the
+// document title. `null` on a document nobody has assigned to a work yet; such
+// a document is still openable.
+export interface TEIWork {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 //detail info for each tei document
 export interface TEIDoc {
   id: number;
   title: string;
   language: string;
+  work: TEIWork | null;
   parsed_json: TEINode;
   created_at: string;
   meta: TEIMeta;
-  anchors: TEIAnchor[]; 
-  word_array: TEIWordEntry[]; 
+  anchors: TEIAnchor[];
+  word_array: TEIWordEntry[];
 }
 
 // list all the tei documents in the database
@@ -70,5 +81,6 @@ export interface TEICatalogEntry {
   id: number;
   title: string;
   language: string;
+  work: TEIWork | null;
   created_at: string;
 }

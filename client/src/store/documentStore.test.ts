@@ -3,6 +3,7 @@ import {
   useDocumentStore,
   MAX_OPEN_DOCUMENTS,
   getSearchableDocuments,
+  planTEIOpen,
 } from "./documentStore";
 import { logEvent } from "../api/log";
 import type { TEIDoc } from "../types/tei";
@@ -18,6 +19,7 @@ function makeTEIDoc(id: number, title = `Doc ${id}`): TEIDoc {
     id,
     title,
     language: "ga",
+    work: null,
     parsed_json: { type: "text", segments: [] },
     created_at: "2026-01-01",
     meta: { title, author: "", language: "ga", pbCount: 0 },
@@ -212,5 +214,66 @@ describe("getSearchableDocuments", () => {
     });
 
     expect(searchable).toEqual([]);
+  });
+});
+
+// Occupy n columns with text documents. Set directly rather than through
+// addDocument, whose `doc-${Date.now()}` ids collide within one millisecond.
+function fillWith(n: number) {
+  useDocumentStore.setState({
+    openDocuments: Array.from({ length: n }, (_, i) => ({
+      id: `doc-filler-${i}`,
+      title: `doc ${i}`,
+      format: "txt" as const,
+      content: "x",
+    })),
+  });
+}
+
+describe("planTEIOpen", () => {
+  // Opening a whole work is one action over several documents, so the limit has
+  // to be answered before the first fetch — not discovered document by document
+  // as the store silently drops the ones that no longer fit (#152).
+  it("takes every requested document when there is room", () => {
+    const plan = planTEIOpen(useDocumentStore.getState(), [1, 2, 3]);
+
+    expect(plan.toOpen).toEqual([1, 2, 3]);
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("fills the remaining slots in request order and reports the rest", () => {
+    fillWith(MAX_OPEN_DOCUMENTS - 2);
+
+    const plan = planTEIOpen(useDocumentStore.getState(), [1, 2, 3, 4]);
+
+    expect(plan.toOpen).toEqual([1, 2]);
+    expect(plan.skipped).toEqual([3, 4]);
+  });
+
+  // An already-open document is re-focused rather than opened again, so it
+  // costs no slot — counting it as one would refuse an open that fits.
+  it("does not spend a slot on a document that is already open", () => {
+    fillWith(MAX_OPEN_DOCUMENTS - 2);
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
+    // one free slot left, and doc 1 is open
+
+    const plan = planTEIOpen(useDocumentStore.getState(), [1, 2, 3]);
+
+    expect(plan.toOpen).toEqual([1, 2]);
+    expect(plan.skipped).toEqual([3]);
+  });
+
+  it("counts a repeated request once", () => {
+    const plan = planTEIOpen(useDocumentStore.getState(), [1, 1, 2]);
+    expect(plan.toOpen).toEqual([1, 2]);
+  });
+
+  it("skips everything when the workspace is full", () => {
+    fillWith(MAX_OPEN_DOCUMENTS);
+
+    const plan = planTEIOpen(useDocumentStore.getState(), [1, 2]);
+
+    expect(plan.toOpen).toEqual([]);
+    expect(plan.skipped).toEqual([1, 2]);
   });
 });

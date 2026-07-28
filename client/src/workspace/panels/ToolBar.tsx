@@ -8,8 +8,7 @@ import {
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import TagFilterButton from "./TagFilterButton";
-import ScopeButton from "./ScopeButton";
-import TEIPickerDropdown from "./TEIPickerDropdown";
+import WorkPicker from "./WorkPicker";
 import HamburgerMenu from "./HamburgerMenu";
 import {
   secondaryBtn,
@@ -79,7 +78,9 @@ export default function ToolBar({
   return (
     <header className="relative z-10 flex items-center justify-between gap-4 border-b border-[#D8D4C3] bg-[#E8E3CE] px-4 py-1 shadow-[0_1px_3px_rgba(82,82,79,0.08)]">
       <TagFilterButton />
-      <ScopeButton />
+      {/* Works → their manuscripts: the one control that both names the work
+          being read and opens its witnesses (#152) */}
+      <WorkPicker />
       <div className="flex items-center gap-3">
         <input
           ref={fileInputRef}
@@ -104,9 +105,6 @@ export default function ToolBar({
           <span className={toolbarLabel}>Add Text</span>
         </button>
       </div>
-
-      {/* menu for selecting tei document from the database*/}
-      <TEIPickerDropdown />
 
       {/* Search input and buttons */}
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2">

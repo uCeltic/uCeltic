@@ -2,7 +2,9 @@ import { useMemo } from "react";
 import {
   getVisibleTEIDocuments,
   useDocumentStore,
+  type SearchableDocument,
 } from "../store/documentStore";
+import { useWorkspaceStore } from "../store/workspaceStore";
 import { buildEntityMenu, type EntityMenuEntry } from "./authority";
 
 export interface EntityMenu {
@@ -25,18 +27,40 @@ export interface EntityMenu {
  * (`1 / 12`) drift apart, which is the one inconsistency this feature cannot
  * afford — they are the same claim, printed twice.
  *
- * `getVisibleTEIDocuments` is the seam #152 will narrow: choosing a work will
- * change which documents this is built from, not what it does with them.
+ * `getVisibleTEIDocuments` is the seam #152 narrows: choosing a work changes
+ * which documents this is built from, not what it does with them.
  */
 export function useEntityMenu(): EntityMenu {
   const openDocuments = useDocumentStore((s) => s.openDocuments);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
+  const selectedWorkId = useWorkspaceStore((s) => s.selectedWorkId);
 
   return useMemo(() => {
-    const docs = getVisibleTEIDocuments({ openDocuments, visibleDocumentIds });
+    const docs = documentsInWork(
+      getVisibleTEIDocuments({ openDocuments, visibleDocumentIds }),
+      selectedWorkId,
+    );
     return {
       entries: buildEntityMenu(docs.map((doc) => doc.content.parsed_json)),
       columnIndexById: new Map(docs.map((doc, i) => [doc.id, i])),
     };
-  }, [openDocuments, visibleDocumentIds]);
+  }, [openDocuments, visibleDocumentIds, selectedWorkId]);
+}
+
+/**
+ * The subset of `docs` belonging to the chosen work — all of them when no work
+ * is chosen.
+ *
+ * The link between the two toolbar dropdowns runs one way (#152): a work
+ * selection narrows what the Tag Filter is a menu of, and the counts it prints
+ * narrow with it, because a count is per column of THIS menu. A document with
+ * no work is simply not in any work's set; it stays offered while no work is
+ * chosen, which is the only state in which it can be reasoned about.
+ */
+function documentsInWork(
+  docs: SearchableDocument[],
+  workId: number | null,
+): SearchableDocument[] {
+  if (workId === null) return docs;
+  return docs.filter((doc) => doc.content.work?.id === workId);
 }

@@ -12,7 +12,7 @@ import TagFilterButton from "./TagFilterButton";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { useDocumentStore } from "../../store/documentStore";
 import type { Document } from "../../types/document";
-import type { TEIDoc, TEIElementNode, TEINode } from "../../types/tei";
+import type { TEIDoc, TEIElementNode, TEINode, TEIWork } from "../../types/tei";
 
 function text(value: string): TEINode {
     return { type: "text", segments: [{ kind: "word", text: value, idx: 0 }] };
@@ -58,7 +58,12 @@ const authority: TEIElementNode = {
     ],
 };
 
-function teiDoc(id: string, body: TEINode[], withAuthority = true): Document {
+function teiDoc(
+    id: string,
+    body: TEINode[],
+    withAuthority = true,
+    work: TEIWork | null = null,
+): Document {
     return {
         id,
         title: id,
@@ -67,6 +72,7 @@ function teiDoc(id: string, body: TEINode[], withAuthority = true): Document {
             id: 1,
             title: id,
             language: "ga",
+            work,
             created_at: "",
             meta: { title: id, author: "", language: "ga", pbCount: 0 },
             anchors: [],
@@ -102,7 +108,11 @@ function openDocs(...docs: Document[]) {
 }
 
 beforeEach(() => {
-    useWorkspaceStore.setState({ selectedEntityId: null, entityIndexByDocument: {} });
+    useWorkspaceStore.setState({
+        selectedEntityId: null,
+        entityIndexByDocument: {},
+        selectedWorkId: null,
+    });
     openDocs(g126, franciscan);
 });
 
@@ -196,6 +206,70 @@ describe("TagFilterButton", () => {
     //Test: with nothing open there is nothing to offer
     it("offers nothing when no document is open", () => {
         openDocs();
+        open();
+
+        expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
+    });
+});
+
+/**
+ * #152 — the two toolbar dropdowns are linked one way: choosing a work narrows
+ * this menu to that work's entries; choosing an entity never touches the work.
+ */
+describe("TagFilterButton narrowed by the selected work", () => {
+    const acallam: TEIWork = { id: 1, name: "Acallam na Senórach", slug: "acallam" };
+    const tain: TEIWork = { id: 2, name: "Táin Bó Cúailnge", slug: "tain" };
+
+    // Same bodies as above, but each column now belongs to a work.
+    const acallamDoc = teiDoc(
+        "g126-acallam",
+        [named("persName", { ref: "#fionn" }, "Find")],
+        true,
+        acallam,
+    );
+    const tainDoc = teiDoc(
+        "leinster-tain",
+        [named("persName", { ref: "#cailte" }, "Chaílte")],
+        true,
+        tain,
+    );
+
+    it("offers only the entries of the columns belonging to the selected work", () => {
+        openDocs(acallamDoc, tainDoc);
+        useWorkspaceStore.setState({ selectedWorkId: acallam.id });
+        open();
+
+        // Fionn is named in the Acallam column; Caílte only in the Táin one, so
+        // he is declared but never referenced within the narrowed set.
+        const fionn = screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ });
+        expect(fionn).toHaveTextContent(/^Find mac Cumaill1$/);
+    });
+
+    it("counts one column per document in the work, not per open column", () => {
+        openDocs(acallamDoc, tainDoc);
+        useWorkspaceStore.setState({ selectedWorkId: acallam.id });
+        open();
+
+        // one number, not two — the Táin column is not part of this menu
+        expect(
+            screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }),
+        ).toHaveTextContent(/^Find mac Cumaill1$/);
+    });
+
+    it("falls back to every open column when no work is selected", () => {
+        openDocs(acallamDoc, tainDoc);
+        open();
+
+        expect(
+            screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }),
+        ).toHaveTextContent(/^Find mac Cumaill1 · 0$/);
+    });
+
+    // A document with no work is invisible to a work selection, but the menu
+    // must not vanish for it when no work is chosen.
+    it("offers nothing when the selected work has no open column", () => {
+        openDocs(tainDoc);
+        useWorkspaceStore.setState({ selectedWorkId: acallam.id });
         open();
 
         expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
