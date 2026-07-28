@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { rebuildHighlights, setQuerySourceHighlight } from "./highlight";
+import {
+    entityOccurrences,
+    rebuildEntityHighlights,
+    rebuildHighlights,
+    setQuerySourceHighlight,
+} from "./highlight";
 import type { TEIAnchor, TEIWordEntry } from "../types/tei";
 import type { SearchResult } from "../types/search";
 
@@ -129,5 +134,134 @@ describe("setQuerySourceHighlight", () => {
 
         expect(() => setQuerySourceHighlight(null)).not.toThrow();
         expect(painted()).toEqual([]);
+    });
+});
+/**
+ * #147 — following one person through every open manuscript at once.
+ *
+ * Two tiers live in the CSS Highlight registry: the occurrence the column is
+ * sitting on, and that entity's other occurrences in the same column. The third
+ * tier (every *other* named entity, dimmed) is plain CSS on `data-tei-entity`
+ * and needs no registry entry.
+ */
+describe("rebuildEntityHighlights", () => {
+    beforeEach(() => {
+        // G 126 and Franciscan A 4 share the authority list, so `#fionn`
+        // resolves in both columns at once — with different occurrences.
+        makeColumn(
+            "doc-a",
+            // an ordinary anchored line, so a search highlight can be painted
+            // into the same column as the entity highlights
+            '<span data-tei-anchor-id="1">hello world</span>' +
+            '<span data-tei-entity data-tei-ref="#fionn">Find</span>' +
+            '<span data-tei-entity data-tei-ref="#cailte">Caílte</span>' +
+            '<span data-tei-entity data-tei-ref="#fionn">Ḟinn</span>',
+        );
+        makeColumn(
+            "doc-b",
+            '<span data-tei-entity data-tei-ref="#fionn">Fhionn</span>',
+        );
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = "";
+        CSS.highlights.get("tag-entity-active")?.clear();
+        CSS.highlights.get("tag-entity-other")?.clear();
+        CSS.highlights.get("search-match-active")?.clear();
+    });
+
+    const painted = (name: string) =>
+        [...(CSS.highlights.get(name) ?? [])].map((r) => r.toString()).sort();
+
+    it("paints each column's current occurrence and its siblings apart", () => {
+        rebuildEntityHighlights([
+            { docId: "doc-a", entityId: "fionn", activeIndex: 0 },
+            { docId: "doc-b", entityId: "fionn", activeIndex: 0 },
+        ]);
+
+        expect(painted("tag-entity-active")).toEqual(["Fhionn", "Find"]);
+        expect(painted("tag-entity-other")).toEqual(["Ḟinn"]);
+    });
+
+    //Test: every spelling of one person highlights, and nothing else does —
+    //the grouping the authority list provides, not string matching
+    it("highlights every spelling variant of the entity and no other entity", () => {
+        rebuildEntityHighlights([
+            { docId: "doc-a", entityId: "fionn", activeIndex: 1 },
+        ]);
+
+        expect(painted("tag-entity-active")).toEqual(["Ḟinn"]);
+        expect(painted("tag-entity-other")).toEqual(["Find"]);
+        expect([...painted("tag-entity-active"), ...painted("tag-entity-other")])
+            .not.toContain("Caílte");
+    });
+
+    it("navigating one column leaves the other column's highlight alone", () => {
+        rebuildEntityHighlights([
+            { docId: "doc-a", entityId: "fionn", activeIndex: 1 },
+            { docId: "doc-b", entityId: "fionn", activeIndex: 0 },
+        ]);
+
+        expect(painted("tag-entity-active")).toEqual(["Fhionn", "Ḟinn"]);
+    });
+
+    it("clears both tiers when no entity is selected", () => {
+        rebuildEntityHighlights([
+            { docId: "doc-a", entityId: "fionn", activeIndex: 0 },
+        ]);
+
+        rebuildEntityHighlights([
+            { docId: "doc-a", entityId: null, activeIndex: 0 },
+        ]);
+
+        expect(painted("tag-entity-active")).toEqual([]);
+        expect(painted("tag-entity-other")).toEqual([]);
+    });
+
+    //Test: the two features are on screen at once, and neither may wipe the
+    //other — rebuildHighlights clears by name, so the names must not collide
+    it("leaves the search highlight standing", () => {
+        rebuildHighlights([
+            { docId: "doc-a", teiDoc: teiDocA, results: [span(0, 1)], activeIndex: 0 },
+        ]);
+
+        rebuildEntityHighlights([
+            { docId: "doc-a", entityId: "fionn", activeIndex: 0 },
+        ]);
+
+        expect(painted("search-match-active")).toEqual(["hello"]);
+        expect(painted("tag-entity-active")).toEqual(["Find"]);
+    });
+
+    it("degrades to nothing for a column with no occurrences", () => {
+        rebuildEntityHighlights([
+            { docId: "doc-b", entityId: "cailte", activeIndex: 0 },
+        ]);
+
+        expect(painted("tag-entity-active")).toEqual([]);
+        expect(painted("tag-entity-other")).toEqual([]);
+    });
+});
+
+describe("entityOccurrences", () => {
+    beforeEach(() => {
+        makeColumn(
+            "doc-a",
+            '<span data-tei-entity data-tei-ref="#fionn">Find</span>' +
+            '<span data-tei-entity data-tei-ref="#fionn">Ḟinn</span>',
+        );
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    it("returns the entity's occurrences in reading order", () => {
+        expect(entityOccurrences("doc-a", "fionn").map((el) => el.textContent))
+            .toEqual(["Find", "Ḟinn"]);
+    });
+
+    it("returns nothing for a column that is not on screen", () => {
+        expect(entityOccurrences("doc-missing", "fionn")).toEqual([]);
     });
 });

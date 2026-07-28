@@ -13,3 +13,26 @@ color: #1f2937;
 background-color: #93C5FD;
 color: #1f2937;
 }
+/* #147 — the Tag Filter, following one person or place through every open
+   manuscript. Violet against the search bar's orange and the query source's
+   blue, so no tier of this feature can be read as a search result. */
+::highlight(tag-entity-active) {
+background-color: #A78BFA;
+color: #1F2937;
+}
+
+/* The same entity's other occurrences in the same column: present, findable,
+   but plainly not the one the ← → arrows are sitting on. */
+::highlight(tag-entity-other) {
+background-color: #EDE9FE;
+color: #1F2937;
+}
+
+/* Third tier — while a column is showing someone's occurrences, every OTHER
+   named entity greys out. Two attributes deep so it outranks the per-element
+   colour class each name carries; the two highlights above outrank it in turn,
+   because ::highlight paints over the element's own colour. */
+[data-entity-focus] [data-tei-entity] {
+color: #9CA3AF;
+text-decoration-color: #D1D5DB;
+}

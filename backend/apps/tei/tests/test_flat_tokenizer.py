@@ -12,7 +12,7 @@ from django.conf import settings
 from django.test import TestCase
 from lxml import etree
 
-from apps.tei.services.parse import _strip_ns, parse_tei
+from apps.tei.services.parse import SKIP_TAGS, _strip_ns, parse_tei
 
 
 def source_text(el, skip_tags=()) -> str:
@@ -222,13 +222,13 @@ class SkippedRegionBoundaryTest(TestCase):
 
         self.assertIn("Dot over b", rendered_text(tree))
 
-    def test_the_index_reproduces_the_source_minus_notes(self):
+    def test_the_index_reproduces_the_source_minus_the_skipped_subtrees(self):
         _, _, word_array = parse_tei(NOTE_TEI)
         root = etree.fromstring(NOTE_TEI)
 
         self.assertEqual(
             normalise(indexed_text(word_array)),
-            normalise(source_text(root, skip_tags={"teiHeader", "note"})),
+            normalise(source_text(root, skip_tags=SKIP_TAGS)),
         )
 
 
@@ -250,7 +250,7 @@ class BuiltInCorpusReconstructionTest(TestCase):
                     normalise(rendered_text(tree)), normalise(source_text(root))
                 )
 
-    def test_the_index_reproduces_every_built_in_file_minus_notes(self):
+    def test_the_index_reproduces_every_built_in_file_minus_the_skipped_subtrees(self):
         for path in self._corpus():
             with self.subTest(path.name):
                 _, _, word_array = parse_tei(path.read_bytes())
@@ -258,7 +258,7 @@ class BuiltInCorpusReconstructionTest(TestCase):
 
                 self.assertEqual(
                     normalise(indexed_text(word_array)),
-                    normalise(source_text(root, skip_tags={"teiHeader", "note"})),
+                    normalise(source_text(root, skip_tags=SKIP_TAGS)),
                 )
 
     def test_mid_word_markup_in_the_built_in_corpus_is_joined(self):

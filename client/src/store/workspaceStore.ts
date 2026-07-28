@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { WorkspaceStatus } from "../types/panel";
-import type { TEIEntityTag } from "../tei/entityTags";
+import type { DocumentId } from "../types/document";
 import { logEvent } from "../api/log";
 
 // no-op guards, mirroring searchStore's logParamChange — skip logging when
@@ -33,10 +33,19 @@ interface WorkspaceStore {
   selectedWorkIds: string[];
   setSelectedWorkIds: (ids: string[]) => void;
 
-  // Tag Filter — a shell for now: nothing downstream reads the selection yet, and
-  // the closed event taxonomy (ADR-0003) has no event for it, so it logs nothing.
-  selectedTagTypes: TEIEntityTag[];
-  setSelectedTagTypes: (tags: TEIEntityTag[]) => void;
+  // Tag Filter — the id of the one person or place the reader is following, as
+  // declared by the open documents' own authority lists (#147). Single-select:
+  // the navigation below is over one entity's occurrences, so there is nothing
+  // for a second selection to mean. `null` is "not following anyone".
+  selectedEntityId: string | null;
+  setSelectedEntityId: (id: string | null) => void;
+
+  // Which occurrence of that entity each column is sitting on. Per document,
+  // because the three manuscripts share the entity but not its 12 / 111 / 72
+  // occurrences — one column's `→` must never move another's.
+  entityIndexByDocument: Record<DocumentId, number>;
+  nextEntityOccurrence: (documentId: DocumentId, total: number) => void;
+  prevEntityOccurrence: (documentId: DocumentId) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
@@ -45,7 +54,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   fontSize: 14,
   showIIIF: true,
   selectedWorkIds: [],
-  selectedTagTypes: [],
+  selectedEntityId: null,
+  entityIndexByDocument: {},
 
   setStatus: (status, statusText) =>
     set({
@@ -75,7 +85,39 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       logEvent("iiif_toggled", { on: showIIIF });
       return { showIIIF };
     }),
-  setSelectedTagTypes: (tags) => set({ selectedTagTypes: tags }),
+  setSelectedEntityId: (id) => {
+    if (get().selectedEntityId === id) return;
+    logEvent("tag_entity_selected", { entity_id: id });
+    // A different person is a different set of occurrences, so every column
+    // starts again at its own first one rather than keeping a position that
+    // belonged to somebody else.
+    set({ selectedEntityId: id, entityIndexByDocument: {} });
+  },
+
+  nextEntityOccurrence: (documentId, total) =>
+    set((state) => {
+      const current = state.entityIndexByDocument[documentId] ?? 0;
+      // Clamp rather than wrap, the same way search result navigation does.
+      const next = Math.min(current + 1, Math.max(total - 1, 0));
+      return {
+        entityIndexByDocument: {
+          ...state.entityIndexByDocument,
+          [documentId]: next,
+        },
+      };
+    }),
+
+  prevEntityOccurrence: (documentId) =>
+    set((state) => {
+      const current = state.entityIndexByDocument[documentId] ?? 0;
+      return {
+        entityIndexByDocument: {
+          ...state.entityIndexByDocument,
+          [documentId]: Math.max(current - 1, 0),
+        },
+      };
+    }),
+
   setSelectedWorkIds: (ids) => {
     if (!sameWorkIds(get().selectedWorkIds, ids)) {
       logEvent("scope_changed", { selected_work_ids: ids });

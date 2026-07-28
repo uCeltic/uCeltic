@@ -7,7 +7,12 @@ import TEIErrorBoundary from "../../tei/ErrorBoundary";
 import type { TEIDoc } from "../../types/tei";
 import type { SearchResult } from "../../types/search";
 import { rangesForWordSpan } from "../../tei/wordRange";
-import { rebuildHighlights } from "../../tei/highlight";
+import {
+  entityOccurrences,
+  rebuildEntityHighlights,
+  rebuildHighlights,
+} from "../../tei/highlight";
+import { useEntityMenu } from "../../tei/useEntityMenu";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -43,11 +48,77 @@ interface SortableDocumentColumnProps {
   activeIndex: number;
   activeResult: SearchResult | undefined;
   showDragHint: boolean;
+  entityCard: EntityCardState | null;
   onDismissDragHint: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onEntityPrev: () => void;
+  onEntityNext: () => void;
   onRetry: () => void;
   onClose: () => void;
+}
+
+// What this column has to say about the entity the Tag Filter is following:
+// who they are, how often this manuscript names them, and which occurrence the
+// column is sitting on. `null` when nothing is selected, or when the column's
+// document declares no authority list to select from.
+interface EntityCardState {
+  headword: string;
+  count: number;
+  index: number;
+}
+
+// One slim row: who is being followed, where this column is among their
+// occurrences, and the two arrows that move within THIS column only. It sits
+// alongside the search result card rather than replacing it, because a tag
+// highlight and a search highlight are both allowed on screen at once.
+function EntityNavCard({
+  entity,
+  onPrev,
+  onNext,
+}: {
+  entity: EntityCardState;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const navBtn =
+    "rounded-md border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 cursor-pointer hover:bg-gray-100 disabled:cursor-default disabled:opacity-40";
+  return (
+    <div
+      className="flex items-center justify-between gap-2 border-b border-gray-200 bg-[#F5F1DF] px-3 py-1"
+    >
+      <span className="min-w-0 truncate text-sm font-medium text-[#52524F]">
+        {entity.headword}
+      </span>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <span className="text-xs tabular-nums text-gray-500">
+          {/* a manuscript that never names them says so, rather than showing
+              "1 / 0" or vanishing and reading as a bug */}
+          {entity.count === 0
+            ? "none here"
+            : `${entity.index + 1} / ${entity.count}`}
+        </span>
+        <button
+          type="button"
+          aria-label="Previous occurrence"
+          disabled={entity.count === 0}
+          onClick={onPrev}
+          className={navBtn}
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          aria-label="Next occurrence"
+          disabled={entity.count === 0}
+          onClick={onNext}
+          className={navBtn}
+        >
+          →
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // One-time popover pointing at the grip icon, telling the user the title
@@ -116,9 +187,12 @@ function SortableDocumentColumn({
   activeIndex,
   activeResult,
   showDragHint,
+  entityCard,
   onDismissDragHint,
   onPrev,
   onNext,
+  onEntityPrev,
+  onEntityNext,
   onRetry,
   onClose,
 }: SortableDocumentColumnProps) {
@@ -246,14 +320,30 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
           </div>
         )}
 
+        {entityCard && (
+          <EntityNavCard
+            entity={entityCard}
+            onPrev={onEntityPrev}
+            onNext={onEntityNext}
+          />
+        )}
+
         {/* document text content */}
         <div className="min-h-0 flex-1 overflow-auto p-4">
           {/* if the document is a TEI document, hand it to the TEIRenderer, let it render the tei document. */}
           {doc.format === "tei" ? (
             // data-tei-content marks the searchable rendered text: select-to-search
             // only offers itself for selections landing inside one of these.
+            //
+            // data-entity-focus is the third highlight tier: while this column
+            // is showing someone's occurrences, every OTHER named entity in it
+            // greys out, so the ones that matter stand out of a page that is
+            // otherwise full of coloured names (index.css).
             <div
               data-tei-content
+              data-entity-focus={
+                entityCard && entityCard.count > 0 ? "" : undefined
+              }
               className="leading-6 text-gray-800"
               style={{ fontSize }}
             >
@@ -315,9 +405,84 @@ export default function DocumentArea() {
     (state) => state.clearDocumentResults,
   );
 
+  const selectedEntityId = useWorkspaceStore((state) => state.selectedEntityId);
+  const entityIndexByDocument = useWorkspaceStore(
+    (state) => state.entityIndexByDocument,
+  );
+  const nextEntityOccurrence = useWorkspaceStore(
+    (state) => state.nextEntityOccurrence,
+  );
+  const prevEntityOccurrence = useWorkspaceStore(
+    (state) => state.prevEntityOccurrence,
+  );
+
   const visibleDocuments = visibleDocumentIds
     .map((id) => openDocuments.find((d) => d.id === id))
     .filter((d): d is NonNullable<typeof d> => d !== undefined);
+
+  // The very menu the toolbar offers, read here for its counts — so a column's
+  // "1 / 12" and the menu's "12" can never disagree.
+  const { entries, columnIndexById } = useEntityMenu();
+  const selectedEntity = entries.find((e) => e.id === selectedEntityId);
+
+  // A column whose document never declared this entity gets no card — no
+  // fallback to matching by element name, which is the behaviour #147 removes.
+  function entityCardFor(docId: string): EntityCardState | null {
+    const column = columnIndexById.get(docId);
+    if (!selectedEntity || column === undefined) return null;
+    if (!selectedEntity.declaredBy[column]) return null;
+    return {
+      headword: selectedEntity.headword,
+      count: selectedEntity.counts[column],
+      index: entityIndexByDocument[docId] ?? 0,
+    };
+  }
+
+  // Scroll a column to the occurrence it is now sitting on. The index is read
+  // back out of the store rather than recomputed, so the clamping lives in one
+  // place; the spans are already on screen — they are the rendered entity
+  // elements — so this needs no anchor arithmetic, unlike a search result.
+  function scrollToOccurrence(docId: string) {
+    if (!selectedEntityId) return;
+    const index =
+      useWorkspaceStore.getState().entityIndexByDocument[docId] ?? 0;
+    entityOccurrences(docId, selectedEntityId)[index]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  // Repaint the Tag Filter's highlights for every visible column together, for
+  // the same reason the search highlights are repainted in one place: the
+  // registry holds one Highlight per tier across all columns, so one column's
+  // change must never be applied by editing that Highlight in place.
+  useEffect(() => {
+    rebuildEntityHighlights(
+      visibleDocumentIds.map((id) => ({
+        docId: id,
+        entityId: selectedEntityId,
+        activeIndex: entityIndexByDocument[id] ?? 0,
+      })),
+    );
+  }, [
+    visibleDocumentIds,
+    openDocuments,
+    selectedEntityId,
+    entityIndexByDocument,
+  ]);
+
+  // Following a new person starts every column at its own first occurrence, the
+  // way a new search scrolls each column to its own first result.
+  useEffect(() => {
+    if (!selectedEntityId) return;
+    for (const id of visibleDocumentIds) {
+      entityOccurrences(id, selectedEntityId)[0]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEntityId]);
 
   // Repaint BOTH search highlights for every visible TEI column whenever the
   // results, active indices, or visible columns change. Navigation only updates
@@ -435,7 +600,16 @@ export default function DocumentArea() {
                 activeIndex={activeIndex}
                 activeResult={activeResult}
                 showDragHint={doc.id === dragHintDocId}
+                entityCard={entityCardFor(doc.id)}
                 onDismissDragHint={dismissDragHint}
+                onEntityPrev={() => {
+                  prevEntityOccurrence(doc.id);
+                  scrollToOccurrence(doc.id);
+                }}
+                onEntityNext={() => {
+                  nextEntityOccurrence(doc.id, entityCardFor(doc.id)?.count ?? 0);
+                  scrollToOccurrence(doc.id);
+                }}
                 onPrev={() => {
                   const next = activeIndex > 0 ? activeIndex - 1 : activeIndex;
                   prevResult(doc.id);

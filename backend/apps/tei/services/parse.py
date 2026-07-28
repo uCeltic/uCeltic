@@ -20,10 +20,19 @@ from typing import NamedTuple
 
 from lxml import etree
 
-# Subtrees whose text stays on screen but leaves the search index. `note` holds
-# the editor's English commentary, not manuscript text, so a fuzzy match window
-# must not be able to straddle the boundary between the two.
-SKIP_TAGS = {"teiHeader", "note"}
+# Subtrees whose text leaves the search index. `note` holds the editor's English
+# commentary, not manuscript text, so a fuzzy match window must not be able to
+# straddle the boundary between the two. `standOff` holds the name authority
+# list — 33 people and 10 places with every spelling variant of each — which is
+# apparatus, not the work: spellings that occur only there would otherwise
+# return a hit pointing outside the text the reader is reading (#151).
+#
+# Skipping the index is not skipping the traversal. Every one of these subtrees
+# still allocates anchor ids, because frontend `assignAnchorIds` walks the same
+# node set and the two must agree or every later anchor shifts. Whether a
+# subtree is also hidden on screen is the frontend's own decision — its
+# SKIP_TAGS, not this one.
+SKIP_TAGS = {"teiHeader", "note", "standOff"}
 
 _TOKEN_RE = re.compile(r"(\w+|[^\w]+)", re.UNICODE)
 

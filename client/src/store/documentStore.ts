@@ -61,8 +61,22 @@ export function getSearchableDocuments(
   state: Pick<DocumentStore, "openDocuments" | "visibleDocumentIds">,
   options: { excludedDocId?: DocumentId } = {},
 ): SearchableDocument[] {
+  return getVisibleTEIDocuments(state).filter(
+    (doc) => doc.id !== options.excludedDocId,
+  );
+}
+
+/**
+ * Every visible column holding a TEI document, in the order they are on screen.
+ *
+ * The column order is part of the answer, not incidental: the Tag Filter prints
+ * one occurrence count per column (`12 · 111 · 72`) and they have to line up
+ * with what the reader sees.
+ */
+export function getVisibleTEIDocuments(
+  state: Pick<DocumentStore, "openDocuments" | "visibleDocumentIds">,
+): SearchableDocument[] {
   return state.visibleDocumentIds
-    .filter((id) => id !== options.excludedDocId)
     .map((id) => state.openDocuments.find((doc) => doc.id === id))
     .filter((doc): doc is SearchableDocument => doc?.format === "tei");
 }

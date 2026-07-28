@@ -7,6 +7,7 @@ import {
 } from "./dragReorderHint";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { useWorkspaceStore } from "../../store/workspaceStore";
 import { searchDocument } from "../../api/search";
 import type { SearchResult } from "../../types/search";
 import type { Document } from "../../types/document";
@@ -487,5 +488,171 @@ describe("computeDragEndReorder", () => {
                 ["doc-1", "doc-2"],
             ),
         ).toBeNull();
+    });
+});
+
+/**
+ * #147 — the Tag Filter's per-column navigation.
+ *
+ * Each visible column finds its own occurrences of the selected entity and
+ * navigates them alone, so a person named 12 times in one manuscript and 111
+ * times in another is two independent readings of the same selection.
+ */
+describe("Tag Filter entity navigation", () => {
+    // Two manuscripts sharing one authority list — the same xml:ids across
+    // files, which is what makes a single selection resolve in both columns.
+    function authorityTei(id: number, refs: string[]): TEIDoc {
+        const parsed_json: TEINode = {
+            tag: "TEI",
+            children: [
+                {
+                    tag: "standOff",
+                    children: [
+                        {
+                            tag: "listPerson",
+                            children: [
+                                {
+                                    tag: "person",
+                                    attrs: { id: "fionn" },
+                                    children: [
+                                        {
+                                            tag: "persName",
+                                            attrs: { type: "canonical" },
+                                            children: [{
+                                                type: "text",
+                                                segments: [{ kind: "word", text: "Find mac Cumaill", idx: 0 }],
+                                            }],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    tag: "text",
+                    children: [{
+                        tag: "body",
+                        children: refs.map((spelling) => ({
+                            tag: "persName",
+                            attrs: { ref: "#fionn" },
+                            children: [{
+                                type: "text",
+                                segments: [{ kind: "word", text: spelling, idx: 0 }],
+                            }],
+                        })),
+                    }],
+                },
+            ],
+        };
+        return {
+            id,
+            title: `tei-${id}`,
+            language: "ga",
+            parsed_json,
+            created_at: "",
+            meta: { title: "", author: "", language: "", pbCount: 0 },
+            anchors: [],
+            word_array: [],
+        };
+    }
+
+    const withAuthorityA: Document = {
+        id: "doc-a", title: "G 126", format: "tei",
+        content: authorityTei(1, ["Find", "Ḟinn"]),
+    };
+    const withAuthorityB: Document = {
+        id: "doc-b", title: "Franciscan A 4", format: "tei",
+        content: authorityTei(2, ["Fionn", "Fhionn", "Finn"]),
+    };
+    // shakespear.xml's shape: named entities, no authority list, no pointers
+    const noAuthority: Document = {
+        id: "doc-c", title: "Shakespeare", format: "tei",
+        content: twoWordTei(3, "hello", "world"),
+    };
+
+    function show(...docs: Document[]) {
+        useDocumentStore.setState({
+            openDocuments: docs,
+            visibleDocumentIds: docs.map((d) => d.id),
+            activeDocumentId: docs[0]?.id ?? null,
+        });
+    }
+
+    beforeEach(() => {
+        useWorkspaceStore.setState({
+            selectedEntityId: null,
+            entityIndexByDocument: {},
+        });
+    });
+
+    it("shows no navigation card until an entity is selected", () => {
+        show(withAuthorityA);
+        render(<DocumentArea />);
+
+        expect(screen.queryByText("Find mac Cumaill")).not.toBeInTheDocument();
+    });
+
+    //Test: each column counts its own occurrences of the same person
+    it("gives each column its own count of the selected entity", () => {
+        show(withAuthorityA, withAuthorityB);
+        render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+
+        expect(screen.getByText("1 / 2")).toBeInTheDocument();
+        expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    });
+
+    //Test: → moves this column alone, and never the other
+    it("navigates one column's occurrences without moving another's", () => {
+        show(withAuthorityA, withAuthorityB);
+        render(<DocumentArea />);
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+
+        fireEvent.click(screen.getAllByLabelText("Next occurrence")[0]);
+
+        expect(screen.getByText("2 / 2")).toBeInTheDocument();
+        expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    });
+
+    //Test: a document with no authority list degrades to no card and no error
+    it("shows no card for a column whose document has no authority list", () => {
+        show(withAuthorityA, noAuthority);
+        render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+
+        expect(screen.getAllByLabelText("Next occurrence")).toHaveLength(1);
+    });
+
+    //Test: every spelling of one person highlights, the current one apart from
+    //the rest, and no other named entity is touched
+    it("paints the current occurrence and its siblings in separate tiers", () => {
+        show(withAuthorityA);
+        render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+
+        const painted = (name: string) =>
+            [...(CSS.highlights.get(name) ?? [])].map((r) => r.toString());
+        expect(painted("tag-entity-active")).toEqual(["Find"]);
+        expect(painted("tag-entity-other")).toEqual(["Ḟinn"]);
+    });
+
+    //Test: the two features share the screen — neither repaint clears the other
+    it("keeps the search highlight while an entity is selected", async () => {
+        show(teiDocA);
+        mockedSearch.mockResolvedValue([span(0, 1)]);
+        render(<DocumentArea />);
+        await act(async () => {
+            useSearchStore.getState().setQuery("hello");
+            await useSearchStore.getState().runSearch(1, "doc-a");
+        });
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+
+        expect([...(CSS.highlights.get("search-match-active") ?? [])]
+            .map((r) => r.toString())).toEqual(["hello"]);
     });
 });
