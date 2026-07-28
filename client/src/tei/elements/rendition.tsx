@@ -1,23 +1,12 @@
 import type { TEIElementProps } from "../elementMap";
-
-// How the manuscript renders a stretch of text, as recorded in `@rend`. The keys
-// are the values the corpus actually uses — `ital` is the research team's own
-// spelling of `italic`, and `decor` marks a decorated initial. Anything else
-// renders as plain text: an unrecognised rendition is still readable text, and
-// guessing at it would misrepresent the manuscript.
-const HI_REND_CLASSES: Record<string, string> = {
-  decor: "text-3xl leading-none font-semibold text-red-800",
-  italic: "italic",
-  ital: "italic",
-  superscript: "align-super text-xs",
-  large: "text-lg",
-};
+import { rendClasses } from "./rend";
 
 export function Hi({ node, children, anchorId }: TEIElementProps) {
   const rend = node.attrs?.rend;
+  const classes = rendClasses(rend);
   return (
     <span
-      className={(rend && HI_REND_CLASSES[rend]) || undefined}
+      className={classes.length ? classes.join(" ") : undefined}
       data-tei-tag="hi"
       data-tei-anchor-id={anchorId}
       data-tei-rend={rend}

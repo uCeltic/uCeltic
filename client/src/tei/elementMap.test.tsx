@@ -8,8 +8,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import TEIRenderer from "../TEIRenderer";
-import type { TEIElementNode, TEINode } from "../../types/tei";
+import TEIRenderer from "./TEIRenderer";
+import type { TEIElementNode, TEINode } from "../types/tei";
 
 // A whole word, the shape `parse_tei` emits for one.
 function text(s: string): TEINode {
@@ -47,6 +47,14 @@ describe("del", () => {
     expect(tagged(container, "del").className).toContain("line-through");
   });
 
+  it("layers any other rendition @rend records on top of the strike", () => {
+    const { container } = renderTEI(el("del", { rend: "italic" }, text("scriptum")));
+    const del = tagged(container, "del");
+
+    expect(del.className).toContain("line-through");
+    expect(del.className).toContain("italic");
+  });
+
   it("adds no characters of its own — a word's offsets are counted against them", () => {
     const { container } = renderTEI(el("del", { rend: "strikethrough" }, text("scriptum")));
     expect(tagged(container, "del").textContent).toBe("scriptum");
@@ -78,6 +86,13 @@ describe("hi", () => {
 
     const large = renderTEI(el("hi", { rend: "large" }, text("x")));
     expect(tagged(large.container, "hi").className).toContain("text-lg");
+  });
+
+  it("reads @rend as the token list it is, not as one opaque value", () => {
+    // `rend="italic center"` is 78 uses in the built-in corpus. Whole-string
+    // matching drops every compound rendition silently.
+    const { container } = renderTEI(el("hi", { rend: "italic center" }, text("uerbum")));
+    expect(tagged(container, "hi").className).toContain("italic");
   });
 
   it("renders an unknown or absent @rend as plain text, not as a bare fallback", () => {
@@ -116,9 +131,11 @@ describe("cb", () => {
     expect(tagged(container, "cb").id).toBe("");
   });
 
-  it("falls back to @n when there is no @xml:id", () => {
+  it("prefixes a bare @n so it cannot be read as manuscript text", () => {
+    // Every `cb` in the built-in corpus carries only `@n`, so this is the shape
+    // the reader actually meets — and a lone `1` inside a verse line is text.
     const { container } = renderTEI(el("cb", { n: "1" }));
-    expect(tagged(container, "cb")).toHaveTextContent("1");
+    expect(tagged(container, "cb")).toHaveTextContent("col. 1");
   });
 
   it("stays inline so it does not break the paragraph it sits inside", () => {

@@ -1,4 +1,5 @@
 import type { TEIElementProps } from "../elementMap";
+import { rendClasses } from "./rend";
 
 //define how the tei tags are rendered in the html page
 
@@ -94,9 +95,14 @@ export function Cb({ node, anchorId }: TEIElementProps) {
   // (`fol.27vb`), so it is shown and exposed as `data-tei-id`, and deliberately
   // NOT spread onto the DOM node: an `id` of that name would land in the
   // document's own id space and collide.
+  //
+  // Prefer it as the label: it names the folio *and* the column (`fol.27vb`),
+  // where `@n` alone is a bare `1` or `2`. A bare digit dropped into a verse
+  // line reads as manuscript text, so when that is all there is, `pb`'s shape
+  // is followed and the number is prefixed.
   const n = node.attrs?.n;
   const xmlId = node.attrs?.id;
-  const label = xmlId ?? n;
+  const label = xmlId ?? (n && `col. ${n}`);
   return (
     <span
       className="mx-1 inline-flex items-baseline gap-1 align-baseline text-[0.7rem] text-gray-400 select-none"
@@ -118,13 +124,19 @@ export function Cb({ node, anchorId }: TEIElementProps) {
 export function Del({ node, children, anchorId }: TEIElementProps) {
   // The one element here that used to actively misinform: struck-out text fell
   // through to PassThrough and read as part of the text (#146).
+  //
+  // The strike is unconditional — a `del` is deleted whatever `@rend` says, and
+  // the corpus's own `strikethrough` only restates that. Any *other* rendition
+  // the editor recorded is layered on top: `@rend` means the same thing here as
+  // it does on `hi`.
+  const rend = node.attrs?.rend;
   return (
     <del
-      className="line-through decoration-gray-500 opacity-70"
+      className={["line-through decoration-gray-500 opacity-70", ...rendClasses(rend)].join(" ")}
       data-tei-tag="del"
       data-tei-anchor-id={anchorId}
-      data-tei-rend={node.attrs?.rend}
-      title={`deleted${node.attrs?.rend ? ": " + node.attrs.rend : ""}`}
+      data-tei-rend={rend}
+      title={`deleted${rend ? ": " + rend : ""}`}
     >
       {children}
     </del>
