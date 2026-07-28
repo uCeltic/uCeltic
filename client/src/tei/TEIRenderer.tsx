@@ -23,7 +23,16 @@ import PassThrough from "./PassThrough";
 //   world
 // </P> */}
 
-const SKIP_TAGS = new Set(["teiHeader"]);
+// Subtrees that are parsed and walked but never painted. `teiHeader` is
+// catalogue metadata; `standOff` is the name authority list — 33 people and 10
+// places with every spelling variant of each, which used to fill the screen
+// before the text began (#151). Both stay in `parsed_json`: the Tag Filter
+// reads the authority list from there (#147).
+//
+// Skipping happens at render only. `assignAnchorIds` below still walks into
+// these subtrees, because the backend's `_flatten` allocates an id for every
+// element and the two walks must stay in step or every later anchor shifts.
+const SKIP_TAGS = new Set(["teiHeader", "standOff"]);
 
 
 
