@@ -11,6 +11,9 @@ export interface TEIElementProps {
   node: TEIElementNode;
   children: ReactNode;
   anchorId: number;
+  // Which editorial note this is, counted from 1 through the document (#154).
+  // Only `note` is given one; every other element ignores it.
+  noteNumber?: number;
 }
 
 export const elementMap: Record<string, FC<TEIElementProps>> = {
