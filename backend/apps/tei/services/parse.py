@@ -14,6 +14,12 @@ _WORD_RE = re.compile(r"(\w+|[^\w]+)", re.UNICODE)
 def _strip_ns(tag: str) -> str:
     return tag.split("}")[-1] if "}" in tag else tag
 
+# True for real elements only. lxml gives comments and processing instructions
+# the callable that constructs them (etree.Comment, etree.ProcessingInstruction)
+# as their .tag, rather than a string.
+def _is_element(el) -> bool:
+    return isinstance(el.tag, str)
+
 # pipeline: parse the tei xml into parsed_json, anchors and word array
 def parse_tei(xml_bytes: bytes) -> tuple[dict, list[dict], list[dict]]:
     #root is lxml object
@@ -34,6 +40,13 @@ def parse_tei(xml_bytes: bytes) -> tuple[dict, list[dict], list[dict]]:
 
 # recursively walk the lxml object
 def _walk(el, parent_id, state, in_skip=False):
+    # Drop before an anchor id is allocated, so backend _walk and frontend
+    # assignAnchorIds keep traversing the same node set — otherwise every
+    # anchor after the first comment shifts and highlighting lands on the
+    # wrong line. The caller still tokenises the tail, so no text is lost.
+    if not _is_element(el):
+        return None
+
     tag = _strip_ns(el.tag)
     skip_words = in_skip or (tag in SKIP_TAGS)
 
