@@ -175,6 +175,25 @@ describe("countOccurrencesByEntity", () => {
     expect(countOccurrencesByEntity(acallam).fionn).toBe(2);
   });
 
+  it("ignores a ref on an element that is not a named entity", () => {
+    // `@ref` is not exclusive to names; only the elements the reader renders as
+    // entities can be highlighted, so only those may be counted.
+    const withPointer = doc([
+      { tag: "l", children: [entity("ptr", "#fionn", "")] },
+      { tag: "l", children: [entity("persName", "#fionn", "Find")] },
+    ]);
+
+    expect(countOccurrencesByEntity(withPointer).fionn).toBe(1);
+  });
+
+  //Test: a teiCorpus root holds several TEI children, each with its own
+  //standOff and text — every one of them counts
+  it("counts across every TEI in a teiCorpus root", () => {
+    const corpus: TEINode = { tag: "teiCorpus", children: [acallam, acallam] };
+
+    expect(countOccurrencesByEntity(corpus).fionn).toBe(4);
+  });
+
   it("ignores references to ids the authority list does not declare", () => {
     const stray = doc([
       { tag: "l", children: [entity("persName", "#oisin", "Oisín")] },
@@ -215,6 +234,18 @@ describe("buildEntityMenu", () => {
     const menu = buildEntityMenu([acallam, second]);
 
     expect(menu.find((e) => e.id === "eriu")?.counts).toEqual([1, 0]);
+  });
+
+  //Test: "declares them but never names them" and "never heard of them" are
+  //different answers — the first gets a card reading "none here", the second
+  //gets no card at all
+  it("records which documents declare each entry, not just which name them", () => {
+    const plain = doc([{ tag: "l", children: [text("do chuaid")] }], false);
+    const menu = buildEntityMenu([acallam, plain]);
+
+    const eriu = menu.find((e) => e.id === "eriu");
+    expect(eriu?.declaredBy).toEqual([true, false]);
+    expect(eriu?.counts).toEqual([1, 0]);
   });
 
   it("orders by total occurrences, so the people the corpus dwells on lead", () => {

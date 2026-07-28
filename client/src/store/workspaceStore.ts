@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { WorkspaceStatus } from "../types/panel";
+import type { DocumentId } from "../types/document";
 import { logEvent } from "../api/log";
 
 // no-op guards, mirroring searchStore's logParamChange — skip logging when
@@ -42,9 +43,9 @@ interface WorkspaceStore {
   // Which occurrence of that entity each column is sitting on. Per document,
   // because the three manuscripts share the entity but not its 12 / 111 / 72
   // occurrences — one column's `→` must never move another's.
-  entityIndexByDocument: Record<string, number>;
-  nextEntityOccurrence: (documentId: string, total: number) => void;
-  prevEntityOccurrence: (documentId: string) => void;
+  entityIndexByDocument: Record<DocumentId, number>;
+  nextEntityOccurrence: (documentId: DocumentId, total: number) => void;
+  prevEntityOccurrence: (documentId: DocumentId) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({

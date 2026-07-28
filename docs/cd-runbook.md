@@ -53,6 +53,25 @@ replace the site address in `Caddyfile.prod` (one line), and update
 `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` in the box `.env`. Everything else
 (cert issuance, redirect, CD) stays the same.
 
+## After a TEI parser change: `reparse_tei` (#151)
+
+`parse_tei` runs from a `post_save` signal, so a document is parsed **once**, when
+it is uploaded. `entrypoint.sh` runs `migrate`, not the parser — a parser fix
+therefore reaches new uploads only, and the corpus already on the box keeps the
+`parsed_json`, `anchors` and `word_array` produced by the parser of the day. The
+symptom is a fix that passes every test and changes nothing you can see in prod.
+
+After deploying a change to `apps/tei/services/parse.py`, re-parse the stored
+corpus by hand:
+
+```sh
+sudo docker compose -f docker-compose.prod.yml exec backend \
+  python manage.py reparse_tei
+```
+
+It re-saves every document, prints each one's new word count, and leaves the old
+parse in place for any file that fails to parse.
+
 ## One-time setup
 
 1. **Registry login** — read-only PAT, `read:packages` on this repo only:

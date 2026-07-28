@@ -1,10 +1,7 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useWorkspaceStore } from "../../store/workspaceStore";
-import {
-  getVisibleTEIDocuments,
-  useDocumentStore,
-} from "../../store/documentStore";
-import { buildEntityMenu, type EntityKind, type EntityMenuEntry } from "../../tei/authority";
+import type { EntityKind, EntityMenuEntry } from "../../tei/authority";
+import { useEntityMenu } from "../../tei/useEntityMenu";
 import { useDismissableDropdown } from "./useDismissableDropdown";
 import { toolbarBtnBase, toolbarLabel } from "./buttonStyles";
 import { TagIcon } from "./icons";
@@ -55,28 +52,15 @@ function EntryRow({
  * construction here, not by keeping a hard-coded list in step with the corpus,
  * which is the mistake the element-name vocabulary this replaces made (#147).
  *
- * `getVisibleTEIDocuments` is the seam #152 will narrow: once a work can be
- * chosen, the menu is built from that work's documents instead of every visible
- * one. Selecting an entity here never changes the opener — the link runs one
- * way, work → entities.
+ * Selecting an entity here never changes the Work opener — the link between the
+ * two toolbar dropdowns runs one way, work → entities (#152).
  */
 export default function TagFilterButton() {
   const selectedEntityId = useWorkspaceStore((s) => s.selectedEntityId);
   const setSelectedEntityId = useWorkspaceStore((s) => s.setSelectedEntityId);
-  const openDocuments = useDocumentStore((s) => s.openDocuments);
-  const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const { open, setOpen, ref } = useDismissableDropdown<HTMLDivElement>();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-
-  const entries = useMemo(
-    () =>
-      buildEntityMenu(
-        getVisibleTEIDocuments({ openDocuments, visibleDocumentIds }).map(
-          (doc) => doc.content.parsed_json,
-        ),
-      ),
-    [openDocuments, visibleDocumentIds],
-  );
+  const { entries } = useEntityMenu();
 
   const selected = entries.find((e) => e.id === selectedEntityId);
   // nothing selected filters nothing, so it reads as "All Tags", not "0 Tags"
@@ -102,7 +86,7 @@ export default function TagFilterButton() {
         >
           {entries.length === 0 ? (
             <p className="px-3 py-1.5 text-sm text-gray-400">
-              No named entities in the open manuscripts
+              No named entities in the open documents
             </p>
           ) : (
             GROUPS.map(({ kind, label: groupLabel }) => {

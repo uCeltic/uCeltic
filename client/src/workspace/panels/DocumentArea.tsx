@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
@@ -12,7 +12,7 @@ import {
   rebuildEntityHighlights,
   rebuildHighlights,
 } from "../../tei/highlight";
-import { countOccurrencesByEntity, readAuthorityList } from "../../tei/authority";
+import { useEntityMenu } from "../../tei/useEntityMenu";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -420,50 +420,36 @@ export default function DocumentArea() {
     .map((id) => openDocuments.find((d) => d.id === id))
     .filter((d): d is NonNullable<typeof d> => d !== undefined);
 
-  // What each column's own document says about named entities: which ones it
-  // declares, and how often it references each. Derived from parsed_json rather
-  // than the DOM so it is available before a column has painted, and recomputed
-  // only when the open documents change — not on every navigation.
-  const authorityByDoc = useMemo(() => {
-    const byDoc = new Map<
-      string,
-      { headwords: Map<string, string>; counts: Record<string, number> }
-    >();
-    for (const d of visibleDocuments) {
-      if (d.format !== "tei") continue;
-      const root = (d.content as TEIDoc).parsed_json;
-      byDoc.set(d.id, {
-        headwords: new Map(
-          readAuthorityList(root).map((e) => [e.id, e.headword]),
-        ),
-        counts: countOccurrencesByEntity(root),
-      });
-    }
-    return byDoc;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleDocumentIds, openDocuments]);
+  // The very menu the toolbar offers, read here for its counts — so a column's
+  // "1 / 12" and the menu's "12" can never disagree.
+  const { entries, columnIndexById } = useEntityMenu();
+  const selectedEntity = entries.find((e) => e.id === selectedEntityId);
 
-  // A column with no authority list contributes no card — no fallback to
-  // matching by element name, which is the behaviour #147 exists to remove.
+  // A column whose document never declared this entity gets no card — no
+  // fallback to matching by element name, which is the behaviour #147 removes.
   function entityCardFor(docId: string): EntityCardState | null {
-    if (!selectedEntityId) return null;
-    const authority = authorityByDoc.get(docId);
-    const headword = authority?.headwords.get(selectedEntityId);
-    if (!headword) return null;
+    const column = columnIndexById.get(docId);
+    if (!selectedEntity || column === undefined) return null;
+    if (!selectedEntity.declaredBy[column]) return null;
     return {
-      headword,
-      count: authority?.counts[selectedEntityId] ?? 0,
+      headword: selectedEntity.headword,
+      count: selectedEntity.counts[column],
       index: entityIndexByDocument[docId] ?? 0,
     };
   }
 
-  // Scroll a column to the occurrence it is now sitting on. The spans are
-  // already on screen — they are the rendered entity elements — so this needs
-  // no anchor arithmetic, unlike a search result.
-  function scrollToOccurrence(docId: string, index: number) {
+  // Scroll a column to the occurrence it is now sitting on. The index is read
+  // back out of the store rather than recomputed, so the clamping lives in one
+  // place; the spans are already on screen — they are the rendered entity
+  // elements — so this needs no anchor arithmetic, unlike a search result.
+  function scrollToOccurrence(docId: string) {
     if (!selectedEntityId) return;
-    const occurrences = entityOccurrences(docId, selectedEntityId);
-    occurrences[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const index =
+      useWorkspaceStore.getState().entityIndexByDocument[docId] ?? 0;
+    entityOccurrences(docId, selectedEntityId)[index]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   }
 
   // Repaint the Tag Filter's highlights for every visible column together, for
@@ -617,15 +603,12 @@ export default function DocumentArea() {
                 entityCard={entityCardFor(doc.id)}
                 onDismissDragHint={dismissDragHint}
                 onEntityPrev={() => {
-                  const index = entityIndexByDocument[doc.id] ?? 0;
                   prevEntityOccurrence(doc.id);
-                  scrollToOccurrence(doc.id, Math.max(index - 1, 0));
+                  scrollToOccurrence(doc.id);
                 }}
                 onEntityNext={() => {
-                  const count = entityCardFor(doc.id)?.count ?? 0;
-                  const index = entityIndexByDocument[doc.id] ?? 0;
-                  nextEntityOccurrence(doc.id, count);
-                  scrollToOccurrence(doc.id, Math.min(index + 1, count - 1));
+                  nextEntityOccurrence(doc.id, entityCardFor(doc.id)?.count ?? 0);
+                  scrollToOccurrence(doc.id);
                 }}
                 onPrev={() => {
                   const next = activeIndex > 0 ? activeIndex - 1 : activeIndex;

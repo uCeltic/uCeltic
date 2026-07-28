@@ -1,10 +1,11 @@
 import type { TEIElementNode, TEINode } from "../types/tei";
+import { ENTITY_TAGS } from "./entityElements";
 
 /**
  * The name authority list a TEI document declares about itself.
  *
  * The Acallam manuscripts each carry a `standOff` naming 33 people and 10
- * places, every entry listing a canonical headword and up to 13 spelling
+ * places, every entry listing a canonical headword and up to 12 spelling
  * variants, and every named entity in the body points back at one with
  * `ref="#fionn"`. That is the grouping the Tag Filter needs — "Find, Finn,
  * Ḟinn and Fhionn are one man" is answered by the corpus, not by us — and the
@@ -32,6 +33,13 @@ export interface AuthorityEntry {
 export interface EntityMenuEntry extends AuthorityEntry {
   /** Occurrences in each source document, in the order they were given. */
   counts: number[];
+  /**
+   * Whether each source document declares this entry at all — which is not the
+   * same as referencing it. A document that declares Áine and never names her
+   * has something to say ("none here"); one whose `standOff` never heard of her
+   * has nothing, and shows no navigation card.
+   */
+  declaredBy: boolean[];
   total: number;
 }
 
@@ -40,6 +48,11 @@ export interface EntityMenuEntry extends AuthorityEntry {
 // keep its `#`.
 const ID_ATTR = "id";
 const REF_PREFIX = "#";
+
+// Only a rendered named entity can be highlighted, so only a rendered named
+// entity is counted — the menu's numbers and the column's spans are then the
+// same population by construction.
+const entityTags = new Set<string>(ENTITY_TAGS);
 
 // Which list holds which kind, and what a headword element is called inside it.
 const LISTS: Record<string, { kind: EntityKind; entry: string; name: string }> =
@@ -62,6 +75,21 @@ function* elements(node: TEINode): Generator<TEIElementNode> {
   for (const child of children(node)) yield* elements(child);
 }
 
+/**
+ * Every element outside the authority list, in document order.
+ *
+ * "In `<text>` only" is expressed as "not in a `standOff`" rather than by
+ * descending into the first `text` element: a `teiCorpus` root holds several
+ * `TEI` children, each with its own `text` and its own `standOff`, and taking
+ * the first of either would silently count one of them and ignore the rest.
+ */
+function* elementsOutsideAuthority(node: TEINode): Generator<TEIElementNode> {
+  if (!isElement(node)) return;
+  if (node.tag === "standOff") return;
+  yield node;
+  for (const child of children(node)) yield* elementsOutsideAuthority(child);
+}
+
 /** The rendered text of a subtree, whitespace collapsed the way a browser does. */
 function textOf(node: TEINode): string {
   if (!isElement(node)) return node.segments.map((s) => s.text).join("");
@@ -72,10 +100,7 @@ function headwordText(node: TEINode): string {
   return textOf(node).replace(/\s+/g, " ").trim();
 }
 
-function firstDescendant(node: TEINode, tag: string): TEIElementNode | undefined {
-  for (const el of elements(node)) if (el.tag === tag) return el;
-  return undefined;
-}
+
 
 function readEntry(
   el: TEIElementNode,
@@ -89,10 +114,12 @@ function readEntry(
   const names = children(el).filter(
     (c): c is TEIElementNode => isElement(c) && c.tag === spec.name,
   );
-  // Which name is the headword is stated by the attribute, not by position —
-  // the corpus does put a variant first in places.
+  // Which name is the headword is stated by the attribute; position is not
+  // part of the contract, even though this corpus does put it first. Falling
+  // back to the first name only matters for a file that marks no canonical at
+  // all — better to offer it under some spelling than to drop the person.
   const canonical = names.find((n) => n.attrs?.type === "canonical");
-  const headword = headwordText(canonical ?? names[0] ?? el);
+  const headword = headwordText(canonical ?? names[0]);
   if (!headword) return undefined;
 
   return {
@@ -111,12 +138,9 @@ function readEntry(
  * in document order. A document with no `standOff` declares none.
  */
 export function readAuthorityList(root: TEINode): AuthorityEntry[] {
-  const standOff = firstDescendant(root, "standOff");
-  if (!standOff) return [];
-
   const entries: AuthorityEntry[] = [];
   for (const [listTag, spec] of Object.entries(LISTS)) {
-    for (const list of elements(standOff)) {
+    for (const list of elements(root)) {
       if (list.tag !== listTag) continue;
       for (const child of children(list)) {
         if (!isElement(child) || child.tag !== spec.entry) continue;
@@ -143,10 +167,8 @@ export function countOccurrencesByEntity(root: TEINode): Record<string, number> 
   const declared = new Set(readAuthorityList(root).map((e) => e.id));
   const counts: Record<string, number> = {};
 
-  const text = firstDescendant(root, "text");
-  if (!text) return counts;
-
-  for (const el of elements(text)) {
+  for (const el of elementsOutsideAuthority(root)) {
+    if (!entityTags.has(el.tag)) continue;
     const ref = el.attrs?.ref;
     if (!ref?.startsWith(REF_PREFIX)) continue;
     const id = ref.slice(REF_PREFIX.length);
@@ -165,7 +187,7 @@ export function countOccurrencesByEntity(root: TEINode): Record<string, number> 
  * in the opener will narrow the set passed in, rather than rewrite this menu.
  *
  * An entry absent from one document reads as `0` rather than disappearing,
- * which turns "which manuscript dwells on Fionn?" into something answerable at
+ * which turns "which document dwells on Fionn?" into something answerable at
  * a glance. Entries are ordered by total occurrences so the names the corpus
  * dwells on lead; the cost is that the order shifts as columns open and close,
  * which is the trade the counts are worth.
@@ -178,10 +200,16 @@ export function buildEntityMenu(roots: TEINode[]): EntityMenuEntry[] {
     for (const entry of readAuthorityList(root)) {
       let menuEntry = byId.get(entry.id);
       if (!menuEntry) {
-        menuEntry = { ...entry, counts: roots.map(() => 0), total: 0 };
+        menuEntry = {
+          ...entry,
+          counts: roots.map(() => 0),
+          declaredBy: roots.map(() => false),
+          total: 0,
+        };
         byId.set(entry.id, menuEntry);
       }
       menuEntry.counts[docIndex] = countsPerDoc[docIndex][entry.id] ?? 0;
+      menuEntry.declaredBy[docIndex] = true;
     }
   });
 

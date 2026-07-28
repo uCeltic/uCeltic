@@ -159,12 +159,12 @@
   ### Tag Filter
 
   A toolbar control for **following one named entity — a person or a place —
-  through every open manuscript at once**. Its options are the entries of the
+  through every open Document at once**. Its options are the entries of the
   open Documents' own **Authority Lists**, never a hard-coded vocabulary, so no
   option is ever offered that cannot match anything. Selecting one is
   **single-select**: each visible column then highlights and navigates *its own*
   occurrences of that entity (`Find mac Cumaill · 1 / 12 · ← →`), independently
-  of every other column. Because the three Acallam manuscripts share one set of
+  of every other column. Because the three Acallam Documents share one set of
   `xml:id`s, one selection resolves in all of them — which is what makes
   side-by-side comparison worth having.
 
@@ -199,7 +199,12 @@
 
   Read by `client/src/tei/authority.ts`. Two traps it absorbs, both a
   consequence of how `parse.py` projects the XML: `xml:id` arrives as plain
-  `id`, and a body reference keeps its leading `#`. _Avoid_: index, glossary —
+  `id`, and a body reference keeps its leading `#`.
+
+  `standOff` is skipped wholesale, so anything else a Document keeps there is
+  hidden and unindexed too — `serafin03/07.xml` file their transcription notes
+  in a `listAnnotation` there, and those left the screen with #151. They are
+  editorial apparatus like `note`, so this is the same call, not an oversight. _Avoid_: index, glossary —
   it is a name authority in the TEI sense, and "index" already means the search
   index here.
 

@@ -8,6 +8,9 @@ import type { TEIElementProps } from "../elementMap";
 // `data-tei-ref` is the pointer into the document's own authority list
 // (`ref="#fionn"`), and it is what the Tag Filter finds occurrences by.
 
+// The components below are the whole of `ENTITY_TAGS` (../entityElements.ts),
+// and `entityElements.test.tsx` fails if the two ever disagree.
+
 const nameBase = "underline decoration-dotted cursor-default";
 
 export function PersName({ node, children, anchorId }: TEIElementProps) {
