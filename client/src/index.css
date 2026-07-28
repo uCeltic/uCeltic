@@ -29,9 +29,11 @@ color: #1F2937;
 }
 
 /* Third tier — while a column is showing someone's occurrences, every OTHER
-   named entity greys out. Two attributes deep so it outranks the per-element
-   colour class each name carries; the two highlights above outrank it in turn,
-   because ::highlight paints over the element's own colour. */
+   named entity greys out. This is the only rule that paints a named entity at
+   all: the elements themselves carry the markup and no styling (#153), so
+   `[data-tei-entity]` is the seam any later opt-in highlighting hangs off too.
+   The two highlights above outrank it, because ::highlight paints over an
+   element's own colour. */
 [data-entity-focus] [data-tei-entity] {
 color: #9CA3AF;
 text-decoration-color: #D1D5DB;

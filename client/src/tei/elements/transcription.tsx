@@ -16,9 +16,11 @@ export function Expan({ children, anchorId }: TEIElementProps) {
   return <span data-tei-tag="expan" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
+// The letters the editor supplied when expanding an abbreviation. They used to
+// be set in grey italics; the `data-tei-tag` is what marks them now (#153).
 export function Ex({ children, anchorId }: TEIElementProps) {
   return (
-    <span className="italic text-gray-500" data-tei-tag="ex" data-tei-anchor-id={anchorId}>
+    <span data-tei-tag="ex" data-tei-anchor-id={anchorId}>
       {children}
     </span>
   );
@@ -26,12 +28,7 @@ export function Ex({ children, anchorId }: TEIElementProps) {
 
 export function Sic({ children, anchorId }: TEIElementProps) {
   return (
-    <span
-      className="underline decoration-red-400 decoration-wavy"
-      data-tei-tag="sic"
-      data-tei-anchor-id={anchorId}
-      title="sic"
-    >
+    <span data-tei-tag="sic" data-tei-anchor-id={anchorId} title="sic">
       {children}
     </span>
   );
@@ -57,6 +54,9 @@ export function Rdg({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
+// The one place in the reading pane that keeps its colour (#153). The
+// superscript is not the manuscript's text — it is the affordance that says
+// "there is a note here, hover it" — and the panel it opens is floating chrome.
 export function Note({ children, anchorId }: TEIElementProps) {
   return (
     <span className="group relative inline-block" data-tei-tag="note" data-tei-anchor-id={anchorId}>

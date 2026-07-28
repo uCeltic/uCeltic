@@ -1,20 +1,25 @@
 import type { TEIElementProps } from "../elementMap";
-import { rendClasses } from "./rend";
 
 //define how the tei tags are rendered in the html page
+//
+// #153 — none of these decorate the manuscript's text. What they do add is the
+// handful of editorial characters a print edition would also carry (`⟨⟩`, `[…]`,
+// `[* *]`, `‖`) and the `data-tei-*` attributes the DOM is here to hold.
 
 export function Pb({ node, anchorId }: TEIElementProps) {
+  // `@n` goes out verbatim. It is a page number in one manuscript and a
+  // folio-column-line locator (`124ra1`) in the next, so any fixed prefix is
+  // wrong for someone — and where the prefix is already in the data, a second
+  // one read `p. p.35`.
   const n = node.attrs?.n;
   return (
     <div
-      className="my-4 flex items-center gap-2 text-xs text-gray-400 select-none"
+      className="my-4 select-none"
       data-tei-tag="pb"
       data-tei-anchor-id={anchorId}
       data-tei-n={n}
     >
-      <hr className="flex-1 border-gray-200" />
-      {n && <span>p.&nbsp;{n}</span>}
-      <hr className="flex-1 border-gray-200" />
+      {n && <span>{n}</span>}
     </div>
   );
 }
@@ -23,14 +28,15 @@ export function Lb() {
   return <br />;
 }
 
+// `data-tei-tag` so a rubric is still findable in the DOM now that nothing
+// paints it — that is the whole premise of dropping the styling.
 export function Rubric({ children, anchorId }: TEIElementProps) {
-  return <span className="font-medium text-red-700" data-tei-anchor-id={anchorId}>{children}</span>;
+  return <span data-tei-tag="rubric" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
 export function Supplied({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className="text-gray-500"
       data-tei-tag="supplied"
       data-tei-anchor-id={anchorId}
       title={`supplied${node.attrs?.reason ? ": " + node.attrs.reason : ""}`}
@@ -47,9 +53,11 @@ export function Supplied({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
+// A `<del>`, so the browser's own strike-through says "the editor holds this to
+// be superfluous" without a class of ours.
 export function Surplus({ children, anchorId }: TEIElementProps) {
   return (
-    <del className="opacity-40" data-tei-tag="surplus" data-tei-anchor-id={anchorId}>
+    <del data-tei-tag="surplus" data-tei-anchor-id={anchorId}>
       {children}
     </del>
   );
@@ -59,23 +67,23 @@ export function Gap({ node, anchorId }: TEIElementProps) {
   const extent = node.attrs?.extent;
   const label = extent ? `…${extent}…` : "…";
   return (
-    <span className="font-mono text-gray-400" data-tei-tag="gap" data-tei-anchor-id={anchorId}>
+    <span data-tei-tag="gap" data-tei-anchor-id={anchorId}>
       [{label}]
     </span>
   );
 }
 
 export function LacunaStart({ anchorId }: TEIElementProps) {
-  return <span className="font-mono text-amber-600" data-tei-tag="lacunaStart" data-tei-anchor-id={anchorId}>[*</span>;
+  return <span data-tei-tag="lacunaStart" data-tei-anchor-id={anchorId}>[*</span>;
 }
 
 export function LacunaEnd({ anchorId }: TEIElementProps) {
-  return <span className="font-mono text-amber-600" data-tei-tag="lacunaEnd" data-tei-anchor-id={anchorId}>*]</span>;
+  return <span data-tei-tag="lacunaEnd" data-tei-anchor-id={anchorId}>*]</span>;
 }
 
 export function Damage({ children, anchorId }: TEIElementProps) {
   return (
-    <span className="underline decoration-amber-400 decoration-wavy" data-tei-tag="damage" data-tei-anchor-id={anchorId}>
+    <span data-tei-tag="damage" data-tei-anchor-id={anchorId} title="damaged">
       {children}
     </span>
   );
@@ -83,7 +91,7 @@ export function Damage({ children, anchorId }: TEIElementProps) {
 
 export function Unclear({ children, anchorId }: TEIElementProps) {
   return (
-    <span className="opacity-60" data-tei-tag="unclear" data-tei-anchor-id={anchorId} title="unclear">
+    <span data-tei-tag="unclear" data-tei-anchor-id={anchorId} title="unclear">
       {children}
     </span>
   );
@@ -96,16 +104,16 @@ export function Cb({ node, anchorId }: TEIElementProps) {
   // NOT spread onto the DOM node: an `id` of that name would land in the
   // document's own id space and collide.
   //
-  // Prefer it as the label: it names the folio *and* the column (`fol.27vb`),
-  // where `@n` alone is a bare `1` or `2`. A bare digit dropped into a verse
-  // line reads as manuscript text, so when that is all there is, `pb`'s shape
-  // is followed and the number is prefixed.
+  // Preferred as the label because it names the folio *and* the column, where
+  // `@n` alone may be a bare `1`. When `@n` is all there is it goes out raw,
+  // like `pb`'s: the research manuscripts put the prefix in the data already, so
+  // adding `col. ` produced `col. p.35b`.
   const n = node.attrs?.n;
   const xmlId = node.attrs?.id;
-  const label = xmlId ?? (n && `col. ${n}`);
+  const label = xmlId ?? n;
   return (
     <span
-      className="mx-1 inline-flex items-baseline gap-1 align-baseline text-[0.7rem] text-gray-400 select-none"
+      className="mx-1 inline-flex items-baseline gap-1 align-baseline select-none"
       data-tei-tag="cb"
       data-tei-anchor-id={anchorId}
       data-tei-n={n}
@@ -113,9 +121,7 @@ export function Cb({ node, anchorId }: TEIElementProps) {
       data-tei-ed-ref={node.attrs?.edRef}
       title={`column break${label ? ": " + label : ""}`}
     >
-      {/* Lighter than the `pb` rule: a column boundary interrupts the reading
-          line, it does not end the page. */}
-      <span aria-hidden="true" className="text-gray-300">‖</span>
+      <span aria-hidden="true">‖</span>
       {label && <span>{label}</span>}
     </span>
   );
@@ -125,14 +131,12 @@ export function Del({ node, children, anchorId }: TEIElementProps) {
   // The one element here that used to actively misinform: struck-out text fell
   // through to PassThrough and read as part of the text (#146).
   //
-  // The strike is unconditional — a `del` is deleted whatever `@rend` says, and
-  // the corpus's own `strikethrough` only restates that. Any *other* rendition
-  // the editor recorded is layered on top: `@rend` means the same thing here as
-  // it does on `hi`.
+  // It is a `<del>`, and the browser strikes a `<del>` through on its own — the
+  // deletion is the document's, so it survives the styling coming off. `@rend`
+  // still reaches the DOM; nothing acts on it.
   const rend = node.attrs?.rend;
   return (
     <del
-      className={["line-through decoration-gray-500 opacity-70", ...rendClasses(rend)].join(" ")}
       data-tei-tag="del"
       data-tei-anchor-id={anchorId}
       data-tei-rend={rend}

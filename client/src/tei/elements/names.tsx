@@ -7,16 +7,18 @@ import type { TEIElementProps } from "../elementMap";
 //
 // `data-tei-ref` is the pointer into the document's own authority list
 // (`ref="#fionn"`), and it is what the Tag Filter finds occurrences by.
+//
+// None of them decorates the text (#153). A name is not marked on the page at
+// all until something asks for it to be: the attributes are here so that
+// highlighting a chosen person, or opting entities back into colour, is a CSS
+// rule against `[data-tei-entity]` rather than a change to these components.
 
 // The components below are the whole of `ENTITY_TAGS` (../entityElements.ts),
 // and `entityElements.test.tsx` fails if the two ever disagree.
 
-const nameBase = "underline decoration-dotted cursor-default";
-
 export function PersName({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-emerald-700 decoration-emerald-500`}
       data-tei-entity=""
       data-tei-tag="persName"
       data-tei-anchor-id={anchorId}
@@ -30,7 +32,6 @@ export function PersName({ node, children, anchorId }: TEIElementProps) {
 export function PlaceName({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-teal-700 decoration-teal-500`}
       data-tei-entity=""
       data-tei-tag="placeName"
       data-tei-anchor-id={anchorId}
@@ -44,7 +45,6 @@ export function PlaceName({ node, children, anchorId }: TEIElementProps) {
 export function GeogName({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-teal-700 decoration-teal-500`}
       data-tei-entity=""
       data-tei-tag="geogName"
       data-tei-anchor-id={anchorId}
@@ -58,7 +58,6 @@ export function GeogName({ node, children, anchorId }: TEIElementProps) {
 export function OrgName({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-orange-700 decoration-orange-400`}
       data-tei-entity=""
       data-tei-tag="orgName"
       data-tei-anchor-id={anchorId}
@@ -72,7 +71,6 @@ export function OrgName({ node, children, anchorId }: TEIElementProps) {
 export function Rs({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-gray-700 decoration-gray-400`}
       data-tei-entity=""
       data-tei-tag="rs"
       data-tei-anchor-id={anchorId}
@@ -87,7 +85,6 @@ export function Rs({ node, children, anchorId }: TEIElementProps) {
 export function Name({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-gray-700 decoration-gray-400`}
       data-tei-entity=""
       data-tei-tag="name"
       data-tei-anchor-id={anchorId}
@@ -98,14 +95,13 @@ export function Name({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
-// `addName` is an added name (epithet, byname) — a name, so it reads as one.
-// It does not occur in this corpus; it is here so a file that does use it
+// `addName` is an added name (epithet, byname) — a name, so it is marked up as
+// one. It does not occur in this corpus; it is here so a file that does use it
 // renders, and it is filterable like any other entity if it ever carries a
 // `ref` into an authority list.
 export function AddName({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
-      className={`${nameBase} text-gray-700 decoration-gray-400`}
       data-tei-entity=""
       data-tei-tag="addName"
       data-tei-anchor-id={anchorId}

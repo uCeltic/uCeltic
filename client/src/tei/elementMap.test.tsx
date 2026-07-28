@@ -1,10 +1,15 @@
 /**
- * #146 — the five elements that used to fall through to `PassThrough`.
+ * #146 — the five elements that used to fall through to `PassThrough`, and
+ * #153, which took the presentational styling back off them and stopped `pb`
+ * and `cb` prefixing a locator the data already carries.
  *
  * They are rendered through the real `TEIRenderer`, not called directly, because
  * half of what the fix has to get right lives in the wiring: an element only
  * stops being a bare `<span>` once `elementMap` names it, and each one has to
  * keep carrying the `data-tei-anchor-id` that highlighting looks it up by.
+ *
+ * That no mapped element decorates the text is a policy over the whole map, so
+ * it is asserted there rather than here — see `presentation.test.tsx`.
  */
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
@@ -33,26 +38,25 @@ function tagged(container: HTMLElement, tag: string): HTMLElement {
 }
 
 describe("del", () => {
-  it("strikes deleted text through", () => {
+  // #153 — the strike-through is the browser's, not a class of ours. A `<del>`
+  // is struck through by the user agent's own stylesheet, so the deletion
+  // survives the presentational styling coming off every other element.
+  it("strikes deleted text through, as a <del>", () => {
     const { container } = renderTEI(el("del", { rend: "strikethrough" }, text("scriptum")));
     const del = tagged(container, "del");
 
     expect(del.tagName).toBe("DEL");
-    expect(del.className).toContain("line-through");
     expect(del).toHaveTextContent("scriptum");
   });
 
   it("still marks the text as deleted when @rend says nothing", () => {
     const { container } = renderTEI(el("del", {}, text("scriptum")));
-    expect(tagged(container, "del").className).toContain("line-through");
+    expect(tagged(container, "del").tagName).toBe("DEL");
   });
 
-  it("layers any other rendition @rend records on top of the strike", () => {
+  it("records @rend on the DOM without acting on it", () => {
     const { container } = renderTEI(el("del", { rend: "italic" }, text("scriptum")));
-    const del = tagged(container, "del");
-
-    expect(del.className).toContain("line-through");
-    expect(del.className).toContain("italic");
+    expect(tagged(container, "del").dataset.teiRend).toBe("italic");
   });
 
   it("adds no characters of its own — a word's offsets are counted against them", () => {
@@ -62,37 +66,18 @@ describe("del", () => {
 });
 
 describe("hi", () => {
-  it("renders @rend=decor as a visually distinct initial", () => {
-    const { container } = renderTEI(el("hi", { rend: "decor" }, text("A")));
-    const hi = tagged(container, "hi");
-
-    expect(hi.dataset.teiRend).toBe("decor");
-    expect(hi.className).toContain("text-3xl");
-    expect(hi).toHaveTextContent("A");
-  });
-
-  it("renders italic rends as italic — both spellings the corpus uses", () => {
-    for (const rend of ["italic", "ital"]) {
+  // #153 — `hi` puts `@rend` on the DOM and renders the text plainly. The class
+  // table it used to consult is gone, so the value reaches the page whole rather
+  // than as whichever tokens a lookup recognised.
+  it("puts @rend on the DOM whatever it says, and renders the text plainly", () => {
+    for (const rend of ["decor", "italic", "ital", "superscript", "large", "italic center"]) {
       const { container, unmount } = renderTEI(el("hi", { rend }, text("uerbum")));
-      expect(tagged(container, "hi").className).toContain("italic");
+      const hi = tagged(container, "hi");
+
+      expect(hi.dataset.teiRend).toBe(rend);
+      expect(hi).toHaveTextContent("uerbum");
       unmount();
     }
-  });
-
-  it("renders superscript and large rends distinctly", () => {
-    const sup = renderTEI(el("hi", { rend: "superscript" }, text("x")));
-    expect(tagged(sup.container, "hi").className).toContain("align-super");
-    sup.unmount();
-
-    const large = renderTEI(el("hi", { rend: "large" }, text("x")));
-    expect(tagged(large.container, "hi").className).toContain("text-lg");
-  });
-
-  it("reads @rend as the token list it is, not as one opaque value", () => {
-    // `rend="italic center"` is 78 uses in the built-in corpus. Whole-string
-    // matching drops every compound rendition silently.
-    const { container } = renderTEI(el("hi", { rend: "italic center" }, text("uerbum")));
-    expect(tagged(container, "hi").className).toContain("italic");
   });
 
   it("renders an unknown or absent @rend as plain text, not as a bare fallback", () => {
@@ -131,11 +116,16 @@ describe("cb", () => {
     expect(tagged(container, "cb").id).toBe("");
   });
 
-  it("prefixes a bare @n so it cannot be read as manuscript text", () => {
-    // Every `cb` in the built-in corpus carries only `@n`, so this is the shape
-    // the reader actually meets — and a lone `1` inside a verse line is text.
-    const { container } = renderTEI(el("cb", { n: "1" }));
-    expect(tagged(container, "cb")).toHaveTextContent("col. 1");
+  it("falls back to @n verbatim, prefixing nothing", () => {
+    // #153 — the research manuscripts put the prefix in the data (`n="p.35b"`),
+    // so `col. ` on top of it read `col. p.35b`. The built-in corpus's `cb`
+    // carries a bare `1`. No fixed prefix is right for both, so none is added
+    // and `‖` is left to mark the break.
+    const { container } = renderTEI(el("cb", { n: "p.35b" }));
+    const cb = tagged(container, "cb");
+
+    expect(cb.textContent).toContain("p.35b");
+    expect(cb.textContent).not.toContain("col.");
   });
 
   it("stays inline so it does not break the paragraph it sits inside", () => {
@@ -147,13 +137,33 @@ describe("cb", () => {
   });
 });
 
+describe("pb", () => {
+  // #153 — `@n` is a page number in one manuscript and a folio-column-line
+  // locator in the next (`124ra1`), and where the transcriber wrote the prefix
+  // into the data the pane read `p. p.35`. It goes out as it came in.
+  it.each(["p.35", "127.20", "124ra1"])("shows @n=%s verbatim", (n) => {
+    const { container } = renderTEI(el("pb", { n }));
+    const pb = tagged(container, "pb");
+
+    expect(pb.textContent).toBe(n);
+    expect(pb.dataset.teiN).toBe(n);
+  });
+
+  it("shows nothing at all when there is no @n to show", () => {
+    const { container } = renderTEI(el("pb", {}));
+    expect(tagged(container, "pb").textContent).toBe("");
+  });
+});
+
 describe("addName", () => {
   it("is marked up as a name", () => {
     const { container } = renderTEI(el("addName", { nymRef: "E15" }, text("Mac Cumaill")));
     const addName = tagged(container, "addName");
 
-    expect(addName.className).toContain("underline");
-    expect(addName.className).toContain("decoration-dotted");
+    // The markup, not a style: `data-tei-entity` is what the Tag Filter finds
+    // names by (#147), and what an opt-in highlight would key off (#153).
+    expect(addName.dataset.teiEntity).toBe("");
+    expect(addName.dataset.teiNymRef).toBe("E15");
     expect(addName).toHaveTextContent("Mac Cumaill");
   });
 

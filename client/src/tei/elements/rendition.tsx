@@ -1,25 +1,18 @@
 import type { TEIElementProps } from "../elementMap";
-import { rendClasses } from "./rend";
 
+// `hi` marks a stretch the manuscript renders differently, and `@rend` says how.
+// Nothing here acts on it (#153): the reading pane shows the text, and `@rend`
+// reaches the DOM as `data-tei-rend` for anything that later wants to opt in.
 export function Hi({ node, children, anchorId }: TEIElementProps) {
-  const rend = node.attrs?.rend;
-  const classes = rendClasses(rend);
   return (
-    <span
-      className={classes.length ? classes.join(" ") : undefined}
-      data-tei-tag="hi"
-      data-tei-anchor-id={anchorId}
-      data-tei-rend={rend}
-    >
+    <span data-tei-tag="hi" data-tei-anchor-id={anchorId} data-tei-rend={node.attrs?.rend}>
       {children}
     </span>
   );
 }
 
 // A character the transcription singles out (`@type="kk"`, `@rend="italic"`).
-// Mapped rather than left to PassThrough so the attributes reach the DOM, but
-// rendered with no visual change of its own — `c` sits *inside* words, and a
-// style here would decorate a fragment of one.
+// Mapped rather than left to PassThrough so the attributes reach the DOM.
 export function C({ node, children, anchorId }: TEIElementProps) {
   return (
     <span

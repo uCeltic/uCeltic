@@ -1,5 +1,8 @@
 import type { TEIElementProps } from "../elementMap";
 
+// #153 — layout and spacing only. What distinguishes one of these from the next
+// is where it sits on the page, not what colour or weight it is set in.
+
 export function Div({ children, anchorId }: TEIElementProps) {
   return <div data-tei-anchor-id={anchorId}>{children}</div>;
 }
@@ -9,7 +12,7 @@ export function P({ children, anchorId }: TEIElementProps) {
 }
 
 export function Head({ children, anchorId }: TEIElementProps) {
-  return <h3 className="mt-4 mb-2 font-semibold text-gray-900" data-tei-anchor-id={anchorId}>{children}</h3>;
+  return <h3 className="mt-4 mb-2" data-tei-anchor-id={anchorId}>{children}</h3>;
 }
 
 export function L({ node, children, anchorId }: TEIElementProps) {
@@ -20,8 +23,12 @@ export function L({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
+// The indent is the one thing here that carries information: these manuscripts
+// are written continuously, so verse-versus-prose is the annotator's analysis
+// rather than the page's own layout. The grey left rule that used to sit beside
+// it said nothing the indent had not already said.
 export function Lg({ children, anchorId }: TEIElementProps) {
-  return <div className="my-3 border-l-2 border-gray-200 pl-4" data-tei-anchor-id={anchorId}>{children}</div>;
+  return <div className="my-3 pl-4" data-tei-anchor-id={anchorId}>{children}</div>;
 }
 
 export function Ab({ children, anchorId }: TEIElementProps) {
@@ -37,7 +44,7 @@ export function Closer({ children, anchorId }: TEIElementProps) {
 }
 
 export function Dateline({ children, anchorId }: TEIElementProps) {
-  return <div className="mb-2 text-sm text-gray-500" data-tei-anchor-id={anchorId}>{children}</div>;
+  return <div className="mb-2" data-tei-anchor-id={anchorId}>{children}</div>;
 }
 
 export function Salute({ children, anchorId }: TEIElementProps) {
@@ -45,9 +52,9 @@ export function Salute({ children, anchorId }: TEIElementProps) {
 }
 
 export function Signed({ children, anchorId }: TEIElementProps) {
-  return <span className="block italic" data-tei-anchor-id={anchorId}>{children}</span>;
+  return <span className="block" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
 export function Trailer({ children, anchorId }: TEIElementProps) {
-  return <p className="mb-3 italic text-gray-600" data-tei-anchor-id={anchorId}>{children}</p>;
+  return <p className="mb-3" data-tei-anchor-id={anchorId}>{children}</p>;
 }
