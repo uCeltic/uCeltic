@@ -87,3 +87,46 @@ export function Unclear({ children, anchorId }: TEIElementProps) {
     </span>
   );
 }
+
+export function Cb({ node, anchorId }: TEIElementProps) {
+  // `xml:id` arrives as plain `id` — the backend strips namespaces off attribute
+  // names (parse.py). It carries the folio-and-column locator the reader wants
+  // (`fol.27vb`), so it is shown and exposed as `data-tei-id`, and deliberately
+  // NOT spread onto the DOM node: an `id` of that name would land in the
+  // document's own id space and collide.
+  const n = node.attrs?.n;
+  const xmlId = node.attrs?.id;
+  const label = xmlId ?? n;
+  return (
+    <span
+      className="mx-1 inline-flex items-baseline gap-1 align-baseline text-[0.7rem] text-gray-400 select-none"
+      data-tei-tag="cb"
+      data-tei-anchor-id={anchorId}
+      data-tei-n={n}
+      data-tei-id={xmlId}
+      data-tei-ed-ref={node.attrs?.edRef}
+      title={`column break${label ? ": " + label : ""}`}
+    >
+      {/* Lighter than the `pb` rule: a column boundary interrupts the reading
+          line, it does not end the page. */}
+      <span aria-hidden="true" className="text-gray-300">‖</span>
+      {label && <span>{label}</span>}
+    </span>
+  );
+}
+
+export function Del({ node, children, anchorId }: TEIElementProps) {
+  // The one element here that used to actively misinform: struck-out text fell
+  // through to PassThrough and read as part of the text (#146).
+  return (
+    <del
+      className="line-through decoration-gray-500 opacity-70"
+      data-tei-tag="del"
+      data-tei-anchor-id={anchorId}
+      data-tei-rend={node.attrs?.rend}
+      title={`deleted${node.attrs?.rend ? ": " + node.attrs.rend : ""}`}
+    >
+      {children}
+    </del>
+  );
+}

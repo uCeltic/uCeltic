@@ -2,8 +2,9 @@ import type { TEIElementNode } from "../types/tei";
 import type { FC, ReactNode } from "react";
 import PassThrough from "./PassThrough";
 import { Div, P, Head, L, Lg, Ab, Opener, Closer, Dateline, Salute, Signed, Trailer } from "./elements/structural";
-import { Pb, Lb, Rubric, Supplied, Surplus, Gap, LacunaStart, LacunaEnd, Damage, Unclear } from "./elements/digitizedText";
-import { PersName, PlaceName, GeogName, OrgName, Rs, Name } from "./elements/names";
+import { Pb, Cb, Lb, Rubric, Supplied, Surplus, Gap, LacunaStart, LacunaEnd, Damage, Unclear, Del } from "./elements/digitizedText";
+import { PersName, PlaceName, GeogName, OrgName, Rs, Name, AddName } from "./elements/names";
+import { Hi, C } from "./elements/rendition";
 import { Choice, Abbr, Expan, Ex, Sic, Corr, App, Lem, Rdg, Note, HandShift } from "./elements/transcription";
 
 export interface TEIElementProps {
@@ -40,6 +41,7 @@ export const elementMap: Record<string, FC<TEIElementProps>> = {
 
   // digitized text (physical features)
   pb: Pb,
+  cb: Cb,
   lb: Lb,
   rubric: Rubric,
   supplied: Supplied,
@@ -49,6 +51,7 @@ export const elementMap: Record<string, FC<TEIElementProps>> = {
   lacunaEnd: LacunaEnd,
   damage: Damage,
   unclear: Unclear,
+  del: Del,
 
   // names
   persName: PersName,
@@ -57,6 +60,11 @@ export const elementMap: Record<string, FC<TEIElementProps>> = {
   orgName: OrgName,
   rs: Rs,
   name: Name,
+  addName: AddName,
+
+  // rendition
+  hi: Hi,
+  c: C,
 
   // transcription & critical apparatus
   choice: Choice,

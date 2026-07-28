@@ -80,3 +80,19 @@ export function Name({ node, children, anchorId }: TEIElementProps) {
     </span>
   );
 }
+
+// `addName` is an added name (epithet, byname) — a name, so it reads as one.
+// It is not offered by the Tag Filter yet; that vocabulary is #147's.
+export function AddName({ node, children, anchorId }: TEIElementProps) {
+  return (
+    <span
+      className={`${nameBase} text-gray-700 decoration-gray-400`}
+      data-tei-tag="addName"
+      data-tei-anchor-id={anchorId}
+      data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
+    >
+      {children}
+    </span>
+  );
+}

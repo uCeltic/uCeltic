@@ -102,6 +102,14 @@ describe("highlighting a word that inline markup splits", () => {
     ["fīarfaig", 2],
     ["Eochaid", 2],
     ["talam", 2],
+    ["scrib", 2],
+    ["rand", 1],
+    ["Find", 1],
+    // #146's real risk. `torad` follows an empty `cb` that renders a visible
+    // `fol.27vb` locator; the line's offsets are counted against the line's own
+    // text, which the marker is not part of. Put it there and this lands nine
+    // characters late.
+    ["torad", 2],
   ])("covers every character of %s, which spans %i anchors", (word, anchorCount) => {
     const start = wordArray.findIndex((w) => w.w === word);
     expect(buildWordToAnchors(anchors).get(start)).toHaveLength(anchorCount);
@@ -114,5 +122,13 @@ describe("highlighting a word that inline markup splits", () => {
 
   it("does not highlight a note's text as part of the word before it", () => {
     expect(highlighted(columnEl, "talam")).not.toContain("Sic");
+  });
+
+  it("shows the column break the backend recorded as an empty element (#146)", () => {
+    const cb = anchors.find((a) => a.tag === "cb")!;
+    const el = columnEl.querySelector(`[data-tei-anchor-id="${cb.id}"]`);
+
+    expect(cb.word_char_offsets).toHaveLength(0);
+    expect(el?.textContent).toContain("fol.27vb");
   });
 });
