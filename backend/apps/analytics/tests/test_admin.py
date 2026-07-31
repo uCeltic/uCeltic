@@ -8,10 +8,11 @@ from apps.accounts.models import Profile
 from apps.analytics.admin import (
     BehaviorEventAdmin,
     ErrorReportAdmin,
+    FeedbackAdmin,
     QuestionnaireResponseAdmin,
     UserListFilter,
 )
-from apps.analytics.models import BehaviorEvent, ErrorReport, QuestionnaireResponse
+from apps.analytics.models import BehaviorEvent, ErrorReport, Feedback, QuestionnaireResponse
 
 User = get_user_model()
 
@@ -317,3 +318,73 @@ class UserListFilterTests(TestCase):
         qs = f.queryset(request, BehaviorEvent.objects.all())
 
         self.assertEqual(list(qs), [BehaviorEvent.objects.get(user__isnull=True)])
+
+
+def _make_feedback(**overrides):
+    fields = {
+        "session_id": "s1",
+        "category": "bug",
+        "body": "The Retry button re-runs the wrong search.",
+        "app_version": "0.0.1",
+    }
+    fields.update(overrides)
+    return Feedback.objects.create(**fields)
+
+
+class FeedbackAdminTests(TestCase):
+    """Visitor-written feedback is read in admin and never authored there (#137, ADR-0014)."""
+
+    def setUp(self):
+        self.site = admin.site
+        self.user = User.objects.create_user(
+            username="signed-in", email="signed-in@example.com", password="pw-12345678"
+        )
+
+    def test_columns_and_filters(self):
+        self.assertEqual(
+            FeedbackAdmin.list_display,
+            ("created_at", "category", "user_display", "contact", "session_id"),
+        )
+        self.assertEqual(FeedbackAdmin.list_filter, (UserListFilter, "category"))
+        self.assertEqual(FeedbackAdmin.search_fields, ("session_id",))
+
+    def test_shows_display_name_not_username(self):
+        Profile.objects.create(user=self.user, display_name="Ada")
+        feedback = _make_feedback(user=self.user)
+
+        fa = FeedbackAdmin(Feedback, self.site)
+
+        self.assertEqual(fa.user_display(feedback), "Ada")
+
+    def test_shows_dash_for_anonymous_traffic(self):
+        fa = FeedbackAdmin(Feedback, self.site)
+
+        self.assertEqual(fa.user_display(_make_feedback(user=None)), "—")
+
+    def test_str_embeds_neither_the_user_nor_the_prose(self):
+        feedback = _make_feedback(user=self.user, body="my email is signed-in@example.com")
+
+        rendered = str(feedback)
+
+        self.assertNotIn("signed-in", rendered)
+        self.assertNotIn("my email", rendered)
+
+
+class FeedbackAdminReadOnlyTests(TestCase):
+    def setUp(self):
+        User.objects.create_superuser(
+            username="admin", email="admin@example.com", password="pw-12345678"
+        )
+        self.client.login(username="admin", password="pw-12345678")
+        self.feedback = _make_feedback()
+
+    def test_add_is_forbidden(self):
+        resp = self.client.get(reverse("admin:analytics_feedback_add"))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_change_view_is_read_only_not_forbidden(self):
+        resp = self.client.get(
+            reverse("admin:analytics_feedback_change", args=[self.feedback.pk])
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context["has_change_permission"])

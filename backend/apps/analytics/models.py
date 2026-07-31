@@ -112,6 +112,69 @@ QUESTIONS = [
 ]
 
 
+# Closed set, like EVENT_TYPES — but here it is a triage bucket a human sorts by, not a
+# study taxonomy. `other` is the default so a visitor who just wants to write something
+# never has to classify it first.
+FEEDBACK_CATEGORIES = [
+    "bug",
+    "feature",
+    "other",
+]
+
+# Length guard, not a throttle: ADR-0014 chose serializer max_length plus a submit button
+# disabled in flight over rate limiting, so this number is the whole abuse defense for the
+# prose field. Generous enough that no real bug report hits it.
+FEEDBACK_BODY_MAX_LENGTH = 5000
+FEEDBACK_CONTACT_MAX_LENGTH = 200
+
+
+class Feedback(models.Model):
+    """A message a visitor deliberately wrote to the team (#137, ADR-0014).
+
+    Deliberately its own table, not a BehaviorEvent: an event is a closed-taxonomy intent
+    the visitor performed, and this is free prose a human reads and triages. Its content
+    must never enter the study stream — a successful submission emits only a
+    `feedback_submitted` event carrying `{category}`, and the two line up through
+    `session_id`.
+    """
+
+    # NULL for anonymous visitors — mirrors BehaviorEvent.user. Stamped server-side from
+    # request.user (see FeedbackView.post); a client-supplied value is never trusted.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="feedback",
+    )
+    session_id = models.CharField(max_length=64)
+    category = models.CharField(
+        max_length=16,
+        choices=[(c, c) for c in FEEDBACK_CATEGORIES],
+        default="other",
+    )
+    body = models.TextField(max_length=FEEDBACK_BODY_MAX_LENGTH)
+    # Free text, not an EmailField: whatever the visitor wants to be reached at (an email,
+    # a handle, nothing at all). Blank is the common case — a signed-in submitter is
+    # already reachable through their account.
+    contact = models.CharField(max_length=FEEDBACK_CONTACT_MAX_LENGTH, blank=True)
+    # Client snapshot — open documents, chosen work, viewport, url — so a bug report is
+    # reproducible without the visitor describing their screen. Tool-usage state, the same
+    # kind of thing BehaviorEvent.payload holds; never search or selection text.
+    context = models.JSONField(default=dict, blank=True)
+    app_version = models.CharField(max_length=32)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        # Neither the user nor the body: admin renders this into the change page's
+        # <title>/breadcrumb, and the body is the one field here that can carry PII the
+        # visitor typed (#69's reasoning, applied to prose rather than to a username).
+        return f"{self.category} @ {self.created_at:%Y-%m-%d %H:%M:%S}"
+
+
 class QuestionnaireResponse(models.Model):
     # NULL for anonymous visitors (ADR-0007) — mirrors BehaviorEvent.user above.
     user = models.ForeignKey(

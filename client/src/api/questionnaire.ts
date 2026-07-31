@@ -1,4 +1,5 @@
 import { csrfHeaders, ensureCsrfToken } from "./csrf";
+import { firstFieldError } from "./fieldError";
 import { getSessionId } from "./log";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
@@ -17,13 +18,6 @@ export interface QuestionnaireDefinition {
 
 /** A rejected questionnaire request — open to any visitor (ADR-0007), so this should be rare. */
 export class QuestionnaireError extends Error {}
-
-/** Mirrors the DRF `{"error": {field: [messages]}}` shape from apps/analytics/views.py. */
-async function firstFieldError(response: Response): Promise<string | null> {
-  const body = await response.json().catch(() => ({}));
-  const firstMessage = Object.values(body.error ?? {}).flat()[0];
-  return typeof firstMessage === "string" ? firstMessage : null;
-}
 
 /** Open to guests too (ADR-0007) — same-origin credentials so a signed-in visitor's session still rides along. */
 export async function fetchQuestionnaire(): Promise<QuestionnaireDefinition> {

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 
-from .models import BehaviorEvent, ErrorReport, QuestionnaireResponse
+from .models import BehaviorEvent, ErrorReport, Feedback, QuestionnaireResponse
 
 
 def _display_name(user):
@@ -111,3 +111,27 @@ class QuestionnaireResponseAdmin(StudyDataAdminMixin, admin.ModelAdmin):
     search_fields = ("session_id",)
     ordering = ("-created_at",)
     fields = ("user_display", "session_id", "questionnaire_version", "answers", "skipped", "created_at")
+
+@admin.register(Feedback)
+class FeedbackAdmin(StudyDataAdminMixin, admin.ModelAdmin):
+    """The triage surface for what visitors wrote to us (#137, ADR-0014).
+
+    Same read-only mixin as the study models, for a different reason: this is a message
+    someone sent, so editing it would rewrite their words. `contact` earns a column —
+    it is the one field that decides whether a submission can be answered at all.
+    """
+
+    list_display = ("created_at", "category", "user_display", "contact", "session_id")
+    list_filter = (UserListFilter, "category")
+    search_fields = ("session_id",)
+    ordering = ("-created_at",)
+    fields = (
+        "created_at",
+        "category",
+        "body",
+        "contact",
+        "context",
+        "session_id",
+        "app_version",
+        "user_display",
+    )
