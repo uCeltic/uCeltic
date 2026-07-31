@@ -8,6 +8,7 @@ import {
 } from "../../api/feedback";
 import { logEvent } from "../../api/log";
 import { buildFeedbackContext } from "./feedbackContext";
+import { inputStyle, labelStyle, primaryBtnStyle } from "./formStyles";
 import { useDismissableDropdown } from "./useDismissableDropdown";
 
 /** How long the thank-you stays up before the popover closes itself. */
@@ -20,10 +21,6 @@ const CATEGORIES: { value: FeedbackCategory; label: string }[] = [
   { value: "feature", label: "Feature request" },
   { value: "other", label: "Other" },
 ];
-
-const inputStyle =
-  "mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2 focus:ring-[#52524F]/20 transition-all";
-const labelStyle = "block text-sm font-medium text-[#52524F]";
 
 function CategoryChoice({
   value,
@@ -76,6 +73,13 @@ export default function FeedbackButton() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A failure that has been walked away from is stale — reopening must not greet the
+  // visitor with the last attempt's alert. The typed body deliberately does survive:
+  // dismissing the popover is not the same as throwing the message away.
+  useEffect(() => {
+    if (!open) setError(null);
+  }, [open]);
 
   // The thank-you is a beat, not a screen: it shows, then takes the popover down with it
   // and leaves a blank form behind, so the next feedback never starts inside the last one.
@@ -184,7 +188,7 @@ export default function FeedbackButton() {
               <button
                 type="submit"
                 disabled={sending || !body.trim()}
-                className="w-full rounded-md border border-[#52524F] bg-[#52524F] px-3 py-2 text-sm font-medium text-white cursor-pointer transition-all hover:bg-[#3F3F3C] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30"
+                className={primaryBtnStyle}
               >
                 {sending ? "Sending…" : "Send"}
               </button>

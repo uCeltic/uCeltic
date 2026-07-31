@@ -117,14 +117,23 @@ class FeedbackAdmin(StudyDataAdminMixin, admin.ModelAdmin):
     """The triage surface for what visitors wrote to us (#137, ADR-0014).
 
     Same read-only mixin as the study models, for a different reason: this is a message
-    someone sent, so editing it would rewrite their words. `contact` earns a column —
-    it is the one field that decides whether a submission can be answered at all.
+    someone sent, so editing it would rewrite their words.
+
+    The list page says only *whether* a reply is possible, not the address itself —
+    `contact` is visitor-supplied PII, and #69's rule for the list pages (say enough to
+    triage, keep the personal detail on the detail page) applies to it as much as to a
+    username.
     """
 
-    list_display = ("created_at", "category", "user_display", "contact", "session_id")
+    list_display = ("created_at", "category", "user_display", "reply_requested", "session_id")
     list_filter = (UserListFilter, "category")
     search_fields = ("session_id",)
     ordering = ("-created_at",)
+
+    @admin.display(description="reply requested", boolean=True, ordering="contact")
+    def reply_requested(self, obj):
+        return bool(obj.contact)
+
     fields = (
         "created_at",
         "category",

@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 
 from .models import (
@@ -5,6 +7,7 @@ from .models import (
     FEEDBACK_BODY_MAX_LENGTH,
     FEEDBACK_CATEGORIES,
     FEEDBACK_CONTACT_MAX_LENGTH,
+    FEEDBACK_CONTEXT_MAX_CHARS,
 )
 
 
@@ -105,3 +108,13 @@ class FeedbackRequestSerializer(serializers.Serializer):
         max_length=32,
         help_text="Build-injected version of the client that sent the feedback.",
     )
+
+    def validate_context(self, value):
+        # A JSONField accepts any json at all, which would leave the one unguarded field
+        # on the endpoint. Shape first — the model's default is `{}` and admin renders it
+        # as a mapping — then size, the same cheap guard `body` and `contact` get.
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Must be an object.")
+        if len(json.dumps(value)) > FEEDBACK_CONTEXT_MAX_CHARS:
+            raise serializers.ValidationError("Snapshot is too large.")
+        return value

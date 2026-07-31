@@ -161,6 +161,36 @@ describe("FeedbackButton", () => {
     expect(screen.getByRole("button", { name: /send/i })).toBeEnabled();
   });
 
+  it("drops a stale failure when the popover is closed and reopened", async () => {
+    vi.spyOn(feedbackApi, "submitFeedback").mockRejectedValue(new FeedbackError("nope"));
+    openPopover();
+
+    typeBody("Something is off.");
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+    await screen.findByRole("alert");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // The message itself survives — dismissing the popover is not throwing it away.
+    expect(screen.getByLabelText(/what would you like to tell us/i)).toHaveValue(
+      "Something is off.",
+    );
+  });
+
+  it("floats above the StatusBar and below the questionnaire modal and the tour", () => {
+    const { container } = render(<FeedbackButton />);
+
+    // `bottom-12` clears the h-9 StatusBar; `z-40` stays under QuestionnaireModal's
+    // `z-50` and SpotlightTour's `z-[60]`, both one-shot flows this fixture must not
+    // occlude. Asserted on the classes because there is no layout to measure in jsdom.
+    const root = container.firstElementChild!;
+    expect(root.className).toContain("fixed");
+    expect(root.className).toContain("bottom-12");
+    expect(root.className).toContain("z-40");
+  });
+
   it("emits one feedback_submitted event carrying only the category", async () => {
     vi.spyOn(feedbackApi, "submitFeedback").mockResolvedValue(undefined);
     const logEvent = vi.spyOn(logApi, "logEvent").mockImplementation(() => {});

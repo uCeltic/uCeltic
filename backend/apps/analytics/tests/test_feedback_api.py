@@ -2,7 +2,11 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from apps.analytics.models import FEEDBACK_BODY_MAX_LENGTH, Feedback
+from apps.analytics.models import (
+    FEEDBACK_BODY_MAX_LENGTH,
+    FEEDBACK_CONTEXT_MAX_CHARS,
+    Feedback,
+)
 
 FEEDBACK = "/api/feedback/"
 
@@ -119,6 +123,14 @@ class FeedbackValidationTests(TestCase):
 
     def test_over_length_body_is_rejected(self):
         self._assert_rejected(_payload(body="x" * (FEEDBACK_BODY_MAX_LENGTH + 1)))
+
+    def test_non_object_context_is_rejected(self):
+        self._assert_rejected(_payload(context=["not", "an", "object"]))
+
+    def test_oversized_context_is_rejected(self):
+        # The snapshot is assembled by our own client, so anything this big came from
+        # somewhere else — and ADR-0014 leaves length guards as the only defense.
+        self._assert_rejected(_payload(context={"url": "x" * FEEDBACK_CONTEXT_MAX_CHARS}))
 
     def test_missing_session_id_is_rejected(self):
         payload = _payload()

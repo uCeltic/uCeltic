@@ -6,6 +6,9 @@ import { useWorkspaceStore } from "../../store/workspaceStore";
  * their screen (#137, ADR-0014): which documents they had open, which were on screen,
  * which work the opener was narrowed to, how big the window was, and where they were.
  *
+ * The visible ids are the spec's "current scope", not an extra: search runs over the
+ * open columns (ADR-0015), so what was on screen *is* what a search would have covered.
+ *
  * Everything here is tool-usage state — the same kind of thing `BehaviorEvent.payload`
  * already records. Deliberately *not* included: document text, titles, the search
  * query, the current selection. Those are content, and the only content a Feedback

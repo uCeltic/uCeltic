@@ -126,6 +126,11 @@ FEEDBACK_CATEGORIES = [
 # prose field. Generous enough that no real bug report hits it.
 FEEDBACK_BODY_MAX_LENGTH = 5000
 FEEDBACK_CONTACT_MAX_LENGTH = 200
+# The `context` snapshot is assembled by our own client (buildFeedbackContext), so its
+# real size is a few hundred characters. Guarded anyway, and for the same reason as the
+# two above: on an unthrottled AllowAny endpoint the length guards are the whole defense,
+# and a JSONField with none would be the hole in it.
+FEEDBACK_CONTEXT_MAX_CHARS = 4000
 
 
 class Feedback(models.Model):

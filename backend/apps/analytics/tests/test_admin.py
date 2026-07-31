@@ -343,7 +343,7 @@ class FeedbackAdminTests(TestCase):
     def test_columns_and_filters(self):
         self.assertEqual(
             FeedbackAdmin.list_display,
-            ("created_at", "category", "user_display", "contact", "session_id"),
+            ("created_at", "category", "user_display", "reply_requested", "session_id"),
         )
         self.assertEqual(FeedbackAdmin.list_filter, (UserListFilter, "category"))
         self.assertEqual(FeedbackAdmin.search_fields, ("session_id",))
@@ -360,6 +360,12 @@ class FeedbackAdminTests(TestCase):
         fa = FeedbackAdmin(Feedback, self.site)
 
         self.assertEqual(fa.user_display(_make_feedback(user=None)), "—")
+
+    def test_reply_requested_flags_whether_a_contact_was_left(self):
+        fa = FeedbackAdmin(Feedback, self.site)
+
+        self.assertTrue(fa.reply_requested(_make_feedback(contact="ada@example.com")))
+        self.assertFalse(fa.reply_requested(_make_feedback(contact="")))
 
     def test_str_embeds_neither_the_user_nor_the_prose(self):
         feedback = _make_feedback(user=self.user, body="my email is signed-in@example.com")
@@ -381,6 +387,16 @@ class FeedbackAdminReadOnlyTests(TestCase):
     def test_add_is_forbidden(self):
         resp = self.client.get(reverse("admin:analytics_feedback_add"))
         self.assertEqual(resp.status_code, 403)
+
+    def test_changelist_does_not_print_the_contact_a_visitor_left(self):
+        # Same posture as #69's user column: the list page says whether a reply is
+        # possible, and the address itself waits on the detail page.
+        _make_feedback(contact="ada@example.com")
+
+        resp = self.client.get(reverse("admin:analytics_feedback_changelist"))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "ada@example.com")
 
     def test_change_view_is_read_only_not_forbidden(self):
         resp = self.client.get(

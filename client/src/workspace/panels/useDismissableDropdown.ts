@@ -6,7 +6,9 @@ import { useEffect, useRef, useState } from "react";
  * panel — a mousedown anywhere outside that element dismisses the panel.
  *
  * Extracted from the copy TagFilterButton and HamburgerMenu each grew; keep new
- * toolbar dropdowns on this hook rather than pasting the listener a fourth time.
+ * dismissable panels on this hook rather than pasting the listeners again. Its
+ * consumers are no longer only toolbar dropdowns — the floating Feedback popover
+ * (#137) sits on it too, which is what Escape was added for.
  */
 export function useDismissableDropdown<T extends HTMLElement = HTMLDivElement>() {
   const [open, setOpen] = useState(false);
