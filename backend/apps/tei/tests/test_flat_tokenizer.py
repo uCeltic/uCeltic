@@ -233,9 +233,9 @@ class SkippedRegionBoundaryTest(TestCase):
 
 
 class BuiltInCorpusReconstructionTest(TestCase):
-    """The 168 mid-word elements in the built-in corpus were mis-indexed too.
-    Both reconstructions have to hold for the shipped content, not only for
-    the research files this issue was found on."""
+    """The mid-word elements in the built-in corpus were mis-indexed too — 2520
+    words' worth (#162). Both reconstructions have to hold for the shipped
+    content, not only for the research files this issue was found on."""
 
     def _corpus(self):
         return sorted((settings.BASE_DIR / "tei").glob("*.xml"))
@@ -262,16 +262,23 @@ class BuiltInCorpusReconstructionTest(TestCase):
                 )
 
     def test_mid_word_markup_in_the_built_in_corpus_is_joined(self):
-        # 168 elements in this corpus cut a word in half (`supplied` 35,
-        # `c` 32, `ex` 7, `placeName` 78). Each one used to shatter its word;
-        # each one now yields a single word spanning more than one anchor —
-        # 183 such words, because a few carry two inline elements at once.
+        # Mid-word markup is not an edge case in the Acallam witnesses, it is
+        # the house style: they expand every scribal abbreviation inline, so
+        # `expan` sits mid-word 2612 times and `hi` 123. Each one used to
+        # shatter its word; each one now yields a single word spanning more
+        # than one anchor.
+        #
+        # 2520 such words, fewer than the element count because one word often
+        # carries several at once. 2471 of them are the four witnesses' —
+        # the number was 183 before they replaced the ll. 2400–3106 ones
+        # (#162), so they exercise this path two orders of magnitude harder
+        # than the sample files, whose 49 come from `c`, `supplied` and `ex`.
         total = sum(
             len(_multi_anchor_words(parse_tei(path.read_bytes())[1]))
             for path in self._corpus()
         )
 
-        self.assertEqual(total, 183)
+        self.assertEqual(total, 2520)
 
 
 def _multi_anchor_words(anchors) -> set[int]:

@@ -22,10 +22,12 @@ from lxml import etree
 
 # Subtrees whose text leaves the search index. `note` holds the editor's English
 # commentary, not manuscript text, so a fuzzy match window must not be able to
-# straddle the boundary between the two. `standOff` holds the name authority
-# list — 33 people and 10 places with every spelling variant of each — which is
-# apparatus, not the work: spellings that occur only there would otherwise
-# return a hit pointing outside the text the reader is reading (#151).
+# straddle the boundary between the two. `standOff` holds whatever a document
+# files *about* its text rather than as its text — the name authority list the
+# superseded Acallam witnesses declared (#151), and today `serafin03.xml`'s 20
+# Polish transcription notes (#162). Either way it is apparatus, not the work:
+# words occurring only there would return a hit pointing outside the text the
+# reader is reading.
 #
 # Skipping the index is not skipping the traversal. Every one of these subtrees
 # still allocates anchor ids, because frontend `assignAnchorIds` walks the same

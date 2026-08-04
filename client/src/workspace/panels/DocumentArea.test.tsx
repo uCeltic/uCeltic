@@ -12,9 +12,25 @@ import { searchDocument } from "../../api/search";
 import type { SearchResult } from "../../types/search";
 import type { Document } from "../../types/document";
 import type { TEIDoc, TEINode } from "../../types/tei";
+import type { EntityMenuEntry } from "../../tei/entityMenu";
 
 vi.mock("../../api/search", () => ({ searchDocument: vi.fn() }));
 const mockedSearch = vi.mocked(searchDocument);
+
+// The Tag Filter's menu, mocked at the seam DocumentArea reads it from. The
+// real hook offers nothing on the current corpus (#162); these tests are about
+// what a column does with a menu, not about where the menu comes from. The
+// default is the real hook's current answer, so every other test in this file
+// sees exactly what the app sees.
+const entityMenu = vi.hoisted(() => ({
+    current: {
+        entries: [] as EntityMenuEntry[],
+        columnIndexById: new Map<string, number>(),
+    },
+}));
+vi.mock("../../tei/useEntityMenu", () => ({
+    useEntityMenu: () => entityMenu.current,
+}));
 
 const doc: Document = {
     id: "doc-1",
@@ -493,50 +509,38 @@ describe("computeDragEndReorder", () => {
 });
 
 /**
- * #147 — the Tag Filter's per-column navigation.
+ * #147, #162 — the Tag Filter's per-column navigation.
  *
  * Each visible column finds its own occurrences of the selected entity and
  * navigates them alone, so a person named 12 times in one manuscript and 111
  * times in another is two independent readings of the same selection.
+ *
+ * The menu is mocked here, and deliberately: on the current corpus the real one
+ * is empty (#162), because the re-cut witnesses group their names by a
+ * `@nymRef` id no file explains and the registry that resolves it is the next
+ * slice. What these tests are about is the other half — given a menu and a
+ * selection, does a column count, navigate and paint *its own* occurrences —
+ * and that half is unchanged by where the entries came from. Mocking the seam
+ * keeps it covered across the swap instead of dropping it and rediscovering it.
+ *
+ * The documents are not mocked. They carry the markup the shipped corpus
+ * carries, so the selector that finds an occurrence is tested against the real
+ * thing.
  */
 describe("Tag Filter entity navigation", () => {
-    // Two manuscripts sharing one authority list — the same xml:ids across
-    // files, which is what makes a single selection resolve in both columns.
-    function authorityTei(id: number, refs: string[]): TEIDoc {
+    // Two witnesses grouping their names the same way — the same `@nymRef`
+    // across files, which is what makes a single selection resolve in both.
+    function nymRefTei(id: number, spellings: string[]): TEIDoc {
         const parsed_json: TEINode = {
             tag: "TEI",
             children: [
                 {
-                    tag: "standOff",
-                    children: [
-                        {
-                            tag: "listPerson",
-                            children: [
-                                {
-                                    tag: "person",
-                                    attrs: { id: "fionn" },
-                                    children: [
-                                        {
-                                            tag: "persName",
-                                            attrs: { type: "canonical" },
-                                            children: [{
-                                                type: "text",
-                                                segments: [{ kind: "word", text: "Find mac Cumaill", idx: 0 }],
-                                            }],
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
                     tag: "text",
                     children: [{
                         tag: "body",
-                        children: refs.map((spelling) => ({
-                            tag: "persName",
-                            attrs: { ref: "#fionn" },
+                        children: spellings.map((spelling) => ({
+                            tag: "name",
+                            attrs: { type: "person", nymRef: "F64" },
                             children: [{
                                 type: "text",
                                 segments: [{ kind: "word", text: spelling, idx: 0 }],
@@ -559,19 +563,36 @@ describe("Tag Filter entity navigation", () => {
         };
     }
 
-    const withAuthorityA: Document = {
-        id: "doc-a", title: "G 126", format: "tei",
-        content: authorityTei(1, ["Find", "Ḟinn"]),
+    const laud610: Document = {
+        id: "doc-a", title: "Laud Misc. 610", format: "tei",
+        content: nymRefTei(1, ["Find", "Ḟinn"]),
     };
-    const withAuthorityB: Document = {
-        id: "doc-b", title: "Franciscan A 4", format: "tei",
-        content: authorityTei(2, ["Fionn", "Fhionn", "Finn"]),
+    const lis204: Document = {
+        id: "doc-b", title: "Book of Lismore", format: "tei",
+        content: nymRefTei(2, ["Fionn", "Fhionn", "Finn"]),
     };
-    // shakespear.xml's shape: named entities, no authority list, no pointers
-    const noAuthority: Document = {
+    // shakespear.xml's shape: text with no marked-up named entity in it at all
+    const noEntities: Document = {
         id: "doc-c", title: "Shakespeare", format: "tei",
         content: twoWordTei(3, "hello", "world"),
     };
+
+    // What the registry slice will build: one entry for Find, carrying each
+    // column's own count of him. `declaredBy` and `counts` are per column of
+    // the menu, in the order the columns were given to it — a column the menu
+    // does not cover is simply absent, not a zero.
+    function menuFor(...columns: [docId: string, count: number][]) {
+        return {
+            entries: [{
+                id: "F64",
+                kind: "person" as const,
+                headword: "Find mac Cumaill",
+                counts: columns.map(([, count]) => count),
+                declaredBy: columns.map(() => true),
+            }],
+            columnIndexById: new Map(columns.map(([id], i) => [id, i])),
+        };
+    }
 
     function show(...docs: Document[]) {
         useDocumentStore.setState({
@@ -589,18 +610,21 @@ describe("Tag Filter entity navigation", () => {
     });
 
     it("shows no navigation card until an entity is selected", () => {
-        show(withAuthorityA);
+        show(laud610);
+        entityMenu.current = menuFor(["doc-a", 2]);
         render(<DocumentArea />);
 
         expect(screen.queryByText("Find mac Cumaill")).not.toBeInTheDocument();
     });
 
-    //Test: each column counts its own occurrences of the same person
+    //Test: each column counts its own occurrences of the same person, found by
+    //the group id rather than by any one spelling of the name
     it("gives each column its own count of the selected entity", () => {
-        show(withAuthorityA, withAuthorityB);
+        show(laud610, lis204);
+        entityMenu.current = menuFor(["doc-a", 2], ["doc-b", 3]);
         render(<DocumentArea />);
 
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
 
         expect(screen.getByText("1 / 2")).toBeInTheDocument();
         expect(screen.getByText("1 / 3")).toBeInTheDocument();
@@ -608,9 +632,10 @@ describe("Tag Filter entity navigation", () => {
 
     //Test: → moves this column alone, and never the other
     it("navigates one column's occurrences without moving another's", () => {
-        show(withAuthorityA, withAuthorityB);
+        show(laud610, lis204);
+        entityMenu.current = menuFor(["doc-a", 2], ["doc-b", 3]);
         render(<DocumentArea />);
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
 
         fireEvent.click(screen.getAllByLabelText("Next occurrence")[0]);
 
@@ -618,12 +643,14 @@ describe("Tag Filter entity navigation", () => {
         expect(screen.getByText("1 / 3")).toBeInTheDocument();
     });
 
-    //Test: a document with no authority list degrades to no card and no error
-    it("shows no card for a column whose document has no authority list", () => {
-        show(withAuthorityA, noAuthority);
+    //Test: a column the menu says nothing about degrades to no card and no
+    //error — no fallback to matching by element name, which is #147's removal
+    it("shows no card for a column the menu does not cover", () => {
+        show(laud610, noEntities);
+        entityMenu.current = menuFor(["doc-a", 2]);
         render(<DocumentArea />);
 
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
 
         expect(screen.getAllByLabelText("Next occurrence")).toHaveLength(1);
     });
@@ -631,10 +658,11 @@ describe("Tag Filter entity navigation", () => {
     //Test: every spelling of one person highlights, the current one apart from
     //the rest, and no other named entity is touched
     it("paints the current occurrence and its siblings in separate tiers", () => {
-        show(withAuthorityA);
+        show(laud610);
+        entityMenu.current = menuFor(["doc-a", 2]);
         render(<DocumentArea />);
 
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
 
         const painted = (name: string) =>
             [...(CSS.highlights.get(name) ?? [])].map((r) => r.toString());
@@ -645,6 +673,7 @@ describe("Tag Filter entity navigation", () => {
     //Test: the two features share the screen — neither repaint clears the other
     it("keeps the search highlight while an entity is selected", async () => {
         show(teiDocA);
+        entityMenu.current = menuFor(["doc-a", 2]);
         mockedSearch.mockResolvedValue([span(0, 1)]);
         render(<DocumentArea />);
         await act(async () => {
@@ -652,7 +681,7 @@ describe("Tag Filter entity navigation", () => {
             await useSearchStore.getState().runSearch(1, "doc-a");
         });
 
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
 
         expect([...(CSS.highlights.get("search-match-active") ?? [])]
             .map((r) => r.toString())).toEqual(["hello"]);

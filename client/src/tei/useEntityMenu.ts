@@ -5,15 +5,19 @@ import {
   type SearchableDocument,
 } from "../store/documentStore";
 import { useWorkspaceStore } from "../store/workspaceStore";
-import { buildEntityMenu, type EntityMenuEntry } from "./authority";
+import type { EntityMenuEntry } from "./entityMenu";
 
 export interface EntityMenu {
-  /** The authority entries on offer, most-referenced first. */
+  /**
+   * The entities on offer. Empty until the registry slice lands (#162); the
+   * order is the producer's to decide, and the one that produced it — most
+   * referenced first — was deleted with the reader it belonged to.
+   */
   entries: EntityMenuEntry[];
   /**
    * Where each TEI column sits in every entry's `counts` / `declaredBy` array.
-   * Columns holding a non-TEI document have no entry here — they have no
-   * authority list, so there is nothing for them to say about an entity.
+   * Columns holding a non-TEI document have no entry here — they carry no
+   * marked-up entities, so there is nothing for them to say about one.
    */
   columnIndexById: Map<string, number>;
 }
@@ -29,6 +33,14 @@ export interface EntityMenu {
  *
  * `getVisibleTEIDocuments` is the seam #152 narrows: choosing a work changes
  * which documents this is built from, not what it does with them.
+ *
+ * It offers nothing at all until the registry slice lands (#162). The corpus it
+ * used to read its entries out of is gone, and the reader with it: the ll.
+ * re-cut witnesses group their named entities by a `@nymRef` group id that
+ * no file explains, so there is no headword in the documents to put in a menu.
+ * Which columns are in play is still worked out here, because that is the half
+ * of the answer this hook can still give honestly — and the half the registry
+ * will need unchanged.
  */
 export function useEntityMenu(): EntityMenu {
   const openDocuments = useDocumentStore((s) => s.openDocuments);
@@ -41,11 +53,15 @@ export function useEntityMenu(): EntityMenu {
       selectedWorkId,
     );
     return {
-      entries: buildEntityMenu(docs.map((doc) => doc.content.parsed_json)),
+      entries: NO_ENTRIES,
       columnIndexById: new Map(docs.map((doc, i) => [doc.id, i])),
     };
   }, [openDocuments, visibleDocumentIds, selectedWorkId]);
 }
+
+// One shared empty array rather than a fresh `[]` per memo, so a re-derivation
+// that changes nothing cannot re-run an effect keyed on the entries.
+const NO_ENTRIES: EntityMenuEntry[] = [];
 
 /**
  * The subset of `docs` belonging to the chosen work — all of them when no work

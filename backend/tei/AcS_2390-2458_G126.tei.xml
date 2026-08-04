@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../TEI%20docs%20(NOT%20TO%20MOVE)/SCHEMA%20(not%20to%20move)/tei_acallam.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+
+  <teiHeader xml:lang="en">
+    <fileDesc>
+      <titleStmt>
+        <title>Acallam na Senórach: NLI MS G126</title>
+        <author>Anonymous</author>
+        <respStmt>
+        <resp>Edited by</resp>
+          <name>Nina Cnockaert-Guillou</name>
+        </respStmt>
+      </titleStmt>
+      <publicationStmt>
+        <distributor>Irish Text Society</distributor>
+        <availability><p>Freely available on a non-commercial basis.</p></availability>
+        <date when="2026">2026</date>
+      </publicationStmt>
+      <sourceDesc>
+        <msDesc>
+          <msIdentifier><msName>Dublin, National Library of Ireland, MS G 126</msName></msIdentifier>
+        </msDesc>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+
+  <text>
+      <body>
+        <p>IS ansin ad-fīafr<expan>aig</expan> <name type="person" nymRef="E15">Eog<expan>aid</expan> l<expan>et</expan>hdh<expan>er</expan>g rīg Laig<expan>en</expan></name> do <name type="person" nymRef="C6"><expan>Chāoilte</expan></name>:<note><p>This sentence is added in the right margin with a caret mark indicating its place in the main text.</p></note> ‘cr<expan>éad</expan> fadeara d’<name type="person" nymRef="F64">Fion<expan>n</expan></name> ⁊ don bhféin gan an phēisd adhbhalmhór atā a <name type="place" nymRef="g19">nGlean<expan>n</expan> Rois Eanaigh</name> do mh<expan>ar</expan>b<expan>ad</expan>h seacha g<expan>ac</expan>h n-<expan>ar</expan>ra<expan>cht</expan> do dhīochuireabh<expan>air</expan> a <name type="place" nymRef="e6">hĒir<expan>inn</expan></name>?’.</p>
+        
+        <p>‘IS fad<expan>ear</expan>a sin’, <expan>ar</expan> <name type="person" nymRef="O2">Oisīn</name>, ‘an ceathromhadh cuid d’inchin <name type="person" nymRef="M28">Meas Gradha</name> í ⁊ do shluig an talamh ansi<expan>n</expan> í go ndearnadh péisd adhbhal di ⁊ ní raibh a ndán dúin<expan>n</expan>e a ma<expan>r</expan>bhadh no go ttig<expan>ead</expan>h an <addName nymRef="P1">Tāilgin</addName> ⁊ an disgiobal úd m<expan>u</expan>raon ris do mhuin<expan>n</expan>t<expan>ir</expan> rīgh nimhe re deir<expan>ead</expan>h aimsire ⁊ go cceangeól<expan>ad</expan>h áonsimhin<expan>n</expan> lūachra í ó sin <pb edRef="G126" n="p.128"/> amach go ttig<expan>ead</expan>h an bráth adhbhalmhor do mheas na mbeó ⁊ na m<expan>ar</expan>bh’.</p>
+        
+        <p>‘Cr<expan>éad</expan> fa ttēich<expan>ead</expan>h an fían isan loch sin dā ma<expan>r</expan>bh f<expan>ēin</expan> ⁊ do mha<expan>r</expan>bh a ccon don phēisd?’</p>
+        
+        <p>‘Leandán sīdhe do bhī ag <name type="person" nymRef="F64">Fion<expan>n</expan></name>’, a<expan>r</expan> <name type="person" nymRef="O2">Oisīn</name>, ‘.i. <name type="person" nymRef="U2">Úaine ing<expan>en</expan> Mhodhai<expan>r</expan>n</name>, ⁊ thug <name type="person" nymRef="F64">Fion<expan>n</expan></name> ēara tochmai<expan>r</expan>c uirre, a<expan>r</expan> iomad do rio<expan>cht</expan>uib<expan>h</expan> a ttēigh<expan>ead</expan>h, óir ní raibh beathadhach nach ttig<expan>ead</expan>h ’na rio<expan>cht</expan>. Tháinig an fían laithe n-áon a<expan>r</expan>an cc<expan>ar</expan>n ós c<expan>ean</expan> an locha sin ⁊ rāinig fíadh fo<note><p><expan>a</expan> corrected to <expan>o</expan>, or the other way around?</p></note> dhīlmhoin amach a<expan>r</expan>an loch ⁊ do mha<expan>r</expan>bh an phēisd dhā .c. ōglach ⁊ dhā .c. cú umain<expan>n</expan> a<expan>r</expan> ndol dóibh a ndíaigh an fíadh a<expan>r</expan>an loch. Do fhīafraigh <name type="person" nymRef="C6">Cāoilte</name> an<expan>n</expan>sin d’<name type="person" nymRef="F64">Fion<expan>n</expan></name>: “an leó féin do thuitf<expan>ead</expan>h an phēisd, ⁊ dā madh leó go ccuirfidis ría ⁊ go ndīoghladis a muin<expan>n</expan>tir uirre”.</p>
+        
+        <p>Thug <name type="person" nymRef="F64">Fion<expan>n</expan></name> a ordan fa na dhéud fios ⁊ foillsigh<expan>ead</expan>h fīrin<expan>n</expan>e dhō ⁊ adub<expan>air</expan>t an laoi’.</p>
+        
+        <p>⁊ do fhāgbh<expan>us</expan> a<expan>r</expan>a holc<expan>us</expan> í.<note><p>‘⁊ do fhāgbh<expan>us</expan> a<expan>r</expan>a holc<expan>us</expan> í’ is not written as a scribal note in the MS, but it seems likely that it was a note which Mac Solaidh copied from his exemplar as part of the main text.</p></note></p>
+        
+        <p><pb xml:id="Stokes_p.69"/> Nī fēadtha<expan>r</expan> a fhaisnéis <expan>ar</expan> in<expan>n</expan>sighdu<expan>r</expan> do dhēanamh<note><p>‘do mhórghnio’ at the end of p. 128, written again at the start of p. 129.</p></note><pb edRef="G126" n="p.129"/> do mhórghnīomhuibh gaisg<expan>id</expan>he ⁊ goile<note><p>‘do’, crossed out (dittography).</p></note> do mhaithibh fían <name type="place" nymRef="e6">Ēirion<expan>n</expan></name> a<expan>r</expan>cheana re táobh a<expan>r</expan> in<expan>n</expan>sighda<expan>r</expan> do dhinshenchas g<expan>ac</expan>h cnuic ⁊ gach fearain<expan>n</expan> do fhíafraigh maithe fhear <name type="place" nymRef="e6">nĒirion<expan>n</expan></name> díobh.</p>
+        
+        <p>IS ansin thāinig <name type="person" nymRef="T6">Tamhan Trēanthreabha<expan>r</expan> m<expan>a</expan>c Tréin</name> .i. flaithbhrugh<expan>aid</expan>h gach comhramhach do mhuin<expan>n</expan>tir rīgh <name type="place" nymRef="e6">Ēirean<expan>n</expan></name> trī .l. fear mór ⁊ faitiubhrān gorm ⁊ léine lángheal um g<expan>ac</expan>h fear dhíobh ⁊ trī .l. gabhāl a lámhoibh leó. Bhean<expan>n</expan>uighsad do rīgh <name type="place" nymRef="e6">Ēirion<expan>n</expan></name>. Freagraidh-sa<note><p>‘d’ crossed out at the end of the word.</p></note> íad-san: ‘atā fl<expan>ead</expan>h mhórchaoín again<expan>n</expan> duit, a rīgh <name type="place" nymRef="e6">Ēir<expan>ionn</expan></name>’, a<expan>r</expan> īad-san, ‘.i. x.xx. dabhach do mhidh ⁊ x.xx. dab<expan>ach</expan> do bhrogōid gona lōrdhóchain do bíadh leō’.</p>
+        
+        <p>Chúadhsad leis an mbrugh<expan>aid</expan>h dībh lin<expan>n</expan>uibh.</p>
+        
+        <p>‘Maith āmh, a <name type="person" nymRef="O2">Oisīn</name>’, a<expan>r</expan> <name type="person" nymRef="D25">Dīa<expan>r</expan>moid</name>, ‘an āonteach óil re maithibh fhear <name type="place" nymRef="e6">nĒirion<expan>n</expan></name> bhías agad ⁊ ag do chomhalta .i. ag <name type="person" nymRef="C6">Cáoilte</name>?’.</p>
+        
+        <p>‘Ar ccuid bīdh ⁊ lean<expan>n</expan>a a<expan>r</expan> l<expan>eat</expan>h dhūin<expan>n</expan>’, a<expan>r</expan> <name type="person" nymRef="O2">Oisīn</name>, ‘óir ní lu<expan>cht</expan> comhdhīne nō comhaimsire sin<expan>n</expan> ⁊ āonduine da bf<expan>uil</expan> a nĒir<expan>inn</expan> anois’.</p>
+        
+        <p>‘Cā líon atāthaoi?’, a<expan>r</expan> <name type="person" nymRef="D25">Día<expan>r</expan>m<expan>oi</expan>d</name>.<note><p>Question mark after <expan>Díarmoid</expan> in MS.</p></note></p>
+        
+        <p><pb edRef="G126" n="p.130"/>‘Dhā nāonbha<expan>r</expan>’, a<expan>r</expan> <name type="person" nymRef="O2">Oisīn</name>. <pb xml:id="Stokes_p.70"/></p>
+        
+        <p>‘.xx. dabhach dhigh dhībh <expan>con</expan>a bha<expan>r</expan> ndāothain bídh’, a<expan>r</expan> <name type="person" nymRef="D25">Día<expan>r</expan>moid</name>.</p>
+        
+        <p>Bhādu<expan>r</expan> an<expan>n</expan> re h<expan>ead</expan>h na hoidhche sin gan <expan>ea</expan>sb<expan>ad</expan>h bídh nō díghe orr<expan>t</expan>h<expan>a</expan>. Do sreathadh a phobal ag rígh <name type="place" nymRef="e6">Ēirion<expan>n</expan></name> a<expan>r</expan> tháobh na tulca fa coimhneasa dhóibh ā<expan>r</expan>namhā<expan>r</expan>ach. Tháinig <name type="person" nymRef="P1">P<expan>ādr</expan>a<expan>ig</expan></name> isan da<expan>r</expan>a l<expan>eat</expan>h dhi ⁊ thāinig <name type="person" nymRef="D25">Dīa<expan>r</expan>moid</name> isan l<expan>eat</expan>h eile ⁊ nīor lēig<expan>ead</expan> <expan>acht</expan> easbog, nō saga<expan>r</expan>t, nō m<expan>a</expan>c ōg isan l<expan>eat</expan>h a raibh <name type="person" nymRef="P1">P<expan>ādr</expan>a<expan>ig</expan></name>.</p>
+        
+        <p>Suidhios <name type="person" nymRef="O2">Oisīn</name> a bfhīaghnuisi <name type="person" nymRef="P1">P<expan>ādr</expan>a<expan>ig</expan></name> ⁊ suidhios <name type="person" nymRef="C6">Cāoilte</name> a bhfíaghnuisi rīgh <name type="place" nymRef="e6">Ēirion<expan>n</expan></name>.</p>
+        
+        <p>‘Cīa hagaibh-si is sine’, a<expan>r</expan> <name type="person" nymRef="D25">Día<expan>r</expan>moid</name>, ‘<name type="person" nymRef="O2">Oisīn</name>, th<expan>us</expan>a nō <name type="person" nymRef="C6">Cáoilte</name>?’.</p>
+        
+        <p>‘IS sine misi’, a<expan>r</expan> <name type="person" nymRef="C6">Cáoilte</name>, ‘óir x. mbl<expan>īadn</expan>a do b<expan>ud</expan>h slán<note><p>‘misi’, crossed out.</p></note> damh-sa an tan do rug<expan>ad</expan>h <name type="person" nymRef="O2">Oisīn</name> ⁊ sea<expan>cht</expan> mbl<expan>īadn</expan>a 20 dhō u<expan>m</expan>’ leab<expan>ad</expan>h ⁊ is as mo thigh ghabh féin a<expan>r</expan> t<expan>ús</expan>’.</p>
+        
+        <p>‘Cā líon do ríoghuibh <name type="place" nymRef="e6">Ēirion<expan>n</expan></name>, a <name type="person" nymRef="O2">Oisīn</name>’, a<expan>r</expan> <name type="person" nymRef="D25">Día<expan>r</expan>moid</name>, ‘thugh f<expan>ea</expan>ran<expan>n</expan> don féin ⁊ cā līon rīgh feindigh da<expan>r</expan> tugadh?’.</p>
+        
+        <p>Fr<expan>ea</expan>gr<expan>us</expan> <name type="person" nymRef="O2">Oisīn</name> go coimhn<expan>ea</expan>rt sin ōir do bhī a fhios aige:</p>
+        
+        <p>‘Ardrīgh do ghabh rīghe <name type="place" nymRef="e6">nĒirion<expan>n</expan></name> .i. <name type="person" nymRef="F21">F<expan>ea</expan>readhach Fion<expan>n</expan>fhea<expan>cht</expan>nach</name> ⁊ fúai<expan>r</expan>-sion bás. Bhāda<expan>r</expan> dhā m<expan>a</expan>c mhaithe aige .i. <pb edRef="G126" n="p.131"/> <name type="person" nymRef="T15">Tūathail</name> ⁊ <name type="person" nymRef="F46">Fīachaigh</name> a n-anmon<expan>n</expan>a. Do ran<expan>n</expan>sad <name type="place" nymRef="e6">Ēire</name> eota<expan>r</expan>radh .i. a seōid ⁊ a búai<expan>r</expan>, a maoín ⁊ a maithiosa, a dúin ⁊ a d<expan>ea</expan>ghbhailte don c<expan>éad</expan> m<expan>a</expan>c. A haille ⁊ a hinbhiora, a m<expan>ea</expan>s ⁊ a mōrthor<expan>adh</expan>, a fíadhach ⁊ a fīanchosga<expan>r</expan> don fh<expan>ea</expan>r eile’.</p>
+        
+        <p>‘Cāit a nd<expan>ea</expan>rnadh an roin<expan>n</expan> sin?’, a<expan>r</expan> <name type="person" nymRef="D25">Dīa<expan>r</expan>moid</name>.<note><p>Question mark after <expan>Díarmoid</expan> in MS.</p></note></p>
+        
+        <p>‘Uman chnoc-sa a bhfuilmaoid’, a<expan>r</expan> <name type="person" nymRef="O2">Oisīn</name>.</p>
+        
+        <p>‘Níor’ comhthrom an<note><p>‘ro’ crossed out at the end of the line.</p></note> roin<expan>n</expan> sin’, a<expan>r</expan> maithe fh<expan>ea</expan>r <name type="place" nymRef="e6">nĒirion<expan>n</expan></name>.</p>
+        
+        <p>‘An roin<expan>n</expan> do ba m<expan>ea</expan>sa dhíobh sūd’, a<expan>r</expan> <name type="person" nymRef="C6"><expan>Cāoilte</expan></name>, ‘as í do b<expan>ud</expan>h f<expan>ea</expan>rr lin<expan>n</expan>e’.</p>
+        
+        <p>‘Rāidh fhīrin<expan>n</expan>e súd do rīgh <name type="place" nymRef="e6">Ēir<expan>ionn</expan></name>, a <name type="person" nymRef="C6">Cháoilte</name>’, a<expan>r</expan> <name type="person" nymRef="O2">Oisīn</name>.</p>
+        
+        <p>⁊ dixit <name type="person" nymRef="O2">Oisīn</name>:</p>
+        
+        <p xml:id="G126_poem63">
+        <lg type="quatrain" n="1"><l>Rāidh, a <name type="person" nymRef="C6">Chāoilte</name>, cidh dā bhfuil</l>
+        <l>ní b<expan>ea</expan>g é re fhīa<expan>r</expan>faig<expan>id</expan>h</l>
+        <l>c<expan>ēat</expan>roin<expan>n</expan> <name type="place" nymRef="e6">Ēirion<expan>n</expan></name> a<expan>r</expan> gach l<expan>eat</expan>h</l>
+        <l>do g<expan>ac</expan>h ainm a <name type="place" nymRef="u3">nUisn<expan>ea</expan>ch</name>.</l></lg>
+        
+          <lg type="quatrain" n="2"><l><pb xml:id="Stokes_p.71"/> Cīa do-rad f<expan>ea</expan>ran<expan>n</expan> don fhéin</l>
+        <l>an ’brair ribh, a <name type="person" nymRef="O2">Oiséin</name>,</l>
+        <l>cīa ro sga<expan>r</expan> re giolla<expan>cht</expan> con</l>
+        <l>cīa ros dil fa thūa<expan>rus</expan>dal?</l></lg>
+        
+          <lg type="quatrain" n="3"><l>C. Meabhai<expan>r</expan> liom-sa sin uile. dixit <name type="person" nymRef="C6"><expan>Caoilte</expan></name>.</l>
+        <l>an abrai<expan>r</expan> riom a dhuine</l>
+        <l>ō ro ghabh <name type="person" nymRef="F46">Fīach<expan>aig</expan>h</name> an féin</l>
+        <l><pb edRef="G126" n="p.132"/>goro tuism<expan>ead</expan>h, a <name type="person" nymRef="O2">Oiséin</name>.</l></lg>
+        
+          <lg type="quatrain" n="4"><l>4. Deich mbl[í]adna do fhlaithios mhaith</l>
+        <l>dhuit-si, a <name type="person" nymRef="O2">Oisīn</name> a<expan>r</expan>dfhlaith,</l>
+        <l>ō ros breug <name type="person" nymRef="F46">Fīach<expan>aig</expan>h</name> an féin</l>
+        <l>gu <expan>rus</expan> treigsad, a <name type="person" nymRef="O2">Oiséin</name>.</l></lg>
+        
+          <lg type="quatrain" n="5"><l>Dén m<expan>a</expan>c<note><p>‘Fiach<expan>ad</expan>h’ crossed out.</p></note> <name type="person" nymRef="F21">F<expan>ear</expan>ad<expan>aig</expan>h</name> da<expan>r</expan> lion<expan>n</expan></l>
+        <l>da<expan>r</expan>bho comhainm <name type="person" nymRef="F46">Fīach<expan>aig</expan>h Fion<expan>n</expan></name></l>
+        <l><name type="person" nymRef="E50">Eitne inghean Da<expan>r</expan>e Dhuibh</name></l>
+        <l>dob’ í an mór-rīoghan a mhāthai<expan>r</expan>.</l></lg>
+        
+          <lg type="quatrain" n="6"><l><name type="person" nymRef="F21">Fearadh<expan>ac</expan>h Fea<expan>cht</expan>nach</name> ba flaith</l>
+        <l>rob’ ē athai<expan>r</expan> an mac maith</l>
+        <l><name type="person" nymRef="E50">Eithne inghean Da<expan>r</expan>e Duibh</name></l>
+        <l>dob’ í an mhór-rīogan a mhātha<expan>r</expan>.</l></lg>
+        
+          <lg type="quatrain" n="7"><l><name type="person" nymRef="F21">Fearadh<expan>ac</expan>h Fea<expan>cht</expan>nac<expan>h</expan></name> is <name type="person" nymRef="F46">Fīach<expan>aig</expan>h Fion<expan>n</expan></name></l>
+        <l>ran<expan>n</expan>sad <name type="place" nymRef="e6">Ēire</name> druim a<expan>r</expan> dhruim</l>
+        <l>bāda<expan>r</expan> a <name type="place" nymRef="e6">nĒirin<expan>n</expan></name> fa bhláth</l>
+        <l>gan chogadh gan chomha<expan>r</expan>d<expan>ad</expan>h.</l></lg>
+        
+          <lg type="quatrain" n="8"><l>Rug dho rogain an m<expan>a</expan>c īa<expan>r</expan> ló</l>
+        <l>bh<expan>eit</expan>h re féin, ní hioma<expan>r</expan>ghó:</l>
+        <l>foithre, fāsaig<expan>h</expan>e, f<expan>ead</expan>ha,</l>
+        <l>aibhne, aille, inbera.</l></lg>
+        
+          <lg type="quatrain" n="9"><l>Ro ghabh <name type="person" nymRef="F21">Fearadh<expan>ac</expan>h</name> da<expan>r</expan> liom</l>
+        <l>a<expan>r</expan>drīghe a<expan>r</expan> fearuibh <name type="place" nymRef="e6">Ēirion<expan>n</expan></name></l>
+        <l>a fl<expan>edh</expan>i, a tairthe, a tighthe,</l>
+        <l>a tainte ’s a treabhai<expan>r</expan>e.</l></lg>
+        
+          <lg type="quatrain" n="10"><l><pb edRef="G126" n="p.133"/>Rīghe <name type="person" nymRef="F21">Fearadhaigh</name> ba maith</l>
+        <l>gu<expan>r</expan>’ thuit le <name type="person" nymRef="N8">Nīall</name> an m<expan>a</expan>cfhlaith</l>
+        <l>ro ba tásg rīg rūamna gail</l>
+        <l>bás an rīgh<note><p>MS ana; dittography.</p></note> an aghaidh sain.</l></lg>
+        
+          <lg type="quatrain" n="11"><l>Luidh <name type="person" nymRef="F46">Fīacha</name> a <name type="place" nymRef="t8">tTeamhr<expan>aig</expan>h</name> gan bhrath</l>
+        <l>an ló ttorcha<expan>r</expan> <name type="person" nymRef="F21">Fearadhach</name></l>
+        <l>gabhtha<expan>r</expan> neart <name type="place" nymRef="e6">Ēirion<expan>n</expan></name> uile</l>
+        <l>leis ta<expan>r</expan><note><p>MS mer; crossed out.</p></note> múr m<expan>ai</expan>c <name type="person" nymRef="R4">Róchraidhe</name>.</l></lg>
+        
+          <lg type="quatrain" n="12"><l>Īa<expan>r</expan> sin do rad <name type="person" nymRef="F46">Fīach<expan>aig</expan>h</name> an féin</l>
+        <l>do <name type="person" nymRef="M44">Morna</name> g<expan>us</expan>an mhóircheill</l>
+        <l>ceatra<expan>r</expan> dhōibh-sion, dreimne gal,</l>
+        <l>’na dhīaigh ro ghabhasda<expan>r</expan>.</l></lg>
+        
+          <lg type="quatrain" n="13"><l><name type="person" nymRef="M44">Morna m<expan>a</expan>c Cai<expan>r</expan>bre</name> go ngus</l>
+        <l>deich mbl<expan>īadn</expan>a dhó ina fhlaitheas</l>
+        <l>deich mbl<expan>īadn</expan>a do <name type="person" nymRef="G5">Gha<expan>rad</expan>h</name> ghan<expan>n</expan></l>
+        <l>no gu<expan>r</expan>’ sga<expan>r</expan>adh é rea cheand.</l></lg>
+        
+          <lg type="quatrain" n="14"><l><name type="person" nymRef="D5">Daghri m<expan>a</expan>c Ga<expan>r</expan>aidh</name> go ng<expan>us</expan></l>
+        <l>cūig bl<expan>īadn</expan>a dhō ina fhlaith<expan>us</expan></l>
+        <l>ā<expan>r</expan>iomh shea<expan>cht</expan> bl<expan>īadn</expan>a gan bhrath</l>
+        <l>dhi agan <name type="person" nymRef="M64">Morna</name> deaghm<expan>a</expan>c.</l></lg>
+        
+          <lg type="quatrain" n="15"><l><name type="person" nymRef="E19">Eoch<expan>aid</expan>h m<expan>a</expan>c Na<expan>r</expan>ch<expan>ad</expan>h</name> anair</l>
+        <l>rīgh fían <name type="place" nymRef="e6">Ēirion<expan>n</expan></name> ō <name type="place" nymRef="u4">Ulltaibh</name></l>
+        <l><pb edRef="G126" n="p.134"/>a dō co l<expan>eat</expan>h a líne</l>
+        <l>isan bhféin a n-ai<expan>r</expan>dríghe.</l></lg>
+        
+          <lg type="quatrain" n="16"><l>Ghabhsad a <name type="place" nymRef="m34">Mum<expan>an</expan></name>, mīadh<expan>ac</expan>h gcealg,</l>
+        <l><name type="person" nymRef="L13">Līath Lūachad</name> is <name type="person" nymRef="L2">Labr<expan>aid</expan>h Lāimhdh<expan>er</expan>g</name></l>
+        <l>deich mbl<expan>īadn</expan>a, lí nach gan<expan>n</expan>,</l>
+        <l>do m<expan>a</expan>cuibh eith<expan>ig</expan>h <name type="place">Āran<expan>n</expan></name><!-- NCG: note sure what place or person this corresponds to! 23.07.26 -->.</l></lg>
+        
+          <lg type="quatrain" n="17"><l><name type="person" nymRef="T13">Trēanmór ūa Báoisgne</name> ba balc</l>
+        <l>ba hūa <name type="person" nymRef="S27">Sēathna Sīthbhac</name></l>
+        <l>seanathai<expan>r</expan> <name type="person" nymRef="F64">Fhin<expan>n</expan></name> feadha an roin<expan>n</expan></l>
+        <l>athai<expan>r</expan> <name type="person" nymRef="C121">Chumhaill</name> ⁊ <name type="person" nymRef="C102">Chrimhaill</name>.</l></lg>
+        
+          <lg type="quatrain" n="18"><l>Tairr<expan>id</expan>h <name type="person" nymRef="T13">Trēanmō<expan>r</expan></name> t[r]ēunbhāidh</l>
+        <l>rīghe fhían <name type="place" nymRef="e6">Ēirean<expan>n</expan></name> d’éunláimh</l>
+        <l>rīgh amhuil an rīgh andeas</l>
+        <l>sea<expan>cht</expan> mbl<expan>īadn</expan>a dēag a reimheas.</l></lg>
+        
+          <lg type="quatrain" n="19"><l>Do ghabh <name type="person" nymRef="C121">Cumhall</name> crúaidh a nem</l>
+        <l>a los sgēithe is cloidhimh</l>
+        <l>rīghe fad t<expan>u</expan>c teóra cath</l>
+        <l>sgain<expan>n</expan>reach congalach cogthach.</l></lg>
+        
+          <lg type="quatrain" n="20"><l>Ro ghabh <name type="person" nymRef="C121">Cubhall</name> b<expan>ud</expan>h crúaidh aim</l>
+        <l>a los sgēith ⁊ cloidhimh</l>
+        <l>deich mbl<expan>īadn</expan>a dhō-san dóna</l>
+        <l>go ttorchai<expan>r</expan> a cCath <name type="place" nymRef="c84">Cnuca</name>.</l></lg>
+        
+          <lg type="quatrain" n="21"><l><pb edRef="G126" n="p.135"/><pb xml:id="Stokes_p.72"/> Í<expan>ar</expan>sin ghabhsad Meic <name type="person" nymRef="M64">Mórna</name></l>
+        <l>gan bhrón is gan bhithdhoghra</l>
+        <l>triochad lāoch ba mór a ngal</l>
+        <l>um <name type="person" nymRef="G23">Gholl</name> ⁊ um <name type="person" nymRef="G5">Gha<expan>r</expan>aigh</name>.</l></lg>
+        
+          <lg type="quatrain" n="22"><l><name type="person" nymRef="G23">Goll</name> mór ba mīl<expan>id</expan>h a ccath</l>
+        <l>mac don <name type="person" nymRef="M64">Mórna</name> dh<expan>ēad</expan>hanach</l>
+        <l>deich mbl<expan>īadn</expan>a dhó líth na<expan>r</expan>’ ghan<expan>n</expan></l>
+        <l>an ai<expan>r</expan>drīgh a<expan>r</expan> fhíanuibh <name type="place" nymRef="e6">Ēirean<expan>n</expan></name>.</l></lg>
+        
+          <lg type="quatrain" n="23"><l>Ansin do ghabh an t-eói óir</l>
+        <l><name type="person" nymRef="F64">Fion<expan>n</expan> m<expan>a</expan>c Cumhaill m<expan>ei</expan>c Trēanmhóir</name></l>
+        <l>ba toirbheartach sáorshlúaghach</l>
+        <l>ba sáor amhra ilbhūadhach.</l></lg>
+        
+          <lg type="quatrain" n="24"><l>Dā chēad blīadhain go mblāithe</l>
+        <l>⁊ trīochad gan tlāithe</l>
+        <l>sāoghal <name type="person" nymRef="F64">Fhin<expan>n</expan></name> ba fada ré</l>
+        <l>go ttorcai<expan>r</expan> ’ga léim bāis é.</l></lg>
+        
+          <lg type="quatrain" n="25"><l>Sea<expan>cht</expan> rīgh dēag is deimhin liom</l>
+        <l>do ghabh rīghe fhían <name type="place" nymRef="e6">Ēirion<expan>n</expan></name></l>
+        <l>fearr <name type="person" nymRef="F64">Fion<expan>n</expan></name><note><p>‘n’, crossed out.</p></note> inā sin uile</l>
+        <l>cathmhīl<expan>id</expan> á<expan>r</expan>d <name type="place" nymRef="a13">Almhuine</name>.</l></lg>
+        
+          <lg type="quatrain" n="26"><l>Cūiger dráoi ba duil<expan>ig</expan>h</l>
+        <l>is fearr tá<expan>r</expan>raill íath fuinigh</l>
+        <l><pb edRef="G126" n="p.136"/> is meabhai<expan>r</expan> liom-sa go bea<expan>cht</expan></l>
+        <l>a n-áis 7 a ndráoidhea<expan>cht</expan>.</l></lg>
+        
+          <lg type="quatrain" n="27"><l>IS dīob <name type="person" nymRef="B1">Badhna</name> a <name type="place" nymRef="s12">Sīth Badhna</name></l>
+        <l>dīobh Cath <name>Fiosnai</name><!-- NCG: not sure if this is supposed to b a place or personal name? 23.07.26 --> deaghamhra</l>
+        <l>’s docan m<expan>a</expan>c <name type="person" nymRef="C124">Cuirc</name> crēa<expan>cht</expan>a cá<expan>r</expan>n</l>
+        <l><name type="person" nymRef="F64">Fion<expan>n</expan> m<expan>a</expan>c Cum<expan>h</expan>aill</name> is <name type="place" nymRef="f32">Formaíl</name>.</l></lg>
+        
+          <lg type="quatrain" n="28"><l><note><p>MS (crossed out): Cuiger leagha is fearr ta<expan>r</expan>aill iat banba.</p></note> Cūiger leagha līth amhra</l>
+        <l>is fearr tā<expan>r</expan>aill íath <name type="place" nymRef="b3">Banbha</name></l>
+        <l>cían at<expan>ū</expan>-<expan>s</expan>a dā ndéis</l>
+        <l>is aineōlach ’nān faisnéis.</l></lg></p>
+  
+      </body>
+  </text>
+</TEI>

@@ -1,13 +1,21 @@
 /**
- * #147 — the Tag Filter offers the people and places the open manuscripts
- * declare about themselves, never a hard-coded vocabulary.
+ * #162 — the Tag Filter on the re-cut corpus.
  *
- * The fixtures carry the corpus's real shapes: `<person xml:id="fionn">` with a
- * canonical headword and its variants in `standOff`, and `<persName ref="#fionn">`
- * in the body.
+ * The control used to offer the people and places each manuscript declared in a
+ * `standOff` authority list. That corpus is gone, and its reader with it: the
+ * witnesses that replaced it group their named entities by a bare `@nymRef`
+ * group id (`nymRef="F64"`) that no file explains, so there is no headword in
+ * any document to put in a menu. Until the registry slice supplies one, the
+ * honest state of this control is empty — and empty is what these tests hold it
+ * to, on the markup the corpus actually carries rather than on nothing at all.
+ *
+ * What the menu is *not* allowed to fall back to is the thing it was before
+ * both: a hard-coded list of TEI element names, which offered options no
+ * document could match (#147). An empty menu is a true statement; that one was
+ * not.
  */
 import { beforeEach, describe, expect, it } from "vitest";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import TagFilterButton from "./TagFilterButton";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { useDocumentStore } from "../../store/documentStore";
@@ -22,48 +30,7 @@ function named(tag: string, attrs: Record<string, string>, value: string): TEIEl
     return { tag, attrs, children: [text(value)] };
 }
 
-const authority: TEIElementNode = {
-    tag: "standOff",
-    children: [
-        {
-            tag: "listPerson",
-            children: [
-                {
-                    tag: "person",
-                    attrs: { id: "fionn" },
-                    children: [
-                        named("persName", { type: "canonical" }, "Find mac Cumaill"),
-                        named("persName", { type: "variant" }, "Ḟinn"),
-                    ],
-                },
-                {
-                    tag: "person",
-                    attrs: { id: "cailte" },
-                    children: [
-                        named("persName", { type: "canonical" }, "Caílte mac Rónáin"),
-                    ],
-                },
-            ],
-        },
-        {
-            tag: "listPlace",
-            children: [
-                {
-                    tag: "place",
-                    attrs: { id: "eriu" },
-                    children: [named("placeName", { type: "canonical" }, "Ériu")],
-                },
-            ],
-        },
-    ],
-};
-
-function teiDoc(
-    id: string,
-    body: TEINode[],
-    withAuthority = true,
-    work: TEIWork | null = null,
-): Document {
+function teiDoc(id: string, body: TEINode[], work: TEIWork | null = null): Document {
     return {
         id,
         title: id,
@@ -79,26 +46,23 @@ function teiDoc(
             word_array: [],
             parsed_json: {
                 tag: "TEI",
-                children: [
-                    ...(withAuthority ? [authority] : []),
-                    { tag: "text", children: [{ tag: "body", children: body }] },
-                ],
+                children: [{ tag: "text", children: [{ tag: "body", children: body }] }],
             },
         } as TEIDoc,
     };
 }
 
-// G 126: Fionn twice, Ériu once. Franciscan A 4: Fionn once, Caílte once.
-const g126 = teiDoc("g126", [
-    named("persName", { ref: "#fionn" }, "Find"),
-    named("persName", { ref: "#fionn" }, "Ḟinn"),
-    named("placeName", { ref: "#eriu" }, "hÉrinn"),
+// The current corpus's shape: `name` / `addName` carrying a group id and no
+// `standOff` anywhere to say what the id names.
+const lis204 = teiDoc("lis204", [
+    named("name", { type: "person", nymRef: "F64" }, "Ḟinn"),
+    named("name", { type: "person", nymRef: "C6" }, "Caílti"),
+    named("name", { type: "place", nymRef: "e6" }, "Ēirinn"),
 ]);
-const franciscan = teiDoc("franciscan", [
-    named("persName", { ref: "#fionn" }, "Fionn"),
-    named("persName", { ref: "#cailte" }, "Chaílte"),
+const laud610 = teiDoc("laud610", [
+    named("name", { type: "person", nymRef: "F64" }, "Find"),
+    named("addName", { nymRef: "P1" }, "Tāilgend"),
 ]);
-const plain = teiDoc("shakespear", [named("persName", {}, "Hamlet")], false);
 
 function openDocs(...docs: Document[]) {
     useDocumentStore.setState({
@@ -113,7 +77,7 @@ beforeEach(() => {
         entityIndexByDocument: {},
         selectedWorkId: null,
     });
-    openDocs(g126, franciscan);
+    openDocs(lis204, laud610);
 });
 
 // the dropdown only exists once the trigger is clicked open
@@ -123,21 +87,33 @@ function open() {
 }
 
 describe("TagFilterButton", () => {
-    //Test: the options are the open documents' own authority entries, grouped
-    //by kind — never an element-name vocabulary
-    it("offers the people and places the open documents declare", () => {
+    //Test: a corpus that groups by @nymRef offers nothing, because nothing in
+    //it says what a group id stands for
+    it("offers no options for documents that group by nymRef alone", () => {
         open();
 
-        expect(screen.getByText(/Person \(2\)/)).toBeInTheDocument();
-        expect(screen.getByText(/Place \(1\)/)).toBeInTheDocument();
-        for (const headword of ["Find mac Cumaill", "Caílte mac Rónáin", "Ériu"]) {
-            expect(screen.getByRole("menuitemradio", { name: new RegExp(headword) }))
-                .toBeInTheDocument();
-        }
+        expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
     });
 
-    //Test: the element-name vocabulary is gone — none of these was ever a
-    //filter option that could match anything in this corpus
+    //Test: and it says so about itself, not about the manuscripts — they are
+    //full of named entities; what is missing is the grouping
+    it("says the filter has nothing to offer, not that the text has no names", () => {
+        open();
+
+        expect(screen.getByText(/no named entities to filter by/i)).toBeInTheDocument();
+        expect(screen.queryByText(/in the open documents/i)).not.toBeInTheDocument();
+    });
+
+    //Test: empty is empty — no kind headings offering a group with nothing in it
+    it("shows no Person or Place heading when there is nothing under them", () => {
+        open();
+
+        expect(screen.queryByText(/Person \(/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Place \(/)).not.toBeInTheDocument();
+    });
+
+    //Test: the element-name vocabulary stays gone — none of these was ever a
+    //filter option that could match anything in this corpus (#147)
     it("no longer offers TEI element names as options", () => {
         open();
 
@@ -146,121 +122,26 @@ describe("TagFilterButton", () => {
         }
     });
 
-    //Test: one number per visible column, in visible order, so "which
-    //manuscript dwells on Fionn?" is answerable at a glance
-    it("shows each entry's occurrence count per column, in visible order", () => {
-        open();
-
-        const fionn = screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ });
-        expect(within(fionn).getByText("2 · 1")).toBeInTheDocument();
-    });
-
-    //Test: an entry missing from one column reads as 0 rather than vanishing
-    it("reports an entry absent from a column as 0", () => {
-        open();
-
-        const eriu = screen.getByRole("menuitemradio", { name: /Ériu/ });
-        expect(within(eriu).getByText("1 · 0")).toBeInTheDocument();
-    });
-
-    //Test: single-select — the navigation below is over one entity's occurrences
-    it("selects one entity at a time", () => {
-        open();
-
-        fireEvent.click(screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }));
-        expect(useWorkspaceStore.getState().selectedEntityId).toBe("fionn");
-
-        fireEvent.click(screen.getByRole("menuitemradio", { name: /Ériu/ }));
-        expect(useWorkspaceStore.getState().selectedEntityId).toBe("eriu");
-    });
-
-    //Test: clicking the selected entry again stops following that person
-    it("clears the selection when the selected entry is clicked again", () => {
-        open();
-
-        fireEvent.click(screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }));
-        fireEvent.click(screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }));
-
-        expect(useWorkspaceStore.getState().selectedEntityId).toBeNull();
-    });
-
-    //Test: the trigger reports who is being followed
-    it("labels the trigger with the selected headword", () => {
+    //Test: nothing selected filters nothing, so the trigger reads "All Tags"
+    it("labels the trigger All Tags", () => {
         render(<TagFilterButton />);
+
         expect(screen.getByRole("button")).toHaveTextContent("All Tags");
-
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("cailte"));
-        expect(screen.getByRole("button")).toHaveTextContent("Caílte mac Rónáin");
     });
 
-    //Test: a document with no authority list contributes nothing — no fallback
-    //to element-name matching, which is the behaviour this issue removes
-    it("offers nothing for a document with no authority list", () => {
-        openDocs(plain);
-        open();
+    //Test: a selection left in the store by an earlier corpus resolves to no
+    //entry, and the trigger falls back rather than rendering `undefined`
+    it("keeps reading All Tags when the selected id matches no entry", () => {
+        render(<TagFilterButton />);
 
-        expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
-        expect(screen.getByText(/no named entities/i)).toBeInTheDocument();
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("fionn"));
+
+        expect(screen.getByRole("button")).toHaveTextContent("All Tags");
     });
 
-    //Test: with nothing open there is nothing to offer
+    //Test: with nothing open there is nothing to offer, and no crash
     it("offers nothing when no document is open", () => {
         openDocs();
-        open();
-
-        expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
-    });
-});
-
-/**
- * #152 — the two toolbar dropdowns are linked one way: choosing a work narrows
- * this menu to that work's entries; choosing an entity never touches the work.
- */
-describe("TagFilterButton narrowed by the selected work", () => {
-    const acallam: TEIWork = { id: 1, name: "Acallam na Senórach", slug: "acallam" };
-    const tain: TEIWork = { id: 2, name: "Táin Bó Cúailnge", slug: "tain" };
-
-    // Same bodies as above, but each column now belongs to a work.
-    const acallamDoc = teiDoc(
-        "g126-acallam",
-        [named("persName", { ref: "#fionn" }, "Find")],
-        true,
-        acallam,
-    );
-    const tainDoc = teiDoc(
-        "leinster-tain",
-        [named("persName", { ref: "#cailte" }, "Chaílte")],
-        true,
-        tain,
-    );
-
-    // Fionn is named in the Acallam column, Caílte only in the Táin one; the
-    // narrowed menu counts one column, not two, so the numbers on screen belong
-    // to the same set of documents the menu was built from.
-    it("counts only the columns belonging to the selected work", () => {
-        openDocs(acallamDoc, tainDoc);
-        useWorkspaceStore.setState({ selectedWorkId: acallam.id });
-        open();
-
-        expect(
-            screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }),
-        ).toHaveTextContent(/^Find mac Cumaill1$/);
-    });
-
-    it("falls back to every open column when no work is selected", () => {
-        openDocs(acallamDoc, tainDoc);
-        open();
-
-        expect(
-            screen.getByRole("menuitemradio", { name: /Find mac Cumaill/ }),
-        ).toHaveTextContent(/^Find mac Cumaill1 · 0$/);
-    });
-
-    // A document with no work is invisible to a work selection, but the menu
-    // must not vanish for it when no work is chosen.
-    it("offers nothing when the selected work has no open column", () => {
-        openDocs(tainDoc);
-        useWorkspaceStore.setState({ selectedWorkId: acallam.id });
         open();
 
         expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();

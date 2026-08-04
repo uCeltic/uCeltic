@@ -1,42 +1,41 @@
-"""#151 — `standOff` carries the name authority list, not manuscript text.
+"""#151, #162 — `standOff` carries apparatus, not manuscript text.
 
-The three Acallam manuscripts declare 33 people and 10 places in a `standOff`
-sibling of `teiHeader` and `text`, each entry listing a canonical headword and
-up to 13 spelling variants. None of that is text the reader is reading, so none
-of it belongs in the search index: spellings that occur *only* in the authority
-list would otherwise return a hit pointing at a region outside the work.
+The Acallam witnesses this skip was written for declared a name authority list
+there. They are gone (#162): the re-cut corpus that replaced them carries
+no `standOff` at all, grouping its named entities by a bare `@nymRef` instead.
 
-It stays in `parsed_json` — the Tag Filter reads it there (#147) — and it keeps
-allocating anchor ids, because backend `_flatten` and frontend `assignAnchorIds`
-must traverse the same node set or every later anchor shifts. That is exactly
-the treatment `teiHeader` already gets on the frontend.
+The skip stays, because `standOff` is a general place to file things that are
+*about* the text, and the shipped corpus still uses it that way —
+`serafin03.xml` files 20 transcription notes there and `serafin07.xml` two more,
+in Polish, recording what the scribe struck out. None of that is text the reader
+is reading, so none of it belongs in the search index: a word occurring *only*
+in the apparatus would otherwise return a hit pointing at a region outside the
+work.
+
+It stays in `parsed_json`, and it keeps allocating anchor ids, because backend
+`_flatten` and frontend `assignAnchorIds` must traverse the same node set or
+every later anchor shifts. Whether it is also hidden on screen is the frontend's
+own decision — its `SKIP_TAGS`, not this one.
 """
+from django.conf import settings
 from django.test import TestCase
 
 from apps.tei.services.parse import parse_tei
 
-# The markup shape of the research corpus, cut down to two entries: a person
-# whose variants are spelled nowhere else, and the body reference that points
-# at it.
+# The markup shape `serafin03.xml` uses, cut down to two notes: a `standOff`
+# sibling of `teiHeader` and `text`, holding a `listAnnotation` of transcription
+# notes that point back into the body with `@target`.
 STANDOFF_TEI = """<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
-  <teiHeader><fileDesc><titleStmt><title>Acallam</title></titleStmt></fileDesc></teiHeader>
+  <teiHeader><fileDesc><titleStmt><title>Serafin</title></titleStmt></fileDesc></teiHeader>
   <standOff>
-    <listPerson>
-      <person xml:id="fionn">
-        <persName type="canonical">Find mac Cumaill</persName>
-        <persName type="variant">Fhionn</persName>
-      </person>
-    </listPerson>
-    <listPlace>
-      <place xml:id="eriu">
-        <placeName type="canonical">Ériu</placeName>
-        <placeName type="variant">Banbha</placeName>
-      </place>
-    </listPlace>
+    <listAnnotation>
+      <note n="a" type="transcription" target="#aa">districti skreślone</note>
+      <note n="b" type="transcription" target="#ab">na marginesie</note>
+    </listAnnotation>
   </standOff>
   <text><body>
-    <l n="1">do chuaid <persName ref="#fionn">Find</persName> co <placeName ref="#eriu">hÉrinn</placeName></l>
+    <l n="1">quia <anchor xml:id="aa"/>distanti loco <anchor xml:id="ab"/>eam</l>
   </body></text>
 </TEI>""".encode("utf-8")
 
@@ -57,48 +56,58 @@ class StandOffIsNotIndexedTest(TestCase):
 
         self.assertEqual(
             [w["w"] for w in word_array],
-            ["do", "chuaid", "Find", "co", "hÉrinn"],
+            ["quia", "distanti", "loco", "eam"],
         )
 
-    def test_a_spelling_only_in_the_authority_list_is_not_searchable(self):
+    def test_a_word_only_in_the_apparatus_is_not_searchable(self):
         _, _, word_array = parse_tei(STANDOFF_TEI)
 
         indexed = {w["w"] for w in word_array}
-        self.assertNotIn("Fhionn", indexed)
-        self.assertNotIn("Banbha", indexed)
+        self.assertNotIn("skreślone", indexed)
+        self.assertNotIn("marginesie", indexed)
+
+
+class ShippedApparatusIsNotIndexedTest(TestCase):
+    """The same claim about the files themselves, not a fixture shaped like
+    them — so that removing the skip fails here even if the fixture drifts out
+    of step with what the corpus actually files in `standOff`."""
+
+    # Polish editorial vocabulary that occurs in each file's `standOff` and
+    # nowhere in the Latin text it annotates.
+    APPARATUS_ONLY = {
+        "serafin03.xml": ["skreślone", "marginesie", "wytarte"],
+        "serafin07.xml": ["poprawione", "księżniczka", "Genealogia"],
+    }
+
+    def test_the_transcription_notes_stay_out_of_the_index(self):
+        for name, words in self.APPARATUS_ONLY.items():
+            with self.subTest(name):
+                path = settings.BASE_DIR / "tei" / name
+
+                _, _, word_array = parse_tei(path.read_bytes())
+
+                indexed = {w["w"] for w in word_array}
+                for word in words:
+                    self.assertNotIn(word, indexed)
 
 
 class StandOffSurvivesInParsedJsonTest(TestCase):
-    """It is data the reader needs, so it is parsed and reachable — just not
-    indexed, and (on the frontend) not rendered."""
+    """Skipping the index is not dropping the subtree. It is parsed and
+    reachable — just not indexed, and (on the frontend) not rendered."""
 
     def test_the_subtree_is_still_present(self):
         tree, _, _ = parse_tei(STANDOFF_TEI)
 
         self.assertIsNotNone(find_node(tree, "standOff"))
 
-    def test_entries_keep_their_ids_and_types(self):
-        tree, _, _ = parse_tei(STANDOFF_TEI)
-
-        person = find_node(find_node(tree, "standOff"), "person")
-        # parse.py strips namespaces from attribute names, so `xml:id` arrives
-        # as plain `id` — the trap #147's authority reader has to know about.
-        self.assertEqual(person["attrs"]["id"], "fionn")
-        headword = person["children"][1]
-        self.assertEqual(headword["attrs"]["type"], "canonical")
-
     def test_the_text_is_still_in_the_render_tree(self):
         tree, _, _ = parse_tei(STANDOFF_TEI)
 
-        person = find_node(find_node(tree, "standOff"), "person")
+        note = find_node(find_node(tree, "standOff"), "note")
         rendered = "".join(
-            seg["text"]
-            for name in person["children"]
-            if name.get("tag")
-            for child in name.get("children", ())
-            for seg in child.get("segments", ())
+            seg["text"] for child in note["children"] for seg in child.get("segments", ())
         )
-        self.assertIn("Find mac Cumaill", rendered)
+        self.assertIn("districti skreślone", rendered)
 
 
 class StandOffStillAllocatesAnchorsTest(TestCase):
@@ -111,8 +120,8 @@ class StandOffStillAllocatesAnchorsTest(TestCase):
 
         tags = [a["tag"] for a in anchors]
         self.assertIn("standOff", tags)
-        self.assertIn("listPerson", tags)
-        self.assertIn("person", tags)
+        self.assertIn("listAnnotation", tags)
+        self.assertIn("note", tags)
 
     def test_body_anchor_ids_are_unaffected_by_the_skip(self):
         _, anchors, word_array = parse_tei(STANDOFF_TEI)
