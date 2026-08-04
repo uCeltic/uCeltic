@@ -8,7 +8,11 @@ import { useWorkspaceStore } from "../store/workspaceStore";
 import type { EntityMenuEntry } from "./entityMenu";
 
 export interface EntityMenu {
-  /** The entities on offer, most-referenced first. */
+  /**
+   * The entities on offer. Empty until the registry slice lands (#162); the
+   * order is the producer's to decide, and the one that produced it — most
+   * referenced first — was deleted with the reader it belonged to.
+   */
   entries: EntityMenuEntry[];
   /**
    * Where each TEI column sits in every entry's `counts` / `declaredBy` array.
@@ -32,7 +36,7 @@ export interface EntityMenu {
  *
  * It offers nothing at all until the registry slice lands (#162). The corpus it
  * used to read its entries out of is gone, and the reader with it: the ll.
- * 2390–2594 witnesses group their named entities by a `@nymRef` group id that
+ * re-cut witnesses group their named entities by a `@nymRef` group id that
  * no file explains, so there is no headword in the documents to put in a menu.
  * Which columns are in play is still worked out here, because that is the half
  * of the answer this hook can still give honestly — and the half the registry

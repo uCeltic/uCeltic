@@ -24,10 +24,10 @@ import PassThrough from "./PassThrough";
 // </P> */}
 
 // Subtrees that are parsed and walked but never painted. `teiHeader` is
-// catalogue metadata; `standOff` is the name authority list — 33 people and 10
-// places with every spelling variant of each, which used to fill the screen
-// before the text began (#151). Both stay in `parsed_json`: the Tag Filter
-// reads the authority list from there (#147).
+// catalogue metadata; `standOff` is what a document files *about* its text —
+// the name authority list that used to fill the screen before the text began
+// (#151), and today `serafin03.xml`'s 20 Polish transcription notes (#162).
+// Apparatus either way, and both stay in `parsed_json`.
 //
 // Skipping happens at render only. `assignAnchorIds` below still walks into
 // these subtrees, because the backend's `_flatten` allocates an id for every

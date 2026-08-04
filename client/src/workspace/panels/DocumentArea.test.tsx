@@ -516,7 +516,7 @@ describe("computeDragEndReorder", () => {
  * times in another is two independent readings of the same selection.
  *
  * The menu is mocked here, and deliberately: on the current corpus the real one
- * is empty (#162), because the ll. 2390–2594 witnesses group their names by a
+ * is empty (#162), because the re-cut witnesses group their names by a
  * `@nymRef` id no file explains and the registry that resolves it is the next
  * slice. What these tests are about is the other half — given a menu and a
  * selection, does a column count, navigate and paint *its own* occurrences —

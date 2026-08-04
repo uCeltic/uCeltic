@@ -6,6 +6,10 @@
  * reader paints in the DOM. If a name element is added to `names.tsx` and not to
  * the list, the menu will under-count it while the highlight still finds it — a
  * drift no other test would notice.
+ *
+ * The reverse drift is asserted here too: every listed element must emit BOTH
+ * group-id attributes, or a file that groups its names the way this element
+ * does becomes unfindable while still rendering (#162).
  */
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
@@ -19,14 +23,22 @@ describe("ENTITY_TAGS", () => {
             const Component = elementMap[tag];
             expect(Component, `${tag} has no component`).toBeDefined();
 
-            const node: TEIElementNode = { tag, attrs: { ref: "#fionn" } };
+            // Both spellings of the group id, because the corpus has used
+            // both and `entityOccurrences` looks for either. A component that
+            // emitted only one would drop half the ways a file can say who a
+            // name belongs to, silently.
+            const node: TEIElementNode = {
+                tag,
+                attrs: { ref: "#fionn", nymRef: "F64" },
+            };
             const { container } = render(
                 <Component node={node} anchorId={0}>Find</Component>,
             );
 
             const el = container.querySelector("[data-tei-entity]");
             expect(el, `${tag} renders no data-tei-entity`).not.toBeNull();
-            expect(el?.getAttribute("data-tei-ref")).toBe("#fionn");
+            expect(el?.getAttribute("data-tei-ref"), tag).toBe("#fionn");
+            expect(el?.getAttribute("data-tei-nym-ref"), tag).toBe("F64");
         }
     });
 

@@ -1,5 +1,5 @@
 /**
- * #162 — the Tag Filter on the ll. 2390–2594 corpus.
+ * #162 — the Tag Filter on the re-cut corpus.
  *
  * The control used to offer the people and places each manuscript declared in a
  * `standOff` authority list. That corpus is gone, and its reader with it: the

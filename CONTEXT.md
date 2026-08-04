@@ -232,8 +232,10 @@
   **bare** — `nymRef="F64"`, not `nymRef="#F64"` — so they are *not* resolvable
   TEI pointers, and must not be turned into one; they are keys, and that is all
   this corpus asks of them. 670 named entities across the four Acallam
-  witnesses fall into 91 groups — 73 person, 17 place, and one (`e6`, Ériu)
-  tagged both ways: `type="place"` 113 times and `type="person"` once.
+  witnesses — Franciscan A 4, Laud Misc. 610 and Lismore 204 at ll. 2390–2594,
+  G 126 at ll. 2390–2458 — fall into 91 groups: 73 person, 17 place, and one
+  (`e6`, Ériu) tagged both ways, `type="place"` 113 times and `type="person"`
+  once.
 
   **Nothing in any file says what a group id stands for.** There is no
   `standOff`, no headword, no register — `F64` is opaque until something outside
@@ -241,11 +243,13 @@
   is why the **Tag Filter** is empty: an id with no headword is not an option a
   reader can be offered.
 
-  The ids are **not** fully consistent across witnesses, and code that joins on
-  them must expect that. Eight of the 670 entities carry no `@nymRef` at all —
-  six put the id in `@n` instead (`n="F21"`, Feradach), two in G 126 carry none
-  — and at least one person is grouped under different ids in different files
-  (`F64` in Franciscan A 4, `64` in Lismore 204). These are tagging slips in the
+  The ids are **not** applied consistently, and code that joins on them must
+  expect that. Eight of the 670 entities carry no `@nymRef` at all — six put the
+  id in `@n` instead (`n="F21"`, Feradach), and two in G 126 carry none. One
+  entity is grouped under a mistyped id: Lismore 204 writes `nymRef="64"` once
+  where it writes `F64` sixteen times. `@type` is unreliable in the same way —
+  `e6` is tagged both ways, and one `addName` (`P1`) carries no `@type` while
+  the `name` in its group is `type="person"`. These are tagging slips in the
   research files, pinned by `backend/apps/tei/tests/test_parse.py` so that a
   re-cut corpus that fixes them is noticed.
 

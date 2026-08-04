@@ -8,7 +8,7 @@ import type { TEIElementProps } from "../elementMap";
 // Two attributes carry "which entity is this", because two corpora answer it
 // differently. `data-tei-ref` is a pointer into the document's own authority
 // list (`ref="#fionn"`), which is how the superseded Acallam witnesses said it.
-// `data-tei-nym-ref` is the bare group id the ll. 2390–2594 witnesses say it
+// `data-tei-nym-ref` is the bare group id the re-cut witnesses say it
 // with instead (`nymRef="F64"`) — not a pointer, and deliberately not written
 // out as one, because nothing in those files declares what `F64` names (#162).
 // Both are emitted as they are found; making sense of either is the Tag
@@ -29,6 +29,7 @@ export function PersName({ node, children, anchorId }: TEIElementProps) {
       data-tei-tag="persName"
       data-tei-anchor-id={anchorId}
       data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
     >
       {children}
     </span>
@@ -42,6 +43,7 @@ export function PlaceName({ node, children, anchorId }: TEIElementProps) {
       data-tei-tag="placeName"
       data-tei-anchor-id={anchorId}
       data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
     >
       {children}
     </span>
@@ -55,6 +57,7 @@ export function GeogName({ node, children, anchorId }: TEIElementProps) {
       data-tei-tag="geogName"
       data-tei-anchor-id={anchorId}
       data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
     >
       {children}
     </span>
@@ -68,6 +71,7 @@ export function OrgName({ node, children, anchorId }: TEIElementProps) {
       data-tei-tag="orgName"
       data-tei-anchor-id={anchorId}
       data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
     >
       {children}
     </span>
@@ -81,6 +85,7 @@ export function Rs({ node, children, anchorId }: TEIElementProps) {
       data-tei-tag="rs"
       data-tei-anchor-id={anchorId}
       data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
       data-tei-type={node.attrs?.type}
     >
       {children}
@@ -88,9 +93,10 @@ export function Rs({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
-// `name` is what the ll. 2390–2594 witnesses mark almost every entity with —
-// 668 of the corpus's 670, people and places alike (485 and 182), the kind
-// stated in `@type` rather than by the element.
+// `name` is what the re-cut Acallam witnesses mark almost every entity with —
+// 668 of the corpus's 670, people and places alike, the kind stated in `@type`
+// rather than by the element: 485 person, 182 place, and one that carries no
+// `@type` at all.
 export function Name({ node, children, anchorId }: TEIElementProps) {
   return (
     <span

@@ -6,7 +6,7 @@
  * `standOff` naming 33 people and 10 places with every spelling of each, and
  * every named entity in the body pointed back at one with `ref="#fionn"`, so
  * "Find, Finn, Ḟinn and Fhionn are one man" was answered by the corpus rather
- * than by us. The re-cut ll. 2390–2594 corpus has no `standOff` at all: its 670
+ * than by us. The re-cut corpus has no `standOff` at all: its 670
  * named entities are `name` / `addName` elements carrying a bare group id in
  * `@nymRef` (`nymRef="F64"`), and nothing in any file says what `F64` stands
  * for. The reader that used to build these rows was deleted rather than left

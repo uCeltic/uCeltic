@@ -99,7 +99,7 @@ export interface EntityHighlightColumn {
  * Two attributes are searched because the corpus has said it two ways.
  * `data-tei-ref` is a pointer into a document's own `standOff` authority list
  * (`ref="#fionn"`), which is how the superseded witnesses grouped names;
- * `data-tei-nym-ref` is the bare group id the ll. 2390–2594 witnesses use
+ * `data-tei-nym-ref` is the bare group id the re-cut witnesses use
  * instead (`nymRef="F64"`), and it is the only one the shipped corpus carries
  * today (#162). A `standOff` is never rendered, so nothing inside one can be
  * found here either way.

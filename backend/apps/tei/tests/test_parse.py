@@ -111,7 +111,7 @@ class ParseBuiltInCorpusTest(TestCase):
     """The built-in corpus is the app's primary content, so every file in it
     must stay parseable — that is the regression this guards (#142)."""
 
-    # Four Acallam witnesses at ll. 2390–2594 (#162) and four sample files.
+    # Four re-cut Acallam witnesses (#162) and four sample files.
     # The count is asserted so a file that silently fails to ship is a failure
     # rather than a loop that runs over one document fewer.
     CORPUS_SIZE = 8
@@ -129,7 +129,7 @@ class ParseBuiltInCorpusTest(TestCase):
 
 
 class NymRefSurvivesParsingTest(TestCase):
-    """#162 — the ll. 2390–2594 witnesses group their named entities with a bare
+    """#162 — the re-cut witnesses group their named entities with a bare
     `@nymRef` on `name` / `addName`, and nothing in the file says what a group
     id stands for. The parser has no opinion about that; what it owes the
     frontend is the attribute, unchanged, on a node the reader can see.

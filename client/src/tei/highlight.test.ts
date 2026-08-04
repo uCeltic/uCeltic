@@ -144,7 +144,7 @@ describe("setQuerySourceHighlight", () => {
  * tier (every *other* named entity, dimmed) is plain CSS on `data-tei-entity`
  * and needs no registry entry.
  *
- * The markup is the ll. 2390–2594 corpus's: `data-tei-nym-ref="F64"`, the bare
+ * The markup is the re-cut corpus's: `data-tei-nym-ref="F64"`, the bare
  * group id those witnesses carry. `data-tei-ref` — a pointer into a document's
  * own `standOff` authority list, which is how the superseded witnesses said the
  * same thing — is covered at the bottom of this file, because the reader still

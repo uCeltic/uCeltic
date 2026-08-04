@@ -1,7 +1,7 @@
 """#151, #162 — `standOff` carries apparatus, not manuscript text.
 
 The Acallam witnesses this skip was written for declared a name authority list
-there. They are gone (#162): the ll. 2390–2594 corpus that replaced them carries
+there. They are gone (#162): the re-cut corpus that replaced them carries
 no `standOff` at all, grouping its named entities by a bare `@nymRef` instead.
 
 The skip stays, because `standOff` is a general place to file things that are
@@ -68,21 +68,27 @@ class StandOffIsNotIndexedTest(TestCase):
 
 
 class ShippedApparatusIsNotIndexedTest(TestCase):
-    """The same claim about the file itself, not a fixture shaped like it — so
-    that removing the skip fails here even if the fixture drifts out of step
-    with what the corpus actually files in `standOff`."""
+    """The same claim about the files themselves, not a fixture shaped like
+    them — so that removing the skip fails here even if the fixture drifts out
+    of step with what the corpus actually files in `standOff`."""
 
-    def test_serafin03s_transcription_notes_stay_out_of_the_index(self):
-        path = settings.BASE_DIR / "tei" / "serafin03.xml"
+    # Polish editorial vocabulary that occurs in each file's `standOff` and
+    # nowhere in the Latin text it annotates.
+    APPARATUS_ONLY = {
+        "serafin03.xml": ["skreślone", "marginesie", "wytarte"],
+        "serafin07.xml": ["poprawione", "księżniczka", "Genealogia"],
+    }
 
-        _, _, word_array = parse_tei(path.read_bytes())
+    def test_the_transcription_notes_stay_out_of_the_index(self):
+        for name, words in self.APPARATUS_ONLY.items():
+            with self.subTest(name):
+                path = settings.BASE_DIR / "tei" / name
 
-        indexed = {w["w"] for w in word_array}
-        # Polish editorial vocabulary that occurs in the notes and nowhere in
-        # the Latin text they annotate.
-        self.assertNotIn("skreślone", indexed)
-        self.assertNotIn("marginesie", indexed)
-        self.assertNotIn("wytarte", indexed)
+                _, _, word_array = parse_tei(path.read_bytes())
+
+                indexed = {w["w"] for w in word_array}
+                for word in words:
+                    self.assertNotIn(word, indexed)
 
 
 class StandOffSurvivesInParsedJsonTest(TestCase):

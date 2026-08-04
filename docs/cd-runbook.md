@@ -80,7 +80,7 @@ and the rows the app serves got there through the admin's upload form. Changing
 the files in the repo therefore changes nothing in prod on its own — the swap is
 a manual step, and the shipped files are what it is done *from*.
 
-When a re-cut corpus lands (as in #162, where four ll. 2390–2594 Acallam
+When a re-cut corpus lands (as in #162, where four Acallam
 witnesses replaced three ll. 2400–3106 ones):
 
 1. In `/admin/tei/teidocument/`, upload each new file and **assign its Work** in
