@@ -1,10 +1,11 @@
 /**
  * The list and the components have to stay one thing.
  *
- * `ENTITY_TAGS` is what `authority.ts` counts in `parsed_json`; `data-tei-entity`
- * and `data-tei-ref` are what the reader paints in the DOM. If a name element is
- * added to `names.tsx` and not to the list, the menu will under-count it while the
- * highlight still finds it — a drift no other test would notice.
+ * `ENTITY_TAGS` is what the Tag Filter counts in `parsed_json`; `data-tei-entity`
+ * and the group-id attributes (`data-tei-ref`, `data-tei-nym-ref`) are what the
+ * reader paints in the DOM. If a name element is added to `names.tsx` and not to
+ * the list, the menu will under-count it while the highlight still finds it — a
+ * drift no other test would notice.
  */
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
@@ -13,7 +14,7 @@ import { elementMap } from "./elementMap";
 import type { TEIElementNode } from "../types/tei";
 
 describe("ENTITY_TAGS", () => {
-    it("every listed tag renders as a named entity carrying its authority ref", () => {
+    it("every listed tag renders as a named entity carrying its group id", () => {
         for (const tag of ENTITY_TAGS) {
             const Component = elementMap[tag];
             expect(Component, `${tag} has no component`).toBeDefined();

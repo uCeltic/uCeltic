@@ -72,6 +72,35 @@ sudo docker compose -f docker-compose.prod.yml exec backend \
 It re-saves every document, prints each one's new word count, and leaves the old
 parse in place for any file that fails to parse.
 
+## After a corpus change: swap the documents, then `reparse_tei` (#162)
+
+`backend/tei/` in the repo is the **archive** of the built-in corpus. It is not
+loaded by anything: `MEDIA_ROOT` is `backend/media/`, kept in a Docker volume,
+and the rows the app serves got there through the admin's upload form. Changing
+the files in the repo therefore changes nothing in prod on its own — the swap is
+a manual step, and the shipped files are what it is done *from*.
+
+When a re-cut corpus lands (as in #162, where four ll. 2390–2594 Acallam
+witnesses replaced three ll. 2400–3106 ones):
+
+1. In `/admin/tei/teidocument/`, upload each new file and **assign its Work** in
+   the same form. The Work is never inferred from the title (#152), so a
+   document uploaded without one silently leaves its Work's branch in the
+   opener.
+2. Delete the superseded documents. Deleting is safe for the Work itself —
+   `TEIDocument.work` is `SET_NULL`, so the Work survives losing its documents.
+3. Re-parse, for the same reason as after a parser change — a freshly uploaded
+   document is parsed by the signal, but any document already on the box is not:
+
+   ```sh
+   sudo docker compose -f docker-compose.prod.yml exec backend \
+     python manage.py reparse_tei
+   ```
+
+4. Check the swap from the workspace, not from the admin: open the new documents
+   side by side, confirm each renders and returns search results, and confirm
+   they are grouped under the right Work in the `Works` opener.
+
 ## One-time setup
 
 1. **Registry login** — read-only PAT, `read:packages` on this repo only:

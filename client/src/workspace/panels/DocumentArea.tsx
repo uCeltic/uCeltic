@@ -60,8 +60,8 @@ interface SortableDocumentColumnProps {
 
 // What this column has to say about the entity the Tag Filter is following:
 // who they are, how often this manuscript names them, and which occurrence the
-// column is sitting on. `null` when nothing is selected, or when the column's
-// document declares no authority list to select from.
+// column is sitting on. `null` when nothing is selected, or when the menu has
+// nothing to say about this column's document.
 interface EntityCardState {
   headword: string;
   count: number;

@@ -81,8 +81,8 @@ export function setQuerySourceHighlight(range: Range | null): void {
   sourceHL.add(range);
 }
 // One visible TEI column's Tag Filter state: which entity the workspace is
-// following (the same id in every column — the manuscripts share their
-// authority list) and which of THIS column's occurrences it is sitting on.
+// following (the same id in every column — the manuscripts group their names
+// the same way) and which of THIS column's occurrences it is sitting on.
 export interface EntityHighlightColumn {
   docId: string;
   entityId: string | null;
@@ -90,18 +90,29 @@ export interface EntityHighlightColumn {
 }
 
 /**
- * Every occurrence of one authority entry in one column, in reading order.
+ * Every occurrence of one entity in one column, in reading order.
  *
- * Occurrences are found by the pointer into the authority list, not by text:
- * `Find`, `Finn`, `Ḟinn` and `Fhionn` all carry `ref="#fionn"`, so all four
- * spellings answer to one selection and no other person's name does. The
- * authority list itself is never rendered (#151), so nothing inside `standOff`
- * can be found here.
+ * Occurrences are found by the id the markup groups them under, not by text:
+ * `Find`, `Finn`, `Ḟinn` and `Fhionn` all carry the same one, so all four
+ * spellings answer to one selection and no other person's name does.
+ *
+ * Two attributes are searched because the corpus has said it two ways.
+ * `data-tei-ref` is a pointer into a document's own `standOff` authority list
+ * (`ref="#fionn"`), which is how the superseded witnesses grouped names;
+ * `data-tei-nym-ref` is the bare group id the ll. 2390–2594 witnesses use
+ * instead (`nymRef="F64"`), and it is the only one the shipped corpus carries
+ * today (#162). A `standOff` is never rendered, so nothing inside one can be
+ * found here either way.
  */
 export function entityOccurrences(docId: string, entityId: string): Element[] {
   const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
   if (!columnEl) return [];
-  return [...columnEl.querySelectorAll(`[data-tei-ref="#${CSS.escape(entityId)}"]`)];
+  const id = CSS.escape(entityId);
+  return [
+    ...columnEl.querySelectorAll(
+      `[data-tei-ref="#${id}"], [data-tei-nym-ref="${id}"]`,
+    ),
+  ];
 }
 
 /**

@@ -137,29 +137,36 @@ describe("setQuerySourceHighlight", () => {
     });
 });
 /**
- * #147 — following one person through every open manuscript at once.
+ * #147, #162 — following one person through every open manuscript at once.
  *
  * Two tiers live in the CSS Highlight registry: the occurrence the column is
  * sitting on, and that entity's other occurrences in the same column. The third
  * tier (every *other* named entity, dimmed) is plain CSS on `data-tei-entity`
  * and needs no registry entry.
+ *
+ * The markup is the ll. 2390–2594 corpus's: `data-tei-nym-ref="F64"`, the bare
+ * group id those witnesses carry. `data-tei-ref` — a pointer into a document's
+ * own `standOff` authority list, which is how the superseded witnesses said the
+ * same thing — is covered at the bottom of this file, because the reader still
+ * supports it and a file using it must still resolve.
  */
 describe("rebuildEntityHighlights", () => {
     beforeEach(() => {
-        // G 126 and Franciscan A 4 share the authority list, so `#fionn`
-        // resolves in both columns at once — with different occurrences.
+        // Laud Misc. 610 and the Book of Lismore group their names the same
+        // way, so `F64` resolves in both columns at once — with different
+        // occurrences, and under different spellings.
         makeColumn(
             "doc-a",
             // an ordinary anchored line, so a search highlight can be painted
             // into the same column as the entity highlights
             '<span data-tei-anchor-id="1">hello world</span>' +
-            '<span data-tei-entity data-tei-ref="#fionn">Find</span>' +
-            '<span data-tei-entity data-tei-ref="#cailte">Caílte</span>' +
-            '<span data-tei-entity data-tei-ref="#fionn">Ḟinn</span>',
+            '<span data-tei-entity data-tei-nym-ref="F64">Find</span>' +
+            '<span data-tei-entity data-tei-nym-ref="C6">Caílte</span>' +
+            '<span data-tei-entity data-tei-nym-ref="F64">Ḟinn</span>',
         );
         makeColumn(
             "doc-b",
-            '<span data-tei-entity data-tei-ref="#fionn">Fhionn</span>',
+            '<span data-tei-entity data-tei-nym-ref="F64">Fhionn</span>',
         );
     });
 
@@ -175,8 +182,8 @@ describe("rebuildEntityHighlights", () => {
 
     it("paints each column's current occurrence and its siblings apart", () => {
         rebuildEntityHighlights([
-            { docId: "doc-a", entityId: "fionn", activeIndex: 0 },
-            { docId: "doc-b", entityId: "fionn", activeIndex: 0 },
+            { docId: "doc-a", entityId: "F64", activeIndex: 0 },
+            { docId: "doc-b", entityId: "F64", activeIndex: 0 },
         ]);
 
         expect(painted("tag-entity-active")).toEqual(["Fhionn", "Find"]);
@@ -184,10 +191,10 @@ describe("rebuildEntityHighlights", () => {
     });
 
     //Test: every spelling of one person highlights, and nothing else does —
-    //the grouping the authority list provides, not string matching
+    //the grouping the markup provides, not string matching
     it("highlights every spelling variant of the entity and no other entity", () => {
         rebuildEntityHighlights([
-            { docId: "doc-a", entityId: "fionn", activeIndex: 1 },
+            { docId: "doc-a", entityId: "F64", activeIndex: 1 },
         ]);
 
         expect(painted("tag-entity-active")).toEqual(["Ḟinn"]);
@@ -198,8 +205,8 @@ describe("rebuildEntityHighlights", () => {
 
     it("navigating one column leaves the other column's highlight alone", () => {
         rebuildEntityHighlights([
-            { docId: "doc-a", entityId: "fionn", activeIndex: 1 },
-            { docId: "doc-b", entityId: "fionn", activeIndex: 0 },
+            { docId: "doc-a", entityId: "F64", activeIndex: 1 },
+            { docId: "doc-b", entityId: "F64", activeIndex: 0 },
         ]);
 
         expect(painted("tag-entity-active")).toEqual(["Fhionn", "Ḟinn"]);
@@ -207,7 +214,7 @@ describe("rebuildEntityHighlights", () => {
 
     it("clears both tiers when no entity is selected", () => {
         rebuildEntityHighlights([
-            { docId: "doc-a", entityId: "fionn", activeIndex: 0 },
+            { docId: "doc-a", entityId: "F64", activeIndex: 0 },
         ]);
 
         rebuildEntityHighlights([
@@ -226,7 +233,7 @@ describe("rebuildEntityHighlights", () => {
         ]);
 
         rebuildEntityHighlights([
-            { docId: "doc-a", entityId: "fionn", activeIndex: 0 },
+            { docId: "doc-a", entityId: "F64", activeIndex: 0 },
         ]);
 
         expect(painted("search-match-active")).toEqual(["hello"]);
@@ -235,7 +242,7 @@ describe("rebuildEntityHighlights", () => {
 
     it("degrades to nothing for a column with no occurrences", () => {
         rebuildEntityHighlights([
-            { docId: "doc-b", entityId: "cailte", activeIndex: 0 },
+            { docId: "doc-b", entityId: "C6", activeIndex: 0 },
         ]);
 
         expect(painted("tag-entity-active")).toEqual([]);
@@ -243,25 +250,52 @@ describe("rebuildEntityHighlights", () => {
     });
 });
 
+/**
+ * The corpus has grouped its names two ways, and an occurrence is found under
+ * either (#162). Both are asserted because both are live: `@nymRef` is what the
+ * shipped witnesses carry, `@ref` is what a file with its own `standOff`
+ * authority list carries, and the app consumes TEI it did not author.
+ */
 describe("entityOccurrences", () => {
-    beforeEach(() => {
-        makeColumn(
-            "doc-a",
-            '<span data-tei-entity data-tei-ref="#fionn">Find</span>' +
-            '<span data-tei-entity data-tei-ref="#fionn">Ḟinn</span>',
-        );
-    });
-
     afterEach(() => {
         document.body.innerHTML = "";
     });
 
     it("returns the entity's occurrences in reading order", () => {
+        makeColumn(
+            "doc-a",
+            '<span data-tei-entity data-tei-nym-ref="F64">Find</span>' +
+            '<span data-tei-entity data-tei-nym-ref="F64">Ḟinn</span>',
+        );
+
+        expect(entityOccurrences("doc-a", "F64").map((el) => el.textContent))
+            .toEqual(["Find", "Ḟinn"]);
+    });
+
+    //Test: a bare group id is not written out as a pointer — `F64` must not
+    //find `ref="#F64"`, and `#F64` is not what any of these files say
+    it("does not confuse a group id with a pointer to an authority entry", () => {
+        makeColumn(
+            "doc-a",
+            '<span data-tei-entity data-tei-nym-ref="F64">Find</span>',
+        );
+
+        expect(entityOccurrences("doc-a", "#F64")).toEqual([]);
+    });
+
+    //Test: a document that points into its own authority list still resolves
+    it("finds an occurrence pointing into an authority list", () => {
+        makeColumn(
+            "doc-a",
+            '<span data-tei-entity data-tei-ref="#fionn">Find</span>' +
+            '<span data-tei-entity data-tei-ref="#fionn">Ḟinn</span>',
+        );
+
         expect(entityOccurrences("doc-a", "fionn").map((el) => el.textContent))
             .toEqual(["Find", "Ḟinn"]);
     });
 
     it("returns nothing for a column that is not on screen", () => {
-        expect(entityOccurrences("doc-missing", "fionn")).toEqual([]);
+        expect(entityOccurrences("doc-missing", "F64")).toEqual([]);
     });
 });

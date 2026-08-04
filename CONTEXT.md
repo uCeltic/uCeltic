@@ -149,8 +149,8 @@
 
   The relationship is held in the database (`apps.tei.Work`, and a nullable FK
   on `TEIDocument`), **never parsed out of a document title**: titles like
-  *Laud Misc. 610 — Acallam na Senórach, ll. 2400–3106* happen to embed the Work
-  name, but the first document titled otherwise would silently leave its Work.
+  *Acallam na Senórach: Laud Misc. 610* happen to embed the Work name, but the
+  first document titled otherwise would silently leave its Work.
   An admin assigns the Work when uploading. A Document with **no** Work is
   normal (the corpus's non-Acallam samples — `shakespear.xml`, `let695.xml`,
   `serafin*.xml`) and stays openable, under its own branch labelled
@@ -176,14 +176,20 @@
   ### Tag Filter
 
   A toolbar control for **following one named entity — a person or a place —
-  through every open Document at once**. Its options are the entries of the
-  open Documents' own **Authority Lists**, never a hard-coded vocabulary, so no
-  option is ever offered that cannot match anything. Selecting one is
-  **single-select**: each visible column then highlights and navigates *its own*
-  occurrences of that entity (`Find mac Cumaill · 1 / 12 · ← →`), independently
-  of every other column. Because the three Acallam Documents share one set of
-  `xml:id`s, one selection resolves in all of them — which is what makes
-  side-by-side comparison worth having.
+  through every open Document at once**. Its options come from the corpus's own
+  **Entity Grouping**, never a hard-coded vocabulary, so no option is ever
+  offered that cannot match anything. Selecting one is **single-select**: each
+  visible column then highlights and navigates *its own* occurrences of that
+  entity (`Find mac Cumaill · 1 / 12 · ← →`), independently of every other
+  column. Because the four Acallam Documents group their names under the same
+  ids, one selection resolves in all of them — which is what makes side-by-side
+  comparison worth having.
+
+  > **Currently empty.** The corpus states its grouping with a bare `@nymRef`
+  > group id and nothing declares what an id names, so there is no headword to
+  > offer (#162). The menu says so rather than falling back to anything, and the
+  > highlighting and per-column navigation below are unchanged and waiting on
+  > it. This entry describes the control the registry slice restores.
 
   Three visual tiers, matching the ctrl+F convention: the current occurrence is
   solid, the entity's other occurrences in that column are tinted, and every
@@ -199,8 +205,8 @@
 
   Entities are selectable **only from this menu** — named entities in the
   reading pane are not click targets, because the reading pane stays a reading
-  pane. A Document with no Authority List contributes no options and gets no
-  navigation card; there is no fallback to matching by element name.
+  pane. A Document the menu knows nothing about contributes no options and gets
+  no navigation card; there is no fallback to matching by element name.
 
   While a **Work** is chosen in the `Works` opener, the menu is built from that
   Work's open columns only, and its per-column counts narrow with it. The two
@@ -211,29 +217,54 @@
   search" next to the real search bar — see
   [ADR-0010](docs/adr/0010-drop-workspace-mode-switcher.md). _Avoid_: Mode,
   second search — the switcher it replaces is gone; "tag type" — the filter is
-  over entities the corpus declares, not over TEI element names.
+  over entities the corpus groups, not over TEI element names.
 
-  ### Authority List
+  ### Entity Grouping
 
-  A Document's own register of the people and places it names, carried in
-  `standOff` as `listPerson` / `listPlace` (`<person xml:id="fionn">`). Each
-  entry gives one **Headword** and its spelling variants, and every named entity
-  in the body points back at an entry with `ref="#fionn"`. It is **apparatus,
-  not text**: it is parsed and kept in `parsed_json`, but never rendered and
-  never tokenised into the search index (#151) — so a spelling that occurs only
-  in the list is not searchable, and `persName` counts exclude it (Franciscan
-  A 4 has 486 `persName` elements, 353 of them in `<text>`).
+  The corpus's claim that several marked-up names are **the same person or
+  place**. It is what makes "follow Fionn through every open column" a question
+  the app can answer without guessing from spelling, and it is **the corpus's
+  claim, not ours** — the app never infers it from the text.
 
-  Read by `client/src/tei/authority.ts`. Two traps it absorbs, both a
-  consequence of how `parse.py` projects the XML: `xml:id` arrives as plain
-  `id`, and a body reference keeps its leading `#`.
+  The current corpus states it with a **group id** in `@nymRef`, on `name` and
+  `addName` elements: `<name type="person" nymRef="F64">Find</name>`. The kind
+  (person or place) is in `@type`, not in the element name. The ids are written
+  **bare** — `nymRef="F64"`, not `nymRef="#F64"` — so they are *not* resolvable
+  TEI pointers, and must not be turned into one; they are keys, and that is all
+  this corpus asks of them. 670 named entities across the four Acallam
+  witnesses fall into 91 groups — 73 person, 17 place, and one (`e6`, Ériu)
+  tagged both ways: `type="place"` 113 times and `type="person"` once.
 
-  `standOff` is skipped wholesale, so anything else a Document keeps there is
-  hidden and unindexed too — `serafin03/07.xml` file their transcription notes
-  in a `listAnnotation` there, and those left the screen with #151. They are
-  editorial apparatus like `note`, so this is the same call, not an oversight. _Avoid_: index, glossary —
-  it is a name authority in the TEI sense, and "index" already means the search
-  index here.
+  **Nothing in any file says what a group id stands for.** There is no
+  `standOff`, no headword, no register — `F64` is opaque until something outside
+  the TEI supplies a name for it. That registry does not exist yet (#162), which
+  is why the **Tag Filter** is empty: an id with no headword is not an option a
+  reader can be offered.
+
+  The ids are **not** fully consistent across witnesses, and code that joins on
+  them must expect that. Eight of the 670 entities carry no `@nymRef` at all —
+  six put the id in `@n` instead (`n="F21"`, Feradach), two in G 126 carry none
+  — and at least one person is grouped under different ids in different files
+  (`F64` in Franciscan A 4, `64` in Lismore 204). These are tagging slips in the
+  research files, pinned by `backend/apps/tei/tests/test_parse.py` so that a
+  re-cut corpus that fixes them is noticed.
+
+  An earlier corpus stated the same thing a different way: an **Authority List**
+  in `standOff` (`listPerson` / `listPlace`, `<person xml:id="fionn">` with a
+  headword and its spelling variants) that every named entity pointed back at
+  with `ref="#fionn"`. Those witnesses were superseded in #162 and the reader
+  that understood them was deleted with them, but the reading side still
+  resolves `@ref`, because the app consumes TEI it did not author.
+
+  `standOff` is **apparatus, not text** whatever it holds: parsed and kept in
+  `parsed_json`, but never rendered and never tokenised into the search index
+  (#151), so a word occurring only there is not searchable. It stays skipped on
+  both sides — `serafin03.xml` files 20 transcription notes in a
+  `listAnnotation` there and `serafin07.xml` two more, and those are editorial
+  apparatus like `note`, so this is the same call, not an oversight.
+
+  _Avoid_: index, glossary ("index" already means the search index here);
+  calling a `@nymRef` value a reference or a pointer — it points at nothing.
 
   ### Headword
 

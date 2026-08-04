@@ -38,7 +38,7 @@ interface WorkspaceStore {
   setSelectedWorkId: (id: number | null) => void;
 
   // Tag Filter — the id of the one person or place the reader is following, as
-  // declared by the open documents' own authority lists (#147). Single-select:
+  // the open documents' own markup groups them (#147, #162). Single-select:
   // the navigation below is over one entity's occurrences, so there is nothing
   // for a second selection to mean. `null` is "not following anyone".
   selectedEntityId: string | null;

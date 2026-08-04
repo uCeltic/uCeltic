@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useWorkspaceStore } from "../../store/workspaceStore";
-import type { EntityKind, EntityMenuEntry } from "../../tei/authority";
+import type { EntityKind, EntityMenuEntry } from "../../tei/entityMenu";
 import { useEntityMenu } from "../../tei/useEntityMenu";
 import { useDismissableDropdown } from "./useDismissableDropdown";
 import {
@@ -15,7 +15,7 @@ const GROUPS: { kind: EntityKind; label: string }[] = [
   { kind: "place", label: "Place" },
 ];
 
-// One authority entry: its headword, and how often each visible column
+// One entry: its headword, and how often each visible column
 // references it — `12 · 111 · 72`, in the order the columns are on screen.
 function EntryRow({
   entry,
@@ -47,10 +47,13 @@ function EntryRow({
  * The Tag Filter: pick one person or place, and every open column highlights
  * and navigates its own occurrences of them.
  *
- * The options are read from the open documents' `standOff` authority lists, so
- * nothing is offered that cannot match anything — that property holds by
- * construction here, not by keeping a hard-coded list in step with the corpus,
- * which is the mistake the element-name vocabulary this replaces made (#147).
+ * Nothing is offered that cannot match anything. That property is what the
+ * hard-coded element-name vocabulary this control started as failed twice over
+ * (#147), and it is why the menu is empty on the current corpus rather than
+ * populated from somewhere else: the `standOff` authority lists it read its
+ * options out of left with the ll. 2400–3106 witnesses (#162), and the
+ * registry that maps the replacement's `@nymRef` group ids to headwords is the
+ * next slice. An empty menu says so; a stale one would not.
  *
  * Selecting an entity here never changes the Work opener — the link between the
  * two toolbar dropdowns runs one way, work → entities (#152).
@@ -85,8 +88,12 @@ export default function TagFilterButton() {
           className="absolute left-0 top-full z-50 mt-1 max-h-96 w-72 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-md"
         >
           {entries.length === 0 ? (
+            // Not "no named entities in these documents" — the manuscripts
+            // are full of them. What is missing is the grouping that says
+            // which name is whose, so the honest claim is about the filter,
+            // not about the text.
             <p className="px-3 py-1.5 text-sm text-gray-400">
-              No named entities in the open documents
+              No named entities to filter by yet
             </p>
           ) : (
             GROUPS.map(({ kind, label: groupLabel }) => {

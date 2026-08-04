@@ -5,8 +5,14 @@ import type { TEIElementProps } from "../elementMap";
 // following (#147), which needs a marker only these elements set —
 // `data-tei-tag` is on most of the reader's spans, not just these.
 //
-// `data-tei-ref` is the pointer into the document's own authority list
-// (`ref="#fionn"`), and it is what the Tag Filter finds occurrences by.
+// Two attributes carry "which entity is this", because two corpora answer it
+// differently. `data-tei-ref` is a pointer into the document's own authority
+// list (`ref="#fionn"`), which is how the superseded Acallam witnesses said it.
+// `data-tei-nym-ref` is the bare group id the ll. 2390–2594 witnesses say it
+// with instead (`nymRef="F64"`) — not a pointer, and deliberately not written
+// out as one, because nothing in those files declares what `F64` names (#162).
+// Both are emitted as they are found; making sense of either is the Tag
+// Filter's job, not this module's.
 //
 // None of them decorates the text (#153). A name is not marked on the page at
 // all until something asks for it to be: the attributes are here so that
@@ -82,6 +88,9 @@ export function Rs({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
+// `name` is what the ll. 2390–2594 witnesses mark almost every entity with —
+// 668 of the corpus's 670, people and places alike (485 and 182), the kind
+// stated in `@type` rather than by the element.
 export function Name({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
@@ -89,6 +98,7 @@ export function Name({ node, children, anchorId }: TEIElementProps) {
       data-tei-tag="name"
       data-tei-anchor-id={anchorId}
       data-tei-ref={node.attrs?.ref}
+      data-tei-nym-ref={node.attrs?.nymRef}
     >
       {children}
     </span>
@@ -96,9 +106,8 @@ export function Name({ node, children, anchorId }: TEIElementProps) {
 }
 
 // `addName` is an added name (epithet, byname) — a name, so it is marked up as
-// one. It does not occur in this corpus; it is here so a file that does use it
-// renders, and it is filterable like any other entity if it ever carries a
-// `ref` into an authority list.
+// one. The current corpus uses it twice, for an epithet it distinguishes from
+// the name proper (`Tāilgend`), grouped by `@nymRef` like any other entity.
 export function AddName({ node, children, anchorId }: TEIElementProps) {
   return (
     <span
