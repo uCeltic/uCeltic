@@ -1,6 +1,14 @@
+import json
+
 from rest_framework import serializers
 
-from .models import EVENT_TYPES
+from .models import (
+    EVENT_TYPES,
+    FEEDBACK_BODY_MAX_LENGTH,
+    FEEDBACK_CATEGORIES,
+    FEEDBACK_CONTACT_MAX_LENGTH,
+    FEEDBACK_CONTEXT_MAX_CHARS,
+)
 
 
 # response DTO for GET /api/questionnaire/ — one code location (models.py QUESTIONS)
@@ -61,3 +69,52 @@ class BehaviorEventRequestSerializer(serializers.Serializer):
         max_length=32,
         help_text="Build-injected version of the client that emitted the event.",
     )
+
+
+# request DTO for POST /api/feedback/. No `user` field on purpose: attribution is
+# stamped from request.user in the view, so a stray one in the body is dropped here
+# before it can reach the model (same rule as BehaviorEventRequestSerializer above).
+#
+# The max_length guards are the abuse defense ADR-0014 chose in place of a throttle,
+# so they belong here rather than only on the model.
+class FeedbackRequestSerializer(serializers.Serializer):
+    session_id = serializers.CharField(
+        max_length=64,
+        help_text="The same session_id used for this sitting's Behavior Events.",
+    )
+    category = serializers.ChoiceField(
+        choices=FEEDBACK_CATEGORIES,
+        default="other",
+        help_text="Triage bucket: bug, feature, or other.",
+    )
+    body = serializers.CharField(
+        max_length=FEEDBACK_BODY_MAX_LENGTH,
+        trim_whitespace=True,
+        help_text="The message itself. Required — a feedback with nothing written is nothing.",
+    )
+    contact = serializers.CharField(
+        max_length=FEEDBACK_CONTACT_MAX_LENGTH,
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Optional: how an anonymous submitter would like to be replied to.",
+    )
+    context = serializers.JSONField(
+        required=False,
+        default=dict,
+        help_text="Client snapshot (open documents, work, viewport, url) for reproducing a report.",
+    )
+    app_version = serializers.CharField(
+        max_length=32,
+        help_text="Build-injected version of the client that sent the feedback.",
+    )
+
+    def validate_context(self, value):
+        # A JSONField accepts any json at all, which would leave the one unguarded field
+        # on the endpoint. Shape first — the model's default is `{}` and admin renders it
+        # as a mapping — then size, the same cheap guard `body` and `contact` get.
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Must be an object.")
+        if len(json.dumps(value)) > FEEDBACK_CONTEXT_MAX_CHARS:
+            raise serializers.ValidationError("Snapshot is too large.")
+        return value

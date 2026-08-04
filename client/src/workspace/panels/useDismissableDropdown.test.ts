@@ -34,6 +34,34 @@ describe("useDismissableDropdown", () => {
     expect(result.current.open).toBe(false);
   });
 
+  it("closes on Escape", () => {
+    const { result } = renderHook(() => useDismissableDropdown<HTMLDivElement>());
+
+    const inside = document.createElement("div");
+    document.body.appendChild(inside);
+    act(() => {
+      result.current.ref.current = inside;
+      result.current.setOpen(true);
+    });
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+
+    expect(result.current.open).toBe(false);
+  });
+
+  it("ignores other keys", () => {
+    const { result } = renderHook(() => useDismissableDropdown<HTMLDivElement>());
+
+    act(() => result.current.setOpen(true));
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+    });
+
+    expect(result.current.open).toBe(true);
+  });
+
   it("stays open on a mousedown inside the ref'd element", () => {
     const { result } = renderHook(() => useDismissableDropdown<HTMLDivElement>());
 

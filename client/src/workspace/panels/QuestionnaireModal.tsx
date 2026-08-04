@@ -7,14 +7,7 @@ import {
   type Question,
   QuestionnaireError,
 } from "../../api/questionnaire";
-
-// Local, not shared with pages/account/AccountShell: that module is scoped to the
-// /account/* routes, and this is the only consumer of these tokens outside it.
-const inputStyle =
-  "mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#52524F] focus:ring-2 focus:ring-[#52524F]/20 transition-all";
-const labelStyle = "block text-sm font-medium text-[#52524F]";
-const primaryBtnStyle =
-  "w-full rounded-md border border-[#52524F] bg-[#52524F] px-3 py-2 text-sm font-medium text-white cursor-pointer transition-all hover:bg-[#3F3F3C] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
+import { inputStyle, labelStyle, primaryBtnStyle } from "./formStyles";
 
 /**
  * The pre-use purpose questionnaire (#67, ADR-0004; opened to guests by ADR-0007):
