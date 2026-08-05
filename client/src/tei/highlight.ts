@@ -11,8 +11,35 @@ export interface HighlightColumn {
   activeIndex: number;
 }
 
+/**
+ * Every named highlight the app paints into, and which one covers which where
+ * two of them land on the same words.
+ *
+ * They do overlap, and in the likeliest case of all: searching for the very
+ * name you are following through the columns. The CSS Custom Highlight API
+ * paints in registration order unless a priority says otherwise, so leaving
+ * these unset would answer "which colour wins" with "whichever feature the
+ * user reached for first", and the violet and the orange would stop being
+ * distinguishable exactly where both are on one span (#164).
+ *
+ * Higher covers lower. The order is by how transient each mark is: a search
+ * result the reader stepped onto a moment ago sits above the entity they have
+ * been following for the last minute, which sits above that entity's other
+ * occurrences, which sit above the text a selection search was taken from.
+ *
+ * This is also the one place the full set is written down — the painters below
+ * register their own names on first use — so it pairs with the `::highlight()`
+ * rules in `index.css`, and `App.tsx` declares the set from it.
+ */
+export const HIGHLIGHT_PRIORITIES: Record<string, number> = {
+  "query-source": 1,
+  "tag-entity-other": 2,
+  "tag-entity-active": 3,
+  "search-match-active": 4,
+};
+
 // Fetch a named global Highlight, creating it on first use.
-function getHighlight(name: string): Highlight | undefined {
+export function getHighlight(name: string): Highlight | undefined {
   const registry = window.CSS?.highlights;
   if (!registry) return undefined;
   let hl = registry.get(name);
@@ -20,6 +47,10 @@ function getHighlight(name: string): Highlight | undefined {
     hl = new Highlight();
     registry.set(name, hl);
   }
+  // Set on every fetch rather than on creation alone: a Highlight may have been
+  // registered by something that did not know the table, and a priority that
+  // silently depends on who got there first is the bug this table exists for.
+  hl.priority = HIGHLIGHT_PRIORITIES[name] ?? 0;
   return hl;
 }
 

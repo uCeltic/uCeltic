@@ -207,7 +207,11 @@
   solid, the entity's other occurrences in that column are tinted, and every
   other named entity greys out. They are violet, deliberately not the search
   highlight's orange: both features are allowed on screen at once and must stay
-  telling apart (`client/src/tei/highlight.ts`, `client/src/index.css`).
+  telling apart (`client/src/tei/highlight.ts`, `client/src/index.css`). Where
+  two land on the **same words** — searching for the very name being followed —
+  which colour covers which is fixed by a **priority table**, not by whichever
+  feature the reader reached for first: the current search result over the
+  current occurrence, over its siblings, over the query source.
 
   These tiers are the **only** thing that marks a named entity on the page. The
   reading pane renders the document as plain text and the TEI markup lives in
@@ -219,6 +223,15 @@
   reading pane are not click targets, because the reading pane stays a reading
   pane. A Document the menu knows nothing about contributes no options and gets
   no navigation card; there is no fallback to matching by element name.
+
+  Two silences are kept apart on the navigation card (#164). A Document that
+  carries a **Name Index** and never writes the selected entity **keeps its
+  card**, reading `none here` with its arrows disabled: the columns are side by
+  side to be compared, and *this witness does not name Find* is one of the
+  answers a comparison can come back with. A Document with **no `@nymRef` in
+  it** — `shakespear.xml` — gets **no card at all**, because it was never asked
+  the question: its names are on the page, ungrouped, and "none here" would be
+  a claim about the markup dressed up as a claim about the text.
 
   While a **Work** is chosen in the `Works` opener, the menu is built from that
   Work's open columns only, and its per-column counts narrow with it. The two

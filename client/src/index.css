@@ -15,7 +15,11 @@ color: #1f2937;
 }
 /* #147 — the Tag Filter, following one person or place through every open
    manuscript. Violet against the search bar's orange and the query source's
-   blue, so no tier of this feature can be read as a search result. */
+   blue, so no tier of this feature can be read as a search result.
+
+   Which of these wins where two land on the same words — searching for the
+   name you are following — is not decided here: it is the priority table in
+   tei/highlight.ts (#164). */
 ::highlight(tag-entity-active) {
 background-color: #A78BFA;
 color: #1F2937;

@@ -26,6 +26,7 @@ const entityMenu = vi.hoisted(() => ({
     current: {
         entries: [] as EntityMenuEntry[],
         columnIndexById: new Map<string, number>(),
+        columnsWithNameIndex: new Set<string>(),
     },
 }));
 vi.mock("../../tei/useEntityMenu", () => ({
@@ -579,20 +580,33 @@ describe("Tag Filter entity navigation", () => {
         content: twoWordTei(3, "hello", "world"),
     };
 
+    // A manuscript that groups its names but never writes this one — the Táin
+    // column has Cú Chulainn in it and no Find.
+    const noFind: Document = {
+        id: "doc-d", title: "Book of Leinster", format: "tei",
+        content: twoWordTei(4, "Cú", "Chulainn"),
+    };
+
     // What the registry slice will build: one entry for Find, carrying each
-    // column's own count of him. `declaredBy` and `counts` are per column of
-    // the menu, in the order the columns were given to it — a column the menu
-    // does not cover is simply absent, not a zero.
-    function menuFor(...columns: [docId: string, count: number][]) {
+    // column's own count of him. Counts are per column of the menu, in the
+    // order the columns were given to it — a column the menu does not cover is
+    // simply absent, not a zero.
+    //
+    // A `null` count is the other silence: that column's document carries no
+    // `@nymRef` at all, so it is not among the columns naming entities and has
+    // no answer to give about anybody.
+    function menuFor(...columns: [docId: string, count: number | null][]) {
         return {
             entries: [{
                 id: "F64",
                 kind: "person" as const,
                 headword: "Find mac Cumaill",
-                counts: columns.map(([, count]) => count),
-                declaredBy: columns.map(() => true),
+                counts: columns.map(([, count]) => count ?? 0),
             }],
             columnIndexById: new Map(columns.map(([id], i) => [id, i])),
+            columnsWithNameIndex: new Set(
+                columns.filter(([, count]) => count !== null).map(([id]) => id),
+            ),
         };
     }
 
@@ -655,6 +669,74 @@ describe("Tag Filter entity navigation", () => {
         act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
 
         expect(screen.getAllByLabelText("Next occurrence")).toHaveLength(1);
+    });
+
+    //Test: a document with no `@nymRef` in it was never asked the question, so
+    //it gets no card rather than a card saying nobody is in it
+    it("shows no card for a column whose document declares no @nymRef", () => {
+        show(laud610, noEntities);
+        entityMenu.current = menuFor(["doc-a", 2], ["doc-c", null]);
+        render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
+
+        expect(screen.getAllByLabelText("Next occurrence")).toHaveLength(1);
+    });
+
+    //Test: a manuscript that groups names and never writes this one says so —
+    //an absence a researcher comparing witnesses came to find, not a column
+    //that quietly drops out of the comparison
+    it("says a column names the entity nowhere, rather than dropping its card", () => {
+        show(laud610, noFind);
+        entityMenu.current = menuFor(["doc-a", 2], ["doc-d", 0]);
+        render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
+
+        expect(screen.getAllByText("Find mac Cumaill")).toHaveLength(2);
+        expect(screen.getByText("none here")).toBeInTheDocument();
+    });
+
+    //Test: and offers no navigation there — there is nothing to step through
+    it("disables the arrows on a column that never names the entity", () => {
+        show(laud610, noFind);
+        entityMenu.current = menuFor(["doc-a", 2], ["doc-d", 0]);
+        render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
+
+        expect(screen.getAllByLabelText("Next occurrence")[1]).toBeDisabled();
+        expect(screen.getAllByLabelText("Previous occurrence")[1]).toBeDisabled();
+    });
+
+    //Test: a column with nothing to highlight is not dimmed either — greying
+    //every other name out is what makes the followed one stand out, and there
+    //is no followed one here
+    it("leaves a column that never names the entity undimmed", () => {
+        show(noFind);
+        entityMenu.current = menuFor(["doc-d", 0]);
+        const { container } = render(<DocumentArea />);
+
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
+
+        expect(container.querySelector("[data-entity-focus]")).toBeNull();
+    });
+
+    //Test: stepping a column brings the occurrence it landed on into view, in
+    //that column — the spans are already rendered, so this is the whole of
+    //"go to the next one"
+    it("scrolls the column to the occurrence it steps onto", () => {
+        show(laud610);
+        entityMenu.current = menuFor(["doc-a", 2]);
+        const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
+        render(<DocumentArea />);
+        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
+
+        fireEvent.click(screen.getByLabelText("Next occurrence"));
+
+        const scrolledTo = scrollIntoView.mock.contexts.at(-1) as Element;
+        expect(scrolledTo.textContent).toBe("Ḟinn");
+        scrollIntoView.mockRestore();
     });
 
     //Test: every spelling of one person highlights, the current one apart from
