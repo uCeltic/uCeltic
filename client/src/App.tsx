@@ -11,18 +11,15 @@ import PasswordResetKeyPage from './pages/account/PasswordResetKeyPage'
 import ProfilePage from './pages/account/ProfilePage'
 import { logSessionStarted } from './api/log'
 import { useAuthStore } from './store/authStore'
+import { getHighlight, HIGHLIGHT_PRIORITIES } from './tei/highlight'
 import { useEffect } from 'react'
-// Every named highlight the app paints into: the search result a column is
-// currently on, and the text a selection-triggered search took its query from.
-// The painters in tei/highlight.ts register their own name on first use, so
-// this declares nothing they need — it is the one place a reader can see the
-// full set, and it pairs with the ::highlight() rules in index.css.
+// Register every named highlight the app paints into, in the order that decides
+// which covers which where two land on the same words. The painters in
+// tei/highlight.ts register their own name on first use, so this declares
+// nothing they need — it puts the whole set in the registry before either
+// feature runs, from the one table that names it (HIGHLIGHT_PRIORITIES).
 if (typeof CSS !== "undefined" && "highlights" in CSS) {
-  for (const name of ["search-match-active", "query-source"]) {
-    if (!CSS.highlights.has(name)) {
-      CSS.highlights.set(name, new Highlight());
-    }
-  }
+  for (const name of Object.keys(HIGHLIGHT_PRIORITIES)) getHighlight(name);
 }
 
 /* Rounter */

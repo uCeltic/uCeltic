@@ -314,3 +314,61 @@ describe("entityOccurrences", () => {
             .toEqual(["Find"]);
     });
 });
+
+/**
+ * Which highlight covers which where two of them land on the same words.
+ *
+ * They do overlap, and in the likeliest case of all: searching for the very
+ * name you are following through the columns. The CSS Custom Highlight API
+ * paints in registration order unless a priority says otherwise, so without
+ * one the answer is "whichever feature the user reached for first" — and the
+ * violet and the orange stop being distinguishable exactly when both are on
+ * the same span (#164).
+ */
+describe("highlight priorities", () => {
+    beforeEach(() => {
+        makeColumn(
+            "doc-a",
+            '<span data-tei-anchor-id="1">hello world</span>' +
+            '<span data-tei-entity data-tei-nym-ref="F64">Find</span>' +
+            '<span data-tei-entity data-tei-nym-ref="F64">Ḟinn</span>',
+        );
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    const priorityOf = (name: string) => {
+        const hl = CSS.highlights.get(name);
+        if (!hl) throw new Error(`${name} was never registered`);
+        return hl.priority;
+    };
+
+    //Test: the search result a column is sitting on is the most transient thing
+    //on screen — the user pressed → a moment ago — so it stays visible over the
+    //longer-standing entity selection underneath it
+    it("paints the current search result over the entity tiers", () => {
+        rebuildHighlights([
+            { docId: "doc-a", teiDoc: { anchors: anchorsA }, results: [span(0, 1)], activeIndex: 0 },
+        ]);
+        rebuildEntityHighlights([{ docId: "doc-a", entityId: "F64", activeIndex: 0 }]);
+
+        expect(priorityOf("search-match-active")).toBeGreaterThan(
+            priorityOf("tag-entity-active"),
+        );
+        expect(priorityOf("search-match-active")).toBeGreaterThan(
+            priorityOf("tag-entity-other"),
+        );
+    });
+
+    //Test: and within the entity feature, the occurrence the ← → arrows are
+    //sitting on covers its own siblings — the tier distinction is the point
+    it("paints the current occurrence over the entity's other occurrences", () => {
+        rebuildEntityHighlights([{ docId: "doc-a", entityId: "F64", activeIndex: 0 }]);
+
+        expect(priorityOf("tag-entity-active")).toBeGreaterThan(
+            priorityOf("tag-entity-other"),
+        );
+    });
+});

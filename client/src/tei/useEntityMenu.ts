@@ -17,6 +17,19 @@ export interface EntityMenu {
    * so there is nothing for them to say about one.
    */
   columnIndexById: Map<string, number>;
+  /**
+   * The columns whose document carries a non-empty Name Index — the ones whose
+   * markup groups its names under `@nymRef` at all.
+   *
+   * It is what tells the two silences of a navigation card apart (#164, and
+   * CONTEXT.md → Tag Filter): a column in this set that names the selected
+   * entity zero times still has an answer to give, and one outside it was never
+   * asked the question.
+   *
+   * A document stored before the registry existed carries no index either and
+   * reads the same way here; `reparse_tei` is what gives it one (#163).
+   */
+  columnsWithNameIndex: Set<string>;
 }
 
 /**
@@ -59,6 +72,11 @@ export function useEntityMenu(): EntityMenu {
         docs.map((doc) => doc.content.name_index),
       ),
       columnIndexById: new Map(docs.map((doc, i) => [doc.id, i])),
+      columnsWithNameIndex: new Set(
+        docs
+          .filter((doc) => Object.keys(doc.content.name_index ?? {}).length > 0)
+          .map((doc) => doc.id),
+      ),
     };
   }, [openDocuments, visibleDocumentIds, selectedWorkId, register]);
 }

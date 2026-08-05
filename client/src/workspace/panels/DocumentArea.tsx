@@ -422,20 +422,26 @@ export default function DocumentArea() {
 
   // The very menu the toolbar offers, read here for its counts — so a column's
   // "1 / 12" and the menu's "12" can never disagree.
-  const { entries, columnIndexById } = useEntityMenu();
+  const { entries, columnIndexById, columnsWithNameIndex } = useEntityMenu();
   const selectedEntity = entries.find((e) => e.id === selectedEntityId);
 
-  // A column that never names this entity gets no card — no fallback to
-  // matching by element name, which is the behaviour #147 removes. With the
-  // corpus grouping by a bare `@nymRef` there is no declaring a name without
-  // using it (#163), so naming it zero times is the whole of "not here".
+  // Which columns get a card, and it turns on the two silences CONTEXT.md →
+  // Tag Filter keeps apart (#164): a column that groups its names and never
+  // writes this one keeps its card, reading "none here", because *this witness
+  // does not name Find* is one of the answers a side-by-side comparison comes
+  // back with; a column whose document carries no `@nymRef` at all gets none,
+  // because it was never asked. There is no fallback to matching by element
+  // name, which is the behaviour #147 removes.
   function entityCardFor(docId: string): EntityCardState | null {
     const column = columnIndexById.get(docId);
     if (!selectedEntity || column === undefined) return null;
-    if (!selectedEntity.counts[column]) return null;
+    if (!columnsWithNameIndex.has(docId)) return null;
     return {
       headword: selectedEntity.headword,
-      count: selectedEntity.counts[column],
+      // `?? 0` only ever fires if the menu's two per-column collections
+      // disagree, and reads as "none here" if they ever do — never as a card
+      // counting to `undefined`.
+      count: selectedEntity.counts[column] ?? 0,
       index: entityIndexByDocument[docId] ?? 0,
     };
   }

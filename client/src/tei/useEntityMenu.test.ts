@@ -142,6 +142,41 @@ describe("useEntityMenu", () => {
         expect(result.current.columnIndexById.has("notes")).toBe(false);
     });
 
+    //Test: a column whose markup groups names at all is one that can be asked
+    //about any of them — including one it never writes
+    it("marks the columns whose document carries a name index", () => {
+        openDocs(laud610, lis204);
+
+        const { result } = renderHook(() => useEntityMenu());
+
+        expect([...result.current.columnsWithNameIndex]).toEqual([
+            "laud610",
+            "lis204",
+        ]);
+    });
+
+    //Test: and one whose markup groups nothing is not — shakespear.xml has no
+    //`@nymRef` in it, so it has no answer to give about anybody
+    it("leaves out a column whose document declares no @nymRef", () => {
+        openDocs(unassigned);
+
+        const { result } = renderHook(() => useEntityMenu());
+
+        expect(result.current.columnsWithNameIndex.has("shakespear")).toBe(
+            false,
+        );
+    });
+
+    //Test: an empty index is the same claim as no index — a document that was
+    //parsed and found nothing to group says nothing here either
+    it("treats an empty name index the same as none at all", () => {
+        openDocs(teiDoc("empty", null, {}));
+
+        const { result } = renderHook(() => useEntityMenu());
+
+        expect(result.current.columnsWithNameIndex.has("empty")).toBe(false);
+    });
+
     //Test: choosing a work narrows what the menu is *of*, and the indices
     //close up behind the columns it drops — a count is per column of THIS menu
     it("narrows to the selected work's columns and renumbers them", () => {
