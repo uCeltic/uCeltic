@@ -13,7 +13,7 @@ import { render } from "@testing-library/react";
 import TEIRenderer from "./TEIRenderer";
 import type { TEINode } from "../types/tei";
 import { text } from "./__fixtures__/nodes";
-import { Note } from "./elements/transcription";
+import { Note } from "./elements/note";
 
 function note(body: string): TEINode {
   return { tag: "note", children: [text(body)] };

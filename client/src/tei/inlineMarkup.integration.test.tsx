@@ -13,7 +13,7 @@
  * command that regenerates the JSON from it.
  */
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import TEIRenderer from "./TEIRenderer";
 import { buildWordToAnchors, rangesForWordSpan } from "./wordRange";
 import type { TEIAnchor, TEINode, TEIWordEntry } from "../types/tei";
@@ -76,7 +76,14 @@ describe("highlighting a word that inline markup splits", () => {
   });
 
   it("still renders a note that has left the search index", () => {
-    expect(columnEl.textContent).toContain("Sic.");
+    // The note's text is no longer in the column at all: the panel is portalled
+    // to the body and only mounted while the marker is hovered (#166). So it is
+    // reached the way a reader reaches it.
+    fireEvent.mouseEnter(columnEl.querySelector('[data-tei-tag="note"] sup')!);
+
+    expect(
+      document.querySelector("[data-tei-note-panel]")?.textContent,
+    ).toContain("Sic.");
   });
 
   it("assigns the anchor ids the backend assigned", () => {
@@ -120,8 +127,16 @@ describe("highlighting a word that inline markup splits", () => {
     expect(highlighted(columnEl, word)).toBe(word);
   });
 
-  it("does not highlight a note's text as part of the word before it", () => {
-    expect(highlighted(columnEl, "talam")).not.toContain("Sic");
+  it("does not count a note's characters into the word before it", () => {
+    // Asserted against the anchors rather than the painted text: with the panel
+    // portalled out of the column (#166) the note's characters are not on the
+    // page to be highlighted by accident, and the assertion would hold for the
+    // wrong reason. What still could go wrong is the offsets themselves.
+    const noteAnchor = anchors.find((a) => a.tag === "note")!;
+    const talam = wordArray.findIndex((w) => w.w === "talam");
+
+    expect(buildWordToAnchors(anchors).get(talam)).not.toContain(noteAnchor.id);
+    expect(highlighted(columnEl, "talam")).toBe("talam");
   });
 
   it("shows the column break the backend recorded as an empty element (#146)", () => {
