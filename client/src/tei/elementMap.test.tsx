@@ -153,13 +153,20 @@ describe("lg", () => {
 
     expect(lg.dataset.teiN).toBe("4");
     expect(lg.className).toContain("relative");
-    expect(lg.className).toContain("pl-4");
     expect(number.textContent).toBe("4");
-    // Absolutely placed at the block's own left edge, which the `pl-4` puts
+    // Absolutely placed at the block's own left edge, which the indent puts
     // outside the verse. `select-none` keeps it out of a copied selection.
     expect(number.className).toContain("absolute");
     expect(number.className).toContain("left-0");
     expect(number.className).toContain("select-none");
+
+    // Gutter and number are both in `em`, so they answer to the reading pane's
+    // font-size control (10–24px, set inline) the way a `rem` would not. At
+    // 24px a two-digit number is wider than `pl-4`, and 139 of the corpus's
+    // 202 groups are two-digit.
+    expect(lg.className).toContain("pl-[2em]");
+    expect(number.className).toContain("w-[1.6em]");
+    expect(number.className).toContain("text-right");
   });
 
   it("numbers a group whatever its @type says, and an unnumbered group not at all", () => {
@@ -268,7 +275,10 @@ describe("pb", () => {
 
     expect(pb.textContent).toBe("Stokes_p.69");
     expect(pb.dataset.teiId).toBe("Stokes_p.69");
-    expect(pb.querySelector("[data-tei-print-page]")).not.toBeNull();
+    expect(pb.querySelector("[data-tei-print-edition-page]")).not.toBeNull();
+    // The tooltip names the coordinate system, not the tag: calling a page of a
+    // modern printed book a "page break" says the manuscript broke there.
+    expect(pb.title).toBe("printed edition, page Stokes_p.69");
     // The box is the tint and the padding; the brackets and the weight belong
     // to the other coordinate system, so neither is here.
     expect(pb.className).toMatch(/\bbg-\w+-\d{2,3}\b/);

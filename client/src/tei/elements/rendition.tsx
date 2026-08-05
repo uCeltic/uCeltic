@@ -13,10 +13,8 @@ import type { TEIElementProps } from "../elementMap";
 // `rend="italic"` came out mis-set; here it is left alone. The match is on the
 // token, because `@rend` is the whitespace-separated token list TEI says it is —
 // `decor italic` is a `decor`, and `decoratedCapital` is not.
-const DECOR = "decor";
-
 function isDecor(rend: string | undefined): boolean {
-  return rend?.split(/\s+/).includes(DECOR) ?? false;
+  return rend?.split(/\s+/).includes("decor") ?? false;
 }
 
 export function Hi({ node, children, anchorId }: TEIElementProps) {

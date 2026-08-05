@@ -136,7 +136,7 @@ describe("the four conventions, each on the element that carries it", () => {
   it("hangs a numbered group's @n outside the verse, and keeps the indent", () => {
     const lg = renderTag("lg").container.firstElementChild!;
 
-    expect(lg.className).toContain("pl-4");
+    expect(lg.className).toContain("pl-[2em]");
     expect(lg.className).toContain("my-3");
     expect(lg.querySelector("[data-tei-lg-n]")?.textContent).toBe(ATTRS.n);
   });

@@ -74,9 +74,17 @@ a `decor`; `decoratedCapital` is a different token and is left alone.
 ### 3. A quatrain number hangs in the margin — 202 `<lg type="quatrain" n="N">`
 
 `@n` reaches the DOM and the number sits outside the text block, left of the
-verse's own left edge. The `pl-4` ADR-0016 kept is the gutter it hangs in, so the
-indent does not change — it is still the only thing carrying the annotator's
+verse's own left edge — right-aligned in the indent's gutter, so a run of
+quatrains reads as a column of numbers with the verse starting level.
+
+The indent stays: it is still the only thing carrying the annotator's
 verse-versus-prose analysis, since these manuscripts are written continuously.
+What changes is its unit. ADR-0016's `pl-4` is a `rem`, and the reading pane's
+font size is a user control (10–24px, set inline in `DocumentArea`) that a `rem`
+does not answer to — at 24px a two-digit number is wider than 16px and lands on
+top of the verse. 139 of the 202 groups are two-digit, so that is the common case
+and not an edge. The gutter is `2em` instead, which resolves against the pane's
+own size and keeps the number and the verse in step at every setting.
 
 **Having an `@n` is what makes a group numbered**, not `@type="quatrain"`. Every
 `lg` in the corpus is a quatrain, so a `@type` gate would be a branch no document
@@ -92,6 +100,16 @@ exercises — the trap ADR-0016's own postscript warns about.
 The box rather than the brackets is what tells the two systems apart on the page.
 A page of Stokes is a locator into a modern printed edition, not into the
 manuscript, and the reader has to be able to see which one they are being given.
+The tooltip says which system too — "printed edition, page Stokes_p.69" against
+"manuscript page fol.124" — rather than naming the tag, which says neither.
+
+**`xml:id` is what selects the print edition; everything else is the
+manuscript's own page.** In this corpus the two are equivalent — all 37 `pb`
+carry exactly one of `@xml:id` or `@edRef` — but they differ on a `pb` that
+carries only `@n`, which the older documents in `backend/tei/` do. Those are
+manuscript pages, and `@n` is the manuscript's own locator wherever it appears,
+so the default falls that way. Keying on `@edRef` instead would leave a bare-`@n`
+`pb` in a third, unstyled state that no rule here describes.
 
 `xml:id` is shown **verbatim**, underscore and all. No prefix is added and no
 substring is parsed out. ADR-0016 was written partly because a hard-coded prefix

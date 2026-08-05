@@ -214,10 +214,14 @@
   current occurrence, over its siblings, over the query source.
 
   These tiers are the **only** thing that marks a named entity on the page. The
-  reading pane renders the document as plain text and the TEI markup lives in
-  the DOM as `data-tei-*` attributes rather than as styling — see
-  [ADR-0016](docs/adr/0016-reading-pane-renders-plain-text.md) — so an entity is
-  unmarked until this control asks for it.
+  TEI markup lives in the DOM as `data-tei-*` attributes rather than as styling,
+  so an entity is unmarked until this control asks for it. The reading pane does
+  set the manuscript — in italic, bold and brackets where the printed edition of
+  the text does
+  ([ADR-0018](docs/adr/0018-reading-pane-reproduces-the-printed-editions-conventions.md),
+  superseding [ADR-0016](docs/adr/0016-reading-pane-renders-plain-text.md)) — but
+  a name is not one of those conventions, and none of what it sets is a colour,
+  so nothing there competes with these tiers.
 
   Entities are selectable **only from this menu** — named entities in the
   reading pane are not click targets, because the reading pane stays a reading

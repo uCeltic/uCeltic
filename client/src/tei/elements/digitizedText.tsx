@@ -17,7 +17,7 @@ const MANUSCRIPT_LOCATOR = "mx-1 font-bold select-none";
 // A tinted box and no brackets: a page of Stokes's printed edition, a different
 // coordinate system from the manuscript's. The box rather than the brackets is
 // what tells the two apart on the page.
-const PRINT_LOCATOR = "mx-1 rounded bg-stone-200 px-1 select-none";
+const PRINT_EDITION_LOCATOR = "mx-1 rounded bg-stone-200 px-1 select-none";
 
 export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
   // Two coordinate systems, told apart by which attribute the break carries.
@@ -47,8 +47,18 @@ export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
   const className = followedByCb
     ? "hidden"
     : xmlId
-      ? PRINT_LOCATOR
+      ? PRINT_EDITION_LOCATOR
       : MANUSCRIPT_LOCATOR;
+
+  // The tooltip names the coordinate system, not the tag. "Page break" is what
+  // `pb` is; it is not what the reader is being handed, and on the `xml:id`
+  // branch it would call a page of a modern printed book a break in the
+  // manuscript (CONTEXT.md → Print-Edition Locator, _Avoid_).
+  const title = xmlId
+    ? `printed edition, page ${xmlId}`
+    : n
+      ? `manuscript page ${n}`
+      : "page break";
 
   return (
     <span
@@ -58,12 +68,16 @@ export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
       data-tei-n={n}
       data-tei-id={xmlId}
       data-tei-ed-ref={node.attrs?.edRef}
-      title={`page break${xmlId ?? n ? ": " + (xmlId ?? n) : ""}`}
+      title={title}
     >
       {/* Nested, never this anchor's own text children: highlighting counts a
           word's offsets against the text nodes whose parent IS the anchor
           (wordRange.ts), the way `supplied`'s ⟨⟩ are kept out. */}
-      {xmlId ? <span data-tei-print-page="">{xmlId}</span> : n && <span>[{n}]</span>}
+      {xmlId ? (
+        <span data-tei-print-edition-page="">{xmlId}</span>
+      ) : (
+        n && <span>[{n}]</span>
+      )}
     </span>
   );
 }
@@ -172,7 +186,7 @@ export function Cb({ node, anchorId }: TEIElementProps) {
       data-tei-n={n}
       data-tei-id={xmlId}
       data-tei-ed-ref={node.attrs?.edRef}
-      title={`column break${label ? ": " + label : ""}`}
+      title={label ? `manuscript column ${label}` : "column break"}
     >
       {/* Nested for the same reason `pb`'s and `supplied`'s marks are. */}
       {label && <span>[{label}]</span>}

@@ -51,14 +51,16 @@ interface Numbering {
 }
 
 /**
- * The next child after `i` that is an element, stepping over the whitespace a
- * pretty-printed file leaves between two tags.
+ * The next child after `i` that is an element, if nothing but whitespace stands
+ * between — `null` the moment any text that says something does.
  *
- * Whitespace only. Text that says something is text the `pb` locates and the
- * `cb` does not, so a `pb` in front of it keeps its locator: hiding it there
- * would drop the page the words in between are on.
+ * Deliberately not the DOM's `nextElementSibling`, which steps over every text
+ * node. Text that says something is text the `pb` locates and the `cb` does not,
+ * so a `pb` in front of it keeps its locator: hiding it there would drop the
+ * page those words are on. Only the whitespace a pretty-printed file leaves
+ * between two tags is stepped over.
  */
-function nextElementSibling(children: TEINode[], i: number): TEIElementNode | null {
+function elementAfterOnlyWhitespace(children: TEINode[], i: number): TEIElementNode | null {
   for (let j = i + 1; j < children.length; j++) {
     const sib = children[j];
     if ("type" in sib && sib.type === "text") {
@@ -96,7 +98,7 @@ function walkDocument(node: TEINode, state: Numbering, insideSkipped: boolean) {
   const children = el.children ?? [];
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
-    if (!("type" in child) && child.tag === "pb" && nextElementSibling(children, i)?.tag === "cb") {
+    if (!("type" in child) && child.tag === "pb" && elementAfterOnlyWhitespace(children, i)?.tag === "cb") {
       state.followedByCb.add(child);
     }
     walkDocument(child, state, skipped);
