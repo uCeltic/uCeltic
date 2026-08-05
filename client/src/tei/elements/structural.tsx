@@ -27,8 +27,41 @@ export function L({ node, children, anchorId }: TEIElementProps) {
 // are written continuously, so verse-versus-prose is the annotator's analysis
 // rather than the page's own layout. The grey left rule that used to sit beside
 // it said nothing the indent had not already said.
-export function Lg({ children, anchorId }: TEIElementProps) {
-  return <div className="my-3 pl-4" data-tei-anchor-id={anchorId}>{children}</div>;
+//
+// The number hangs in the margin, the way a printed edition sets a numbered
+// quatrain (#165, ADR-0018): right-aligned in the indent's own gutter, so a run
+// of quatrains reads as a column of numbers with the verse starting level.
+//
+// The gutter is in `em`, not the `rem` the indent used to be. The reading pane's
+// font size is a user control (10–24px, set inline in `DocumentArea`), and a
+// `rem` gutter does not answer to it — at 24px a two-digit number is wider than
+// `pl-4`'s 16px and lands on top of the verse. 139 of the corpus's 202 groups
+// are two-digit, so that is the common case rather than the edge. `em` resolves
+// against the pane's own size, which keeps the gutter and the number in step.
+//
+// Having an `@n` is what makes a group numbered — not `@type="quatrain"`. All
+// 202 `lg` in the corpus are quatrains, so a `@type` gate would be a branch no
+// document exercises, which is the trap ADR-0016's own postscript warns about.
+//
+// The number lives in a child span, never in the `lg`'s own text children:
+// highlighting counts a word's offsets against the text nodes whose parent IS
+// the anchor (wordRange.ts), so a bare `4` there would shift every offset in
+// the group — the same reason `supplied`'s ⟨⟩ are nested.
+export function Lg({ node, children, anchorId }: TEIElementProps) {
+  const n = node.attrs?.n;
+  return (
+    <div className="relative my-3 pl-[2em]" data-tei-anchor-id={anchorId} data-tei-n={n}>
+      {n && (
+        <span
+          className="absolute top-0 left-0 w-[1.6em] text-right select-none"
+          data-tei-lg-n={n}
+        >
+          {n}
+        </span>
+      )}
+      {children}
+    </div>
+  );
 }
 
 export function Ab({ children, anchorId }: TEIElementProps) {

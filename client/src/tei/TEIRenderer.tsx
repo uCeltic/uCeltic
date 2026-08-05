@@ -42,8 +42,34 @@ const SKIP_TAGS = new Set(["teiHeader", "standOff"]);
 interface Numbering {
   ids: Map<TEINode, number>;
   noteNumbers: Map<TEINode, number>;
+  // The `pb` whose next sibling element is a `cb` (#165). Adjacency is a fact
+  // about a node's *place*, not about the node, so it is worked out here for the
+  // same reason note numbers are: `Pb` is handed its own subtree and nothing else.
+  followedByCb: Set<TEINode>;
   nextAnchor: number;
   nextNote: number;
+}
+
+/**
+ * The next child after `i` that is an element, if nothing but whitespace stands
+ * between — `null` the moment any text that says something does.
+ *
+ * Deliberately not the DOM's `nextElementSibling`, which steps over every text
+ * node. Text that says something is text the `pb` locates and the `cb` does not,
+ * so a `pb` in front of it keeps its locator: hiding it there would drop the
+ * page those words are on. Only the whitespace a pretty-printed file leaves
+ * between two tags is stepped over.
+ */
+function elementAfterOnlyWhitespace(children: TEINode[], i: number): TEIElementNode | null {
+  for (let j = i + 1; j < children.length; j++) {
+    const sib = children[j];
+    if ("type" in sib && sib.type === "text") {
+      if (sib.segments.some((s) => s.text.trim() !== "")) return null;
+      continue;
+    }
+    return sib as TEIElementNode;
+  }
+  return null;
 }
 
 // pre-order DFS traversal to assign anchor ids to the nodes in the tei document
@@ -69,7 +95,12 @@ function walkDocument(node: TEINode, state: Numbering, insideSkipped: boolean) {
   const skipped = insideSkipped || SKIP_TAGS.has(el.tag);
   if (!skipped && el.tag === "note") state.noteNumbers.set(node, state.nextNote++);
 
-  for (const child of el.children ?? []) {
+  const children = el.children ?? [];
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (!("type" in child) && child.tag === "pb" && elementAfterOnlyWhitespace(children, i)?.tag === "cb") {
+      state.followedByCb.add(child);
+    }
     walkDocument(child, state, skipped);
   }
 }
@@ -87,6 +118,7 @@ export default function TEIRenderer({ node }: Props) {
     const state: Numbering = {
       ids: new Map(),
       noteNumbers: new Map(),
+      followedByCb: new Set(),
       nextAnchor: 0,
       nextNote: 1,
     };
@@ -110,7 +142,12 @@ function NodeRenderer({ node, numbering }: { node: TEINode; numbering: Numbering
   ));
   const Component = elementMap[el.tag] ?? PassThrough;
   return (
-    <Component node={el} anchorId={anchorId} noteNumber={numbering.noteNumbers.get(node)}>
+    <Component
+      node={el}
+      anchorId={anchorId}
+      noteNumber={numbering.noteNumbers.get(node)}
+      followedByCb={numbering.followedByCb.has(node)}
+    >
       {children}
     </Component>
   );

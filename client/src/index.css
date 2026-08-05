@@ -34,7 +34,9 @@ color: #1F2937;
 
 /* Third tier — while a column is showing someone's occurrences, every OTHER
    named entity greys out. This is the only rule that paints a named entity at
-   all: the elements themselves carry the markup and no styling (#153), so
+   all: `persName` and its siblings carry the markup and no styling (#153, and
+   still so under ADR-0018 — a name is not one of the printed edition's four
+   conventions, and none of those four is a colour), so
    `[data-tei-entity]` is the seam any later opt-in highlighting hangs off too.
    The two highlights above outrank it, because ::highlight paints over an
    element's own colour. */

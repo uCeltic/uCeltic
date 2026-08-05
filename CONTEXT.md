@@ -214,10 +214,14 @@
   current occurrence, over its siblings, over the query source.
 
   These tiers are the **only** thing that marks a named entity on the page. The
-  reading pane renders the document as plain text and the TEI markup lives in
-  the DOM as `data-tei-*` attributes rather than as styling — see
-  [ADR-0016](docs/adr/0016-reading-pane-renders-plain-text.md) — so an entity is
-  unmarked until this control asks for it.
+  TEI markup lives in the DOM as `data-tei-*` attributes rather than as styling,
+  so an entity is unmarked until this control asks for it. The reading pane does
+  set the manuscript — in italic, bold and brackets where the printed edition of
+  the text does
+  ([ADR-0018](docs/adr/0018-reading-pane-reproduces-the-printed-editions-conventions.md),
+  superseding [ADR-0016](docs/adr/0016-reading-pane-renders-plain-text.md)) — but
+  a name is not one of those conventions, and none of what it sets is a colour,
+  so nothing there competes with these tiers.
 
   Entities are selectable **only from this menu** — named entities in the
   reading pane are not click targets, because the reading pane stays a reading
@@ -423,6 +427,58 @@
   off the catalogue to group it. `scope_changed` still records which Work the
   reader chose, now as a single database id; it names what they are reading, not
   what is searched.
+
+  ### Expansion
+
+  **The letters the editor supplied that the scribe did not write** — the resolved
+  part of an abbreviation. Marked `<expan>`, and the reading pane sets it in
+  italic, the convention of a printed Irish diplomatic edition
+  ([ADR-0018](docs/adr/0018-reading-pane-reproduces-the-printed-editions-conventions.md)).
+
+  This corpus's `<expan>` is **non-standard TEI and the definition follows the
+  corpus, not the spec**. Standard TEI makes `<expan>` a *container* holding an
+  `<abbr>` + `<ex>` pair — the whole abbreviation, both halves. Here it wraps only
+  the supplied letters, inline inside a word: `rīa<expan>n</expan>` is the word
+  `rīan`, of which the scribe wrote `rīa`. There is no `abbr`, `ex` or `choice` in
+  any of the four manuscripts, so nothing depends on the standard reading, and a
+  reader who assumes it will misread 2767 elements as whole words.
+
+  An Expansion never bounds a Word: `tal<expan>am</expan>` is the single word
+  `talam` (see **Word (index term)**), and the italic changes how a character is
+  drawn, not how many there are, so no search offset moves.
+  _Avoid_: abbreviation (that is what an Expansion resolves, and the corpus never
+  marks it); "expansion" for a UI panel opening.
+
+  ### Manuscript Locator
+
+  **A pointer into the physical Manuscript** — its folio, page or column:
+  `fol.124ra`, `p.36b`. Carried by `<cb>` and by a `<pb>` with an `@edRef`, always
+  in `@n`. The reading pane sets it **bold in square brackets** — `[fol.124ra]`.
+
+  The value goes out **verbatim**: `@n` is a page in one manuscript and a folio in
+  the next, and several already carry their own prefix, so nothing is added to it
+  and nothing is parsed out of it. The brackets are the *editor's mark*, the same
+  class as `supplied`'s `⟨⟩` — they wrap the value without reading it.
+
+  A `<pb>` whose next sibling element is a `<cb>` is not shown: the column
+  extends the page (`fol.124` → `fol.124ra`), so the column locator already says
+  everything the page locator said. It stays in the DOM.
+  _Avoid_: page number (it is often neither a page nor a number); anchor (an
+  anchor is the app's own id for an element, not the manuscript's own address).
+
+  ### Print-Edition Locator
+
+  **A pointer into Stokes's modern printed edition** — one of its pages, named by
+  `<pb xml:id="Stokes_p.69">`. A **different coordinate system** from the
+  Manuscript Locator: it addresses a printed book about the text, not the
+  handwritten book the text is in. The two are told apart on the page by their
+  rendering — the Print-Edition Locator gets a **tinted box and no brackets**.
+
+  Shown **verbatim, underscore and all**. `Stokes_p.69` is not reformatted to
+  `p. 69` and the `Stokes_` is not stripped: parsing a locator is what produced
+  `p. p.35` (ADR-0016), differing only in which direction it guesses.
+  _Avoid_: page break (that is the tag, and it carries either coordinate system);
+  edition (a Version is the app's word for one witness of a Work).
 
   ### Built-in Corpus
 
