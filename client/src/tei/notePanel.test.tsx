@@ -28,7 +28,7 @@ const MARKER_RECT = { left: 400, right: 408, top: 500, bottom: 512 };
 function renderNoteInAColumn(body = "A patronymic."): RenderResult {
   return render(
     <article data-doc-column-id="doc-1">
-      <div data-tei-content style={{ overflow: "auto" }}>
+      <div data-tei-content style={{ overflowY: "auto" }}>
         <p>
           Find
           <Note node={{ tag: "note" }} anchorId={7} noteNumber={3}>
@@ -62,6 +62,45 @@ function panel(): HTMLElement | null {
 function open(view: RenderResult, rect = MARKER_RECT): HTMLElement {
   fireEvent.mouseEnter(marker(view, rect));
   return panel()!;
+}
+
+/** The column's scrolling content box, which is what clips the marker. */
+function scrollBox(view: RenderResult): HTMLElement {
+  return view.container.querySelector<HTMLElement>("[data-tei-content]")!;
+}
+
+/**
+ * Give the column's scroll box a measured height. jsdom lays nothing out, so
+ * without this it reports an empty rect — which clips nothing, by design.
+ */
+function scrollBoxSpans(
+  view: RenderResult,
+  { top, bottom }: { top: number; bottom: number },
+): void {
+  vi.spyOn(scrollBox(view), "getBoundingClientRect").mockReturnValue({
+    top,
+    bottom,
+    left: 0,
+    right: 600,
+    width: 600,
+    height: bottom - top,
+    x: 0,
+    y: top,
+    toJSON: () => "",
+  });
+}
+
+function scrollColumn(view: RenderResult): void {
+  fireEvent.scroll(scrollBox(view));
+}
+
+/** Select the whole text of one element, the way a reader dragging over it does. */
+function selectContentsOf(el: Element): void {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const selection = window.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 beforeEach(() => {
@@ -132,9 +171,23 @@ describe("the note panel escapes the column's scroll box", () => {
     const before = el.style.bottom;
 
     marker(view, { left: 400, right: 408, top: 200, bottom: 212 });
-    fireEvent.scroll(view.container.querySelector("[data-tei-content]")!);
+    scrollColumn(view);
 
     expect(panel()!.style.bottom).not.toBe(before);
+  });
+
+  // A fixed panel does not scroll away with the text it belongs to. Left
+  // following a marker the column has already hidden, it would sit over the
+  // page pointing at nothing, so it closes with the marker instead.
+  it("closes when the column scrolls its marker out of sight", () => {
+    const view = renderNoteInAColumn();
+    open(view);
+    scrollBoxSpans(view, { top: 100, bottom: 700 });
+
+    marker(view, { left: 400, right: 408, top: 20, bottom: 32 });
+    scrollColumn(view);
+
+    expect(panel()).toBeNull();
   });
 });
 
@@ -179,6 +232,34 @@ describe("the panel can be read, entered and left", () => {
     act(() => vi.advanceTimersByTime(CLOSE_DELAY_MS / 2));
 
     expect(panel()).not.toBeNull();
+  });
+
+  // Selecting a note's last line means dragging past the panel's edge, and
+  // copying from the context menu means leaving the panel altogether. Closing on
+  // `mouseleave` alone would unmount the panel under the selection and take the
+  // text with it, so the panel with text selected in it stays up.
+  it("does not close out from under a selection the reader is still holding", () => {
+    const view = renderNoteInAColumn("Fionn is Find.");
+    const el = open(view);
+    selectContentsOf(el);
+
+    fireEvent.mouseLeave(el);
+    act(() => vi.advanceTimersByTime(CLOSE_DELAY_MS * 4));
+
+    expect(panel()).not.toBeNull();
+  });
+
+  it("closes once that selection is let go", () => {
+    const view = renderNoteInAColumn("Fionn is Find.");
+    const el = open(view);
+    selectContentsOf(el);
+    fireEvent.mouseLeave(el);
+    act(() => vi.advanceTimersByTime(CLOSE_DELAY_MS * 2));
+
+    window.getSelection()!.removeAllRanges();
+    act(() => vi.advanceTimersByTime(CLOSE_DELAY_MS * 2));
+
+    expect(panel()).toBeNull();
   });
 
   it("takes the pointer rather than letting it through, so the text can be selected", () => {
@@ -250,26 +331,19 @@ describe("select-to-search", () => {
    */
   it("is not offered for text selected inside the panel", () => {
     const view = renderNoteInAColumn("Fionn is Find.");
-    const el = open(view);
 
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
+    selectContentsOf(open(view));
 
-    expect(readTEISelection(selection)).toBeNull();
+    expect(readTEISelection(window.getSelection())).toBeNull();
   });
 
   it("is still offered for the manuscript text around the marker", () => {
     const view = renderNoteInAColumn();
 
-    const range = document.createRange();
-    range.selectNodeContents(view.container.querySelector("p")!.firstChild!);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
+    selectContentsOf(view.container.querySelector("p")!);
 
-    expect(readTEISelection(selection)).toMatchObject({ docId: "doc-1" });
+    expect(readTEISelection(window.getSelection())).toMatchObject({
+      docId: "doc-1",
+    });
   });
 });

@@ -50,6 +50,7 @@ export const CLOSE_DELAY_MS = 200;
  */
 export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
   const markerRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   // Where the panel is, and whether it is open at all: an open panel always has
   // somewhere to be, so the two are one piece of state rather than a flag and a
   // position that could disagree.
@@ -59,22 +60,35 @@ export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
   const measure = useCallback(() => {
     const marker = markerRef.current;
     if (!marker) return;
+    const rect = marker.getBoundingClientRect();
+    // The column scrolled its marker away. A fixed panel does not scroll with
+    // it, so following it here would leave the panel floating over the page
+    // pointing at nothing; it goes with the marker instead.
+    if (!withinClipBox(rect, clipBoxOf(marker))) return setPlacement(null);
     setPlacement(
-      placeNotePanel(marker.getBoundingClientRect(), {
+      placeNotePanel(rect, {
         width: window.innerWidth,
         height: window.innerHeight,
       }),
     );
   }, []);
 
-  function keepOpen() {
+  function openPanel() {
     clearTimeout(closeTimer.current);
     measure();
   }
 
   function closeSoon() {
     clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setPlacement(null), CLOSE_DELAY_MS);
+    closeTimer.current = setTimeout(() => {
+      // Selecting a note's last line means dragging past the panel's edge, and
+      // copying from the context menu means leaving the panel entirely — both
+      // fire `mouseleave`. A panel still holding a live selection has not been
+      // finished with, so it waits rather than closing and taking the selection
+      // down with it. The wait ends when the selection does.
+      if (holdsSelection(panelRef.current)) return closeSoon();
+      setPlacement(null);
+    }, CLOSE_DELAY_MS);
   }
 
   useEffect(() => () => clearTimeout(closeTimer.current), []);
@@ -99,7 +113,7 @@ export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
       <sup
         ref={markerRef}
         className="cursor-help select-none text-sm leading-none text-blue-500"
-        onMouseEnter={keepOpen}
+        onMouseEnter={openPanel}
         onMouseLeave={closeSoon}
       >
         {noteNumber ?? "*"}
@@ -107,6 +121,7 @@ export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
       {placement &&
         createPortal(
           <div
+            ref={panelRef}
             data-tei-note-panel
             // Light paper, not the cold grey it used to be: the column is
             // `#f5f6ee` and the controls `#FAF9F3`/`#F0EEE6`, and the panel was
@@ -121,7 +136,7 @@ export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
               top: placement.top,
               bottom: placement.bottom,
             }}
-            onMouseEnter={keepOpen}
+            onMouseEnter={openPanel}
             onMouseLeave={closeSoon}
           >
             {children}
@@ -130,4 +145,40 @@ export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
         )}
     </span>
   );
+}
+
+/**
+ * The box the marker's own column clips it to — the nearest scrolling ancestor,
+ * or the viewport when it has none.
+ *
+ * A box with no height was never laid out (a column still measuring itself, or
+ * a test's detached DOM), and an unmeasured box clips nothing, so the search
+ * carries on past it.
+ */
+function clipBoxOf(marker: Element): { top: number; bottom: number } {
+  for (let el = marker.parentElement; el; el = el.parentElement) {
+    const { overflowY } = getComputedStyle(el);
+    if (overflowY === "auto" || overflowY === "scroll") {
+      const rect = el.getBoundingClientRect();
+      if (rect.height > 0) return rect;
+    }
+  }
+  return { top: 0, bottom: window.innerHeight };
+}
+
+/** Whether any part of the marker is still inside the box that clips it. */
+function withinClipBox(
+  marker: { top: number; bottom: number },
+  box: { top: number; bottom: number },
+): boolean {
+  return marker.bottom >= box.top && marker.top <= box.bottom;
+}
+
+/** Whether a live, non-empty selection lies inside `panel`. */
+function holdsSelection(panel: HTMLElement | null): boolean {
+  const selection = window.getSelection();
+  if (!panel || !selection || selection.isCollapsed || selection.rangeCount === 0) {
+    return false;
+  }
+  return panel.contains(selection.getRangeAt(0).commonAncestorContainer);
 }

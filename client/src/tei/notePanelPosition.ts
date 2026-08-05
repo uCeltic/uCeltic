@@ -11,7 +11,6 @@
 /** The part of a marker's `DOMRect` the placement actually reads. */
 export interface MarkerRect {
   left: number;
-  right: number;
   top: number;
   bottom: number;
 }
@@ -36,14 +35,30 @@ export interface NotePanelPlacement {
   bottom?: number;
 }
 
-/** How wide the panel likes to be — wider than the 12rem popover it replaces. */
+/**
+ * How wide the panel likes to be.
+ *
+ * Wider than the 12rem popover it replaces, because the notes are longer than
+ * that popover was built for: 62 of them, median 32 characters but running to
+ * 263, and some hold a `<p>`. Its right edge no longer cuts anything off, so
+ * width is now only a question of how the text reads.
+ */
 export const PANEL_WIDTH_PX = 288;
 
 /** How close to the viewport's edge the panel may come. */
 export const MARGIN_PX = 8;
 
+/**
+ * The least height the panel is ever given.
+ *
+ * Only a viewport too short for either side of the marker reaches it, and there
+ * the honest answer is "no room" — but a panel with no height shows nothing at
+ * all, whereas a short scrolling one still shows the note.
+ */
+export const MIN_HEIGHT_PX = 48;
+
 /** The gap between the marker and the panel — the pointer crosses this. */
-export const GAP_PX = 6;
+const GAP_PX = 6;
 
 export function placeNotePanel(
   marker: MarkerRect,
@@ -63,9 +78,11 @@ export function placeNotePanel(
   // marker is at the end of a word the eye has just left. It goes below only
   // when above is the tighter side, which is what a note near the top of the
   // screen gets.
+  const room = Math.max(roomAbove, roomBelow, MIN_HEIGHT_PX);
+
   return roomAbove >= roomBelow
-    ? { left, width, maxHeight: roomAbove, bottom: viewport.height - marker.top + GAP_PX }
-    : { left, width, maxHeight: roomBelow, top: marker.bottom + GAP_PX };
+    ? { left, width, maxHeight: room, bottom: viewport.height - marker.top + GAP_PX }
+    : { left, width, maxHeight: room, top: marker.bottom + GAP_PX };
 }
 
 function clamp(value: number, min: number, max: number): number {

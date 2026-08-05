@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MARGIN_PX,
+  MIN_HEIGHT_PX,
   PANEL_WIDTH_PX,
   placeNotePanel,
   type MarkerRect,
@@ -18,7 +19,7 @@ const VIEWPORT = { width: 1200, height: 800 };
 
 /** A marker's bounding rect: `x`/`y` is its top-left, and it is small. */
 function marker(x: number, y: number): MarkerRect {
-  return { left: x, right: x + 8, top: y, bottom: y + 12 };
+  return { left: x, top: y, bottom: y + 12 };
 }
 
 describe("placing the note panel against the viewport", () => {
@@ -86,5 +87,15 @@ describe("placing the note panel against the viewport", () => {
     for (const y of [0, 799]) {
       expect(placeNotePanel(marker(400, y), VIEWPORT).maxHeight).toBeGreaterThan(0);
     }
+  });
+
+  // A viewport too short for either side of the marker is the one case where
+  // the room runs out. A negative `max-height` is discarded by CSS, so the
+  // panel would come back full height and be cut off by the window instead —
+  // the very failure this whole placement exists to stop.
+  it("never hands back a height a browser would throw away", () => {
+    const cramped = placeNotePanel(marker(400, 10), { width: 1200, height: 24 });
+
+    expect(cramped.maxHeight).toBe(MIN_HEIGHT_PX);
   });
 });
