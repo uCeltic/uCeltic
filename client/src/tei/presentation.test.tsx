@@ -78,9 +78,14 @@ const ALLOWED: Record<string, string[]> = {
   pb: ["font-bold", "bg-stone-200"],
   // Not a convention of the edition at all: `note`'s superscript marker is not
   // the manuscript's text, it is the affordance saying "there is a note here,
-  // hover it", and the panel it opens is floating chrome. Carried over from
+  // open it", and the panel it opens is floating chrome. Carried over from
   // ADR-0016, which made the same exemption for the same reason.
-  note: ["text-sm", "text-blue-500", "text-xs", "bg-gray-800", "text-white"],
+  //
+  // Only the marker's classes are ever walked here: the panel is portalled to
+  // the body and mounted only while it is open (#166), so it is outside the
+  // container this suite renders into. Its own styling is pinned by
+  // `notePanel.test.tsx` instead, and the exemption covers both.
+  note: ["text-sm", "text-blue-500"],
 };
 
 /** What `el` is doing to the text that ADR-0018 does not name for `tag`. */

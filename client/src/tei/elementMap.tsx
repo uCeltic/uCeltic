@@ -5,7 +5,8 @@ import { Div, P, Head, L, Lg, Ab, Opener, Closer, Dateline, Salute, Signed, Trai
 import { Pb, Cb, Lb, Rubric, Supplied, Surplus, Gap, LacunaStart, LacunaEnd, Damage, Unclear, Del } from "./elements/digitizedText";
 import { PersName, PlaceName, GeogName, OrgName, Rs, Name, AddName } from "./elements/names";
 import { Hi, C } from "./elements/rendition";
-import { Choice, Abbr, Expan, Ex, Sic, Corr, App, Lem, Rdg, Note, HandShift } from "./elements/transcription";
+import { Choice, Abbr, Expan, Ex, Sic, Corr, App, Lem, Rdg, HandShift } from "./elements/transcription";
+import { Note } from "./elements/note";
 
 export interface TEIElementProps {
   node: TEIElementNode;
