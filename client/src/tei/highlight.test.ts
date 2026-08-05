@@ -298,4 +298,19 @@ describe("entityOccurrences", () => {
     it("returns nothing for a column that is not on screen", () => {
         expect(entityOccurrences("doc-missing", "F64")).toEqual([]);
     });
+
+    //Test: a name the editor cites inside a note is not an occurrence in the
+    //manuscript. The menu's count leaves it out (#163), so counting it here
+    //would make a column's `1 / 21` a claim about 22 things — and navigation
+    //could land on a span only visible while the footnote marker is hovered.
+    it("leaves out a name cited inside an editorial note", () => {
+        makeColumn(
+            "doc-a",
+            '<span data-tei-entity data-tei-nym-ref="F64">Find</span>' +
+            '<span data-tei-tag="note"><span data-tei-entity data-tei-nym-ref="F64">Fionn</span></span>',
+        );
+
+        expect(entityOccurrences("doc-a", "F64").map((el) => el.textContent))
+            .toEqual(["Find"]);
+    });
 });

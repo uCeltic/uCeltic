@@ -25,6 +25,7 @@ function makeTEIDoc(id: number, title = `Doc ${id}`): TEIDoc {
     meta: { title, author: "", language: "ga", pbCount: 0 },
     anchors: [],
     word_array: [],
+    name_index: null,
   };
 }
 

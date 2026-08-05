@@ -46,7 +46,14 @@ class TEIDocument(models.Model):
     parsed_json = models.JSONField(blank=True, null=True)
     meta = models.JSONField(blank=True, null=True)
     anchors = models.JSONField(blank=True, null=True)
-    word_array = models.JSONField(blank=True, null=True)   
+    word_array = models.JSONField(blank=True, null=True)
+    # This document's own account of the names it marks up, keyed by the
+    # `@nymRef` group id: `{"F64": {"count": 21, "types": {...},
+    # "variants": {...}, "anchors": [...]}}` (#163). Written at parse time and
+    # replaced wholesale on every re-parse, so a document can be re-uploaded
+    # without double-counting — which is why the corpus-wide `NameEntity`
+    # register is aggregated from these rather than incremented as files arrive.
+    name_index = models.JSONField(blank=True, null=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -56,3 +63,60 @@ class TEIDocument(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class NameEntity(models.Model):
+    """One person or place the corpus names, as the corpus groups them (#163).
+
+    The group itself is the corpus's claim, stated with a bare `@nymRef` id on
+    every occurrence: `Find`, `Fionn`, `Find` and `Finn` are one man because the
+    four witnesses all write `nymRef="F64"`, not because anything here compared
+    the spellings. What no file carries is a NAME for the group — `F64` appears
+    64 times and no document ever says who `F64` is — and that is the one thing
+    this table adds.
+
+    Aggregated from every document's `name_index` after each parse, so
+    re-uploading a document cannot double-count it.
+    """
+
+    DERIVED = 'derived'
+    MANUAL = 'manual'
+    HEADWORD_SOURCES = [
+        (DERIVED, 'Derived from the corpus'),
+        (MANUAL, 'Set by hand'),
+    ]
+
+    PERSON = 'person'
+    PLACE = 'place'
+    KINDS = [(PERSON, 'Person'), (PLACE, 'Place')]
+
+    # The `@nymRef` value verbatim, case and all. The annotators' own name lists
+    # tell people from places by case — `A13` is Aed mac Echach Lethdeirg, `a13`
+    # is Almu, and 483 codes collide that way — so folding case would silently
+    # make one entity of a man and a hillfort. Postgres compares this column
+    # case-sensitively, which is what keeps the two rows apart.
+    code = models.CharField(max_length=64, unique=True)
+    # The majority `@type` over every occurrence in the corpus, recomputed as
+    # documents arrive: `e6` is tagged `place` 113 times and `person` once, and
+    # it is a place.
+    kind = models.CharField(max_length=16, choices=KINDS)
+    # What the Tag Filter prints. Fixed by the first document to introduce the
+    # code and never recomputed: uploading more manuscripts later must not
+    # rename an entity a researcher has already learned to recognise.
+    headword = models.CharField(max_length=255)
+    # `manual` marks a headword a human chose, which no upload may overwrite.
+    # This is also where the team's own person_name_list.csv / place_name_list.csv
+    # will land if they are ever wired in — a second source for the same field,
+    # changing nothing else.
+    headword_source = models.CharField(
+        max_length=16, choices=HEADWORD_SOURCES, default=DERIVED,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.headword} ({self.code})'
+
+    class Meta:
+        verbose_name_plural = 'name entities'
+        ordering = ['headword']

@@ -180,16 +180,28 @@
   **Entity Grouping**, never a hard-coded vocabulary, so no option is ever
   offered that cannot match anything. Selecting one is **single-select**: each
   visible column then highlights and navigates *its own* occurrences of that
-  entity (`Find mac Cumaill · 1 / 12 · ← →`), independently of every other
-  column. Because the four Acallam Documents group their names under the same
-  ids, one selection resolves in all of them — which is what makes side-by-side
-  comparison worth having.
+  entity (`Find · 1 / 21 · ← →`), independently of every other column. Because
+  the four Acallam Documents group their names under the same ids, one selection
+  resolves in all of them — which is what makes side-by-side comparison worth
+  having.
 
-  > **Currently empty.** The corpus states its grouping with a bare `@nymRef`
-  > group id and nothing declares what an id names, so there is no headword to
-  > offer (#162). The menu says so rather than falling back to anything, and the
-  > highlighting and per-column navigation below are unchanged and waiting on
-  > it. This entry describes the control the registry slice restores.
+  A row is a **join of two things**, and neither is a row on its own: the **Name
+  Register** says what a group id is called, and each visible column's own
+  **Name Index** says how often that column writes it. So each row prints a
+  **Headword**, the **`@nymRef` code**, and one count per visible column —
+  `Find · F64 · 21 · 10 · 17 · 16`. The code is shown because the Headword is
+  ours and the code is the corpus's: researchers cross-check against their own
+  `person_name_list.csv` / `place_name_list.csv`, and the code is the only key
+  those lists share with the app. It is also what tells two near-identical rows
+  apart when a source file has a typo in it (`F64` and `64` are both Find).
+
+  Rows are grouped into **people and places** (from **Kind**), ordered
+  **most-referenced first over the visible columns**, and filterable by Headword
+  or code — the corpus in hand offers 91 of them, and typing beats scrolling.
+  The menu scrolls within its own bounds; the reading panes and the toolbar do
+  not move for it. An entity **no visible column names** is not offered at all,
+  and a column that names it zero times still keeps its slot in the counts, so
+  they line up with what is on screen.
 
   Three visual tiers, matching the ctrl+F convention: the current occurrence is
   solid, the entity's other occurrences in that column are tinted, and every
@@ -238,10 +250,10 @@
   once.
 
   **Nothing in any file says what a group id stands for.** There is no
-  `standOff`, no headword, no register — `F64` is opaque until something outside
-  the TEI supplies a name for it. That registry does not exist yet (#162), which
-  is why the **Tag Filter** is empty: an id with no headword is not an option a
-  reader can be offered.
+  `standOff`, no headword, no register in the TEI — `F64` is opaque until
+  something outside it supplies a name. That is what the **Name Register**
+  (below) is, and it is the only part of this the app authors; the grouping
+  itself stays the corpus's claim.
 
   The ids are **not** applied consistently, and code that joins on them must
   expect that. Eight of the 670 entities carry no `@nymRef` at all — six put the
@@ -250,8 +262,20 @@
   where it writes `F64` sixteen times. `@type` is unreliable in the same way —
   `e6` is tagged both ways, and one `addName` (`P1`) carries no `@type` while
   the `name` in its group is `type="person"`. These are tagging slips in the
-  research files, pinned by `backend/apps/tei/tests/test_parse.py` so that a
-  re-cut corpus that fixes them is noticed.
+  research files, pinned by `backend/apps/tei/tests/test_parse.py` and
+  `test_name_index.py` so that a re-cut corpus that fixes them is noticed.
+
+  **Bad data degrades, it never errors.** There is no lookup table, so there is
+  no "not found": an id nobody else uses is simply a group of one. The mistyped
+  `nymRef="64"` gets its own menu row. The symptom the reader sees is two
+  near-identical rows, and that is the signal to fix the source file — a
+  correction table in the app would hide the defect and never be removed. The
+  six `n="F21"` names join no group, stay visible in the text and are not
+  navigable; `@n` is a different TEI attribute with a real meaning. A name with
+  no id at all joins nothing and still renders. Names in `teiHeader` and `note`
+  are apparatus, not the manuscript's text, and are left out of the grouping on
+  both sides (`SKIP_TAGS`) — so the count a menu row prints is exactly the set
+  of spans the highlighter can find.
 
   An earlier corpus stated the same thing a different way: an **Authority List**
   in `standOff` (`listPerson` / `listPlace`, `<person xml:id="fionn">` with a
@@ -270,15 +294,83 @@
   _Avoid_: index, glossary ("index" already means the search index here);
   calling a `@nymRef` value a reference or a pointer — it points at nothing.
 
+  ### Name Register
+
+  The corpus-wide list of the people and places the manuscripts name, one row
+  per **Entity Grouping** id (`apps.tei.NameEntity`, `GET /api/tei/names/`). It
+  holds the one thing no TEI file in this corpus carries: a **Headword** for a
+  group. The grouping is still the corpus's — the register never decides that
+  two spellings are one person, it only names a group the corpus already
+  declared.
+
+  Built as XML is uploaded, from the parse signal, and **aggregated** from every
+  Document's **Name Index** rather than incremented per upload — which is what
+  makes a Document re-uploadable without double-counting. The four witnesses in
+  hand yield **91 entities: 73 person, 18 place**.
+
+  The group key is the **`@nymRef` value verbatim, case-sensitive, never
+  lowercased**. The annotators' own name lists tell people from places by case
+  — `A13` is Aed mac Echach Lethdeirg, `a13` is Almu — and 483 codes collide
+  that way, so folding case would silently make one entity of a man and a
+  hillfort.
+
+  _Avoid_: authority list (that is the superseded `standOff` the corpus itself
+  carried), index (that already means the search index here), lookup table —
+  there is no "not found" to look up.
+
+  ### Name Index
+
+  One Document's own account of the names it marks up
+  (`TEIDocument.name_index`), keyed by group id: how many occurrences, which
+  `@type`s they carried, every spelling with its count, and each occurrence's
+  anchor. Written at parse time and **replaced wholesale on every re-parse**, so
+  a correction to a source file can take back what its previous parse claimed.
+
+  It is what a **Tag Filter** row's per-column counts are read from. The
+  Register says what a group is *called*; the Name Index says how often *this
+  column* says it, and the menu is the join — made on the frontend, where which
+  columns are visible is already known.
+
+  ### Kind
+
+  Whether an Entity Grouping is a **person** or a **place**: the majority
+  `@type` over every occurrence in the corpus. `e6` (Ériu) is tagged
+  `type="place"` 113 times and `type="person"` once, and it is a place — the
+  minority tag is a slip in the research files, not a second identity. Recomputed
+  as Documents arrive, so a re-cut corpus that fixes a real mistagging shows up.
+  `addName` carries no `@type` at all and follows its group. A group the corpus
+  never typed reads as a person; no group in the corpus in hand is untyped
+  throughout, so that is a degradation rule, not a claim about the text.
+
   ### Headword
 
-  The canonical form of an Authority List entry — the `type="canonical"` child
-  of a `person`/`place`, e.g. *Find mac Cumaill* for the variants *Find*,
-  *Finn*, *Ḟinn*, *Fhionn*. It is what the Tag Filter shows the reader, and the
-  grouping it implies ("these four spellings are one man") is **the corpus's
-  claim, not ours** — the app never infers it from the text. Which child is
-  canonical is stated by the attribute and must not be inferred from position.
-  _Avoid_: lemma, preferred name, canonical name (say Headword).
+  The name a **Name Register** entry goes by — what the **Tag Filter** prints,
+  e.g. *Find* for the spellings *Find*, *Fionn*, *Ḟinn*, *Finn*.
+
+  It is **derived from the corpus's own spellings, and it is the one part of
+  this the app authors**: the grouping is the corpus's claim, the label is a
+  best reading of it. The first Document to introduce a group id sets it, using
+  that Document's most frequent surface form (ties broken by first occurrence in
+  document order), and it is **never recomputed** — uploading more manuscripts
+  later must not rename an entity a researcher has already learned to recognise.
+  On the corpus in hand that yields `F64` → *Find*, `e6` → *Érend*, `O2` →
+  *Oisīn*, `C6` → *Caílti*.
+
+  A surface form **excludes nested `note` text**: an occurrence reading
+  `Trēnmhōr<note><p>Dúch caite</p></note> ūa Baīscne` contributes *Trēnmhōr ūa
+  Baīscne*, not the palaeographer's remark. Same manuscript-text/commentary
+  boundary `note` already draws for the search index.
+
+  **An admin edit wins forever.** Editing a Headword in admin sets
+  `headword_source` to `manual` and no later upload overwrites it. That is also
+  where the team's own `person_name_list.csv` / `place_name_list.csv` will land
+  if they are ever wired in — a second source for the same field, changing
+  nothing else in this model.
+
+  An earlier corpus stated it in the TEI itself: the `type="canonical"` child of
+  a `standOff` `person`/`place`. Those witnesses were superseded in #162; the
+  reading side still resolves `@ref`, because the app consumes TEI it did not
+  author. _Avoid_: lemma, preferred name, canonical name (say Headword).
 
   ### Version (of a Work)
 
