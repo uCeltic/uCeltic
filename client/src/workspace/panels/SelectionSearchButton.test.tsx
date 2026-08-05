@@ -70,13 +70,15 @@ afterAll(() => {
 function renderColumns() {
   const host = document.createElement("div");
   host.innerHTML = `
-    <article data-doc-column-id="doc-tei-1">
-      <div data-tei-content><p id="tei-a">the hound of culann</p></div>
-    </article>
-    <article data-doc-column-id="doc-tei-2">
-      <div data-tei-content><p id="tei-b">a second passage</p></div>
-    </article>
-    <article data-doc-column-id="doc-3"><pre id="txt">plain text</pre></article>
+    <section data-column-strip>
+      <article data-doc-column-id="doc-tei-1">
+        <div data-tei-content><p id="tei-a">the hound of culann</p></div>
+      </article>
+      <article data-doc-column-id="doc-tei-2">
+        <div data-tei-content><p id="tei-b">a second passage</p></div>
+      </article>
+      <article data-doc-column-id="doc-3"><pre id="txt">plain text</pre></article>
+    </section>
   `;
   document.body.appendChild(host);
 }
@@ -235,6 +237,20 @@ describe("SelectionSearchButton", () => {
     fireEvent.scroll(document.querySelector("[data-tei-content]")!);
 
     expect(searchButton()).toHaveStyle({ top: "86px" });
+  });
+
+  //Test: below the comfortable width the whole column strip scrolls sideways
+  //(#159), which moves the selected text horizontally — the button has to come
+  //with it, exactly as it does for a column's own vertical scroll.
+  it("follows the selected text when the column strip is scrolled horizontally", () => {
+    render(<SelectionSearchButton />);
+    selectText("tei-a");
+    expect(searchButton()).toHaveStyle({ left: "20px" });
+
+    selectionRect = { top: 10, left: 220, bottom: 30, right: 260 } as DOMRect;
+    fireEvent.scroll(document.querySelector("[data-column-strip]")!);
+
+    expect(searchButton()).toHaveStyle({ left: "220px" });
   });
 
   it("takes itself down once the search has been fired", () => {

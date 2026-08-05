@@ -13,6 +13,7 @@ import {
   rebuildHighlights,
 } from "../../tei/highlight";
 import { useEntityMenu } from "../../tei/useEntityMenu";
+import { COLUMN_MIN_WIDTH_PX } from "../responsive";
 // Drag to arrange the text viewers from @dnd-kit。
 import {
   DndContext, //   All text viewers are managed here
@@ -209,6 +210,10 @@ function SortableDocumentColumn({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    // The floor that keeps this column readable: `flex-1` still splits the area
+    // evenly while every column fits, and stops shrinking here when they don't
+    // — at which point the strip around them scrolls (ADR-0019).
+    minWidth: COLUMN_MIN_WIDTH_PX,
   };
   const fontSize = useWorkspaceStore((state) => state.fontSize);
   return (
@@ -216,11 +221,11 @@ function SortableDocumentColumn({
       data-doc-column-id={doc.id}
       ref={setNodeRef}
       style={style}
-      className={`flex min-w-0 flex-1 flex-col bg-[#f5f6ee] ${index < totalCount - 1 ? "border-r border-gray-200" : ""
+      className={`flex flex-1 flex-col bg-[#f5f6ee] ${index < totalCount - 1 ? "border-r border-gray-200" : ""
         }`}
     >
-      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-1">
-        <div className="relative">
+      <header className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-1">
+        <div className="relative shrink-0">
           <button
             type="button"
             title={doc.title}
@@ -234,10 +239,13 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
           </button>
           {showDragHint && <DragReorderHint onDismiss={onDismissDragHint} />}
         </div>
+        {/* shrink-0: the column has a floor of its own now, but the ✕ is what
+            the header sacrifices first without one — it must keep its full hit
+            area rather than sliding under the neighbouring column (#159). */}
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F]
+          className="shrink-0 rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F]
           cursor-pointer transition-colors hover:bg-[#F0EEE6]"
         >
           ✕
@@ -252,23 +260,30 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
           </div>
         ) : docResults.length > 0 ? (
           <div className="border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between px-3 py-2">
-              <div className="text-sm font-medium text-gray-800">
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <div className="shrink-0 text-sm font-medium text-gray-800">
                 Result {activeIndex + 1} / {docResults.length}
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>
+              {/* The one part of the row that gives way in a narrow column:
+                  line and score are context, while the counter and the arrows
+                  are what the card is for (#159). `truncate` sits on the two
+                  spans, not on this flex container — `text-overflow` has no
+                  effect on a box whose children are flex items — and it is what
+                  lets them shrink at all, since `overflow: hidden` is what
+                  drops a flex item's automatic min-width. */}
+              <div className="flex min-w-0 items-center gap-2 text-xs text-gray-500">
+                <span className="truncate">
                   {activeResult?.line_no && <span>Line
                     {activeResult.line_no}</span>}
                 </span>
-                <span>
+                <span className="truncate">
                   Score:{" "}
                   {activeResult?.score !== undefined
                     ? activeResult.score.toFixed(2)
                     : "N/A"}
                 </span>
               </div>
-              <div className="flex items-center gap-1" data-tour="result-nav">
+              <div className="flex shrink-0 items-center gap-1" data-tour="result-nav">
                 <button
                   type="button"
                   onClick={onPrev}
@@ -588,7 +603,16 @@ export default function DocumentArea() {
         items={visibleDocumentIds}
         strategy={horizontalListSortingStrategy}
       >
-        <section className="flex h-full min-h-0 bg-[#f5f6ee]">
+        {/* The column strip. Columns hold COLUMN_MIN_WIDTH_PX and this scrolls
+            sideways once they stop fitting, rather than every column collapsing
+            past the point its own controls are usable (ADR-0019). Vertical
+            overflow is pinned off: each column scrolls its own text, so the
+            strip must not grow a second scrollbar around them — which is what
+            `overflow-x: auto` alone would compute to. */}
+        <section
+          data-column-strip
+          className="flex h-full min-h-0 overflow-x-auto overflow-y-hidden bg-[#f5f6ee]"
+        >
           {visibleDocuments.map((doc, index) => {
             const docResults = resultsByDocument[doc.id] ?? [];
             const isSearching = isSearchingByDocument[doc.id] ?? false;

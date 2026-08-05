@@ -27,16 +27,21 @@ const MARKER_RECT = { left: 400, right: 408, top: 500, bottom: 512 };
  */
 function renderNoteInAColumn(body = "A patronymic."): RenderResult {
   return render(
-    <article data-doc-column-id="doc-1">
-      <div data-tei-content style={{ overflowY: "auto" }}>
-        <p>
-          Find
-          <Note node={{ tag: "note" }} anchorId={7} noteNumber={3}>
-            {body}
-          </Note>
-        </p>
-      </div>
-    </article>,
+    // The strip scrolls sideways once the columns stop fitting (ADR-0019), so
+    // the marker has a scrolling ancestor on each axis — and both of them clip
+    // it.
+    <section data-column-strip style={{ overflowX: "auto" }}>
+      <article data-doc-column-id="doc-1">
+        <div data-tei-content style={{ overflowY: "auto" }}>
+          <p>
+            Find
+            <Note node={{ tag: "note" }} anchorId={7} noteNumber={3}>
+              {body}
+            </Note>
+          </p>
+        </div>
+      </article>
+    </section>,
   );
 }
 
@@ -92,6 +97,29 @@ function scrollBoxSpans(
 
 function scrollColumn(view: RenderResult): void {
   fireEvent.scroll(scrollBox(view));
+}
+
+/** The column strip, which clips the marker sideways (ADR-0019). */
+function strip(view: RenderResult): HTMLElement {
+  return view.container.querySelector<HTMLElement>("[data-column-strip]")!;
+}
+
+/** As `scrollBoxSpans`, for the strip's horizontal extent. */
+function stripSpans(
+  view: RenderResult,
+  { left, right }: { left: number; right: number },
+): void {
+  vi.spyOn(strip(view), "getBoundingClientRect").mockReturnValue({
+    top: 0,
+    bottom: 800,
+    left,
+    right,
+    width: right - left,
+    height: 800,
+    x: left,
+    y: 0,
+    toJSON: () => "",
+  });
 }
 
 /** Select the whole text of one element, the way a reader dragging over it does. */
@@ -188,6 +216,33 @@ describe("the note panel escapes the column's scroll box", () => {
     scrollColumn(view);
 
     expect(panel()).toBeNull();
+  });
+
+  // The same rule on the other axis: below the comfortable width the whole
+  // column strip scrolls sideways (ADR-0019), which can carry a hovered
+  // marker out past its edge while nothing about it moves vertically.
+  it("closes when the strip scrolls its marker out sideways", () => {
+    const view = renderNoteInAColumn();
+    open(view);
+    stripSpans(view, { left: 300, right: 900 });
+
+    marker(view, { left: 40, right: 48, top: 500, bottom: 512 });
+    fireEvent.scroll(strip(view));
+
+    expect(panel()).toBeNull();
+  });
+
+  // ...and a marker the strip still shows keeps its panel, so the sideways
+  // check cannot close a panel the vertical one would have left open.
+  it("keeps the panel while the strip still shows the marker", () => {
+    const view = renderNoteInAColumn();
+    open(view);
+    stripSpans(view, { left: 300, right: 900 });
+
+    marker(view, { left: 320, right: 328, top: 500, bottom: 512 });
+    fireEvent.scroll(strip(view));
+
+    expect(panel()).not.toBeNull();
   });
 });
 

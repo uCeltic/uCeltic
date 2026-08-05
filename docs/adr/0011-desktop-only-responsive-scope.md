@@ -4,6 +4,14 @@
 - Date: 2026-07-21
 - Deciders: Zhou Dejian
 
+> **Update (2026-08-05).** This document decided the tool bar; the document area
+> below it was still collapsing at the same widths, until a column was narrower
+> than its own ✕ and result arrows.
+> [ADR-0019](0019-columns-keep-a-minimum-width-and-the-strip-scrolls.md) extends
+> the scope here to the columns: they take a `min-width` and the strip scrolls
+> horizontally, deliberately not the measure-and-collapse scheme rejected below.
+> Nothing in this document changes.
+
 ## Context
 
 The workspace is built for **desktop browsers only**. "Responsive" here means

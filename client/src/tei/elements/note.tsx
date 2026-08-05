@@ -147,31 +147,62 @@ export function Note({ children, anchorId, noteNumber }: TEIElementProps) {
   );
 }
 
+interface Box {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
 /**
- * The box the marker's own column clips it to — the nearest scrolling ancestor,
- * or the viewport when it has none.
+ * The box the workspace clips the marker to: every scrolling ancestor
+ * intersected, bounded by the viewport.
+ *
+ * It is every one of them, not the nearest, because the marker now has a
+ * scroller per axis — its column scrolls the text vertically, and the strip
+ * around the columns scrolls sideways (ADR-0019). The strip carrying a column
+ * off its edge hides the marker just as surely as the column scrolling it past
+ * its own top, and the column's box moves with the strip, so it cannot see that
+ * happen on its own.
  *
  * A box with no height was never laid out (a column still measuring itself, or
- * a test's detached DOM), and an unmeasured box clips nothing, so the search
+ * a test's detached DOM), and an unmeasured box clips nothing, so the walk
  * carries on past it.
  */
-function clipBoxOf(marker: Element): { top: number; bottom: number } {
+function clipBoxOf(marker: Element): Box {
+  let box: Box = {
+    top: 0,
+    bottom: window.innerHeight,
+    left: 0,
+    right: window.innerWidth,
+  };
   for (let el = marker.parentElement; el; el = el.parentElement) {
-    const { overflowY } = getComputedStyle(el);
-    if (overflowY === "auto" || overflowY === "scroll") {
-      const rect = el.getBoundingClientRect();
-      if (rect.height > 0) return rect;
-    }
+    const { overflowX, overflowY } = getComputedStyle(el);
+    if (!scrolls(overflowX) && !scrolls(overflowY)) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.height === 0) continue;
+    box = {
+      top: Math.max(box.top, rect.top),
+      bottom: Math.min(box.bottom, rect.bottom),
+      left: Math.max(box.left, rect.left),
+      right: Math.min(box.right, rect.right),
+    };
   }
-  return { top: 0, bottom: window.innerHeight };
+  return box;
+}
+
+function scrolls(overflow: string): boolean {
+  return overflow === "auto" || overflow === "scroll";
 }
 
 /** Whether any part of the marker is still inside the box that clips it. */
-function withinClipBox(
-  marker: { top: number; bottom: number },
-  box: { top: number; bottom: number },
-): boolean {
-  return marker.bottom >= box.top && marker.top <= box.bottom;
+function withinClipBox(marker: Box, box: Box): boolean {
+  return (
+    marker.bottom >= box.top &&
+    marker.top <= box.bottom &&
+    marker.right >= box.left &&
+    marker.left <= box.right
+  );
 }
 
 /** Whether a live, non-empty selection lies inside `panel`. */
