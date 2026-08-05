@@ -6,11 +6,13 @@ person" — the four witnesses write the same man `Find` / `Fionn` / `Find` /
 reading it exactly as the annotators wrote it, including where they wrote it
 wrong.
 """
+import re
 from pathlib import Path
 
 from django.test import SimpleTestCase
 
 from apps.tei.services.name_index import (
+    NAME_TAGS,
     build_name_index,
     headword_of,
     kind_of,
@@ -216,6 +218,35 @@ class HeadwordTest(SimpleTestCase):
 
     def test_a_group_with_nothing_to_print_has_no_headword(self):
         self.assertIsNone(headword_of({}))
+
+
+class NameTagsMatchTheRendererTest(SimpleTestCase):
+    """The set counted here and the set painted in the DOM have to be one set.
+
+    `NAME_TAGS` decides the count a Tag Filter row prints; the frontend's
+    `ENTITY_TAGS` decides which spans the highlighter can find. Add an element
+    to one and not the other and a column claims 21 occurrences while 19 light
+    up — a drift nothing else would notice, because both halves keep working.
+
+    Pinned by reading the frontend's own list rather than by restating it, since
+    a copy of a list is the thing that goes stale.
+    """
+
+    ENTITY_ELEMENTS = (
+        Path(__file__).resolve().parents[4] / "client/src/tei/entityElements.ts"
+    )
+
+    def test_it_lists_exactly_the_elements_the_reader_marks_as_entities(self):
+        source = self.ENTITY_ELEMENTS.read_text(encoding="utf-8")
+        declaration = re.search(
+            r"export const ENTITY_TAGS = \[(.*?)\]", source, re.DOTALL,
+        )
+        self.assertIsNotNone(declaration, "ENTITY_TAGS is no longer declared")
+
+        self.assertEqual(
+            set(re.findall(r'"(\w+)"', declaration.group(1))),
+            set(NAME_TAGS),
+        )
 
 
 class AnchorIdsAgreeWithTheParserTest(SimpleTestCase):

@@ -288,6 +288,24 @@ describe("TagFilterButton", () => {
         ).toBeInTheDocument();
     });
 
+    //Test: 91 rows have to go somewhere, and it is not into the toolbar or the
+    //reading panes. jsdom cannot measure a layout, so what is asserted is the
+    //structure that produces one: the rows scroll inside a bounded box of their
+    //own, and the filter box sits outside it rather than scrolling away with
+    //the rows it filters.
+    it("scrolls the rows inside its own bounds, below a filter box that stays put", () => {
+        open();
+        const scroller = screen
+            .getByRole("menuitemradio", { name: /^Find/ })
+            .closest(".overflow-y-auto");
+
+        expect(scroller).not.toBeNull();
+        expect(scroller).not.toContainElement(
+            screen.getByLabelText(/filter named entities/i),
+        );
+        expect(screen.getByRole("menu").className).toMatch(/max-h-/);
+    });
+
     //Test: the element-name vocabulary stays gone — none of these was ever a
     //filter option that could match anything in this corpus (#147)
     it("no longer offers TEI element names as options", () => {

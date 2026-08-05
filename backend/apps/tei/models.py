@@ -3,6 +3,11 @@ from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.utils.text import slugify
 
+# The two kinds a named entity can be are defined where they are decided: the
+# parser reads them out of `@type`, and has no Django to import. Spelling
+# "person" again here would be a second place for it to be spelled.
+from .services import name_index
+
 
 class Work(models.Model):
     """A named story, independent of the manuscript it survives in — the thing
@@ -86,8 +91,8 @@ class NameEntity(models.Model):
         (MANUAL, 'Set by hand'),
     ]
 
-    PERSON = 'person'
-    PLACE = 'place'
+    PERSON = name_index.PERSON
+    PLACE = name_index.PLACE
     KINDS = [(PERSON, 'Person'), (PLACE, 'Place')]
 
     # The `@nymRef` value verbatim, case and all. The annotators' own name lists

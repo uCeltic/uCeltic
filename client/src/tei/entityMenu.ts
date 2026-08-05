@@ -18,9 +18,12 @@
  * chosen Work already narrows it.
  */
 
-import type { NameEntity, TEINameIndex } from "../types/tei";
+import type { EntityKind, NameEntity, TEINameIndex } from "../types/tei";
 
-export type EntityKind = "person" | "place";
+// Re-exported so a reader of the menu reaches the kind through the menu, the
+// way `EntityMenuEntry` does — it is defined next to `NameEntity` because that
+// is what the backend decides it on.
+export type { EntityKind };
 
 export interface EntityMenuEntry {
   /** The group id every occurrence of this entity carries — its `@nymRef`

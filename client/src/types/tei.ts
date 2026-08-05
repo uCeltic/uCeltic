@@ -84,12 +84,16 @@ export interface TEINameIndexEntry {
 /** `null` on a document parsed before the registry existed (#163). */
 export type TEINameIndex = Record<string, TEINameIndexEntry> | null;
 
+// Whether an Entity Grouping is a person or a place: the majority `@type` over
+// every occurrence in the corpus, decided on the backend (CONTEXT.md → Kind).
+export type EntityKind = "person" | "place";
+
 // One entry of the corpus-wide name register — what a `@nymRef` group id is
 // called, which no TEI file in the corpus says (#163).
 export interface NameEntity {
   /** The `@nymRef` value verbatim, case and all: `A13` is a man, `a13` a hillfort. */
   code: string;
-  kind: "person" | "place";
+  kind: EntityKind;
   /** What the Tag Filter prints. Derived from the corpus's own spellings until
    *  a human overrides it in admin. */
   headword: string;

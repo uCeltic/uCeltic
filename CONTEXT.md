@@ -348,8 +348,10 @@
   e.g. *Find* for the spellings *Find*, *Fionn*, *Ḟinn*, *Finn*.
 
   It is **derived from the corpus's own spellings, and it is the one part of
-  this the app authors**: the grouping is the corpus's claim, the label is a
-  best reading of it. The first Document to introduce a group id sets it, using
+  this the app authors** — the grouping is the corpus's claim, the label is a
+  best reading of it (see
+  [ADR-0017](docs/adr/0017-the-app-names-a-group-the-corpus-only-declares.md)).
+  The first Document to introduce a group id sets it, using
   that Document's most frequent surface form (ties broken by first occurrence in
   document order), and it is **never recomputed** — uploading more manuscripts
   later must not rename an entity a researcher has already learned to recognise.

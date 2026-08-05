@@ -12,7 +12,7 @@ from django.conf import settings
 from django.test import TestCase
 from lxml import etree
 
-from apps.tei.services.parse import SKIP_TAGS, _strip_ns, parse_tei
+from apps.tei.services.parse import SKIP_TAGS, strip_ns, parse_tei
 
 
 def source_text(el, skip_tags=()) -> str:
@@ -23,7 +23,7 @@ def source_text(el, skip_tags=()) -> str:
     Subtrees named in `skip_tags` contribute nothing but their tail either,
     which is what "excluded from the index" has to mean.
     """
-    if not isinstance(el.tag, str) or _strip_ns(el.tag) in skip_tags:
+    if not isinstance(el.tag, str) or strip_ns(el.tag) in skip_tags:
         return ""
     out = [el.text] if el.text else []
     for child in el:

@@ -39,7 +39,7 @@ SKIP_TAGS = {"teiHeader", "note", "standOff"}
 _TOKEN_RE = re.compile(r"(\w+|[^\w]+)", re.UNICODE)
 
 # get the tag name without the namespace
-def _strip_ns(tag: str) -> str:
+def strip_ns(tag: str) -> str:
     return tag.split("}")[-1] if "}" in tag else tag
 
 # True for real elements only. lxml gives comments and processing instructions
@@ -67,7 +67,7 @@ def anchor_elements(root) -> list:
 def parse_tei(xml_bytes: bytes) -> tuple[dict, list[dict], list[dict]]:
     #root is lxml object
     root = etree.fromstring(xml_bytes)
-    tag = _strip_ns(root.tag)
+    tag = strip_ns(root.tag)
     if tag not in ("TEI", "teiCorpus"):
         raise ValueError(f"Root element must be TEI or teiCorpus, got: {tag}")
 
@@ -152,10 +152,10 @@ def _flatten(el, stream: _Stream, in_skip: bool = False):
     if not _is_element(el):
         return None
 
-    tag = _strip_ns(el.tag)
+    tag = strip_ns(el.tag)
     skip = in_skip or tag in SKIP_TAGS
 
-    attrs = {_strip_ns(k): v for k, v in el.attrib.items()}
+    attrs = {strip_ns(k): v for k, v in el.attrib.items()}
     anchor = stream.new_anchor(tag, attrs)
 
     children = []

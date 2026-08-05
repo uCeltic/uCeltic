@@ -27,14 +27,18 @@ Insertion order carries meaning. `variants` is written in the order the
 spellings are first met, which is how a tie between two equally frequent
 spellings is broken (`headword_of`), and JSON preserves it.
 """
+from typing import TypedDict
+
 from lxml import etree
 
-from .parse import SKIP_TAGS, _strip_ns, anchor_elements
+from .parse import SKIP_TAGS, anchor_elements, strip_ns
 
-# The elements that can carry a group id, matching the frontend's ENTITY_TAGS.
-# The two sets have to agree: this one decides the count the menu prints, that
-# one decides which spans the highlighter can find, and `21 occurrences` next to
-# 19 highlighted ones is not a claim about anything.
+# The elements that can carry a group id, matching the frontend's ENTITY_TAGS
+# (`client/src/tei/entityElements.ts`). The two sets have to agree: this one
+# decides the count a menu row prints, that one decides which spans the
+# highlighter can find, and `21 occurrences` next to 19 highlighted ones is not
+# a claim about anything. Pinned across the two languages by
+# `test_name_index.NameTagsMatchTheRendererTest`.
 #
 # The corpus in hand only ever uses `name` and `addName`; the rest are here
 # because the app consumes TEI it did not author and the renderer already draws
@@ -48,7 +52,29 @@ PLACE = "place"
 KINDS = (PERSON, PLACE)
 
 
-def build_name_index(xml_bytes: bytes) -> dict[str, dict]:
+class NameIndexEntry(TypedDict):
+    """What one document says about one group of its names.
+
+    A plain dict at runtime, because it is stored as JSON on the document and
+    read back by both the register and the frontend; the annotation is here so
+    the shape has one written definition on this side, the way
+    `TEINameIndexEntry` gives it one on the other.
+    """
+
+    #: How many occurrences this document has, including untyped ones.
+    count: int
+    #: How often each `@type` was used. Un-resolved on purpose: the corpus-wide
+    #: kind is a majority over occurrences, so a per-document verdict would let
+    #: a one-occurrence document outvote a thirty-occurrence one.
+    types: dict[str, int]
+    #: Every spelling, with its count, in the order the spellings are first met
+    #: — which is how `headword_of` breaks a tie.
+    variants: dict[str, int]
+    #: The anchor of each occurrence, in reading order.
+    anchors: list[int]
+
+
+def build_name_index(xml_bytes: bytes) -> dict[str, NameIndexEntry]:
     """Group this document's named entities by the id their markup gives them.
 
     There is no lookup table, so there is no "not found": an id nobody else uses
@@ -58,20 +84,20 @@ def build_name_index(xml_bytes: bytes) -> dict[str, dict]:
     would hide the defect and never be removed.
     """
     root = etree.fromstring(xml_bytes)
-    index: dict[str, dict] = {}
+    index: dict[str, NameIndexEntry] = {}
 
     for anchor_id, el in enumerate(anchor_elements(root)):
+        # `@nymRef` and nothing else. Six names put the group id in `@n`
+        # instead, and `@n` is a different TEI attribute with a real meaning —
+        # reading it would invent a grouping the corpus never claimed, so those
+        # names stay ungrouped: visible in the text, absent from the menu.
         code = el.get("nymRef")
-        if code is None or _strip_ns(el.tag) not in NAME_TAGS:
+        if code is None or strip_ns(el.tag) not in NAME_TAGS:
             continue
-        # `@n` is a different TEI attribute with a real meaning, and six names
-        # put the group id there by mistake. Reading it would invent a grouping
-        # the corpus never claimed, so those names stay ungrouped — visible in
-        # the text, absent from the menu.
         if _is_apparatus(el):
             continue
 
-        entry = index.setdefault(
+        entry: NameIndexEntry = index.setdefault(
             code, {"count": 0, "types": {}, "variants": {}, "anchors": []}
         )
         entry["count"] += 1
@@ -93,14 +119,13 @@ def build_name_index(xml_bytes: bytes) -> dict[str, dict]:
 def surface_form(el) -> str:
     """The spelling this occurrence writes the name with.
 
-    Nested `note` text is not part of it. One `e6` occurrence reads
-    `Ērinn<note>The MS has an instance of dittography here; I have retained only
-    one 'Ērinn'.</note>`, and taking the element's whole text would print the
-    editor's sentence in the Tag Filter menu. This is the same
-    manuscript-text/commentary boundary `note` already draws for the search
-    index — the excluded subtree's *tail* is still the name, though, because
-    `Find<note>Dot over d.</note> mac` is two words of manuscript text with a
-    comment wedged between them.
+    Nested `note` text is not part of it. Lismore writes
+    `Trēnmhōr<note><p>Dúch caite</p></note> ūa Baīscne`, and taking the
+    element's whole text would print the palaeographer's remark in the Tag
+    Filter menu. This is the same manuscript-text/commentary boundary `note`
+    already draws for the search index — the excluded subtree's *tail* is still
+    the name, though, because that occurrence's surname follows the note and is
+    as much the manuscript's text as the given name before it.
 
     Inline markup inside the name is the name: `tal<expan>am</expan>` records an
     expanded scribal abbreviation, not two spellings.
@@ -109,7 +134,7 @@ def surface_form(el) -> str:
 
 
 def _text_pieces(el, top: bool = False):
-    if not top and _strip_ns(el.tag) in SKIP_TAGS:
+    if not top and strip_ns(el.tag) in SKIP_TAGS:
         # The subtree goes, its tail stays — the tail is the parent's text.
         return [el.tail] if el.tail else []
 
@@ -161,7 +186,7 @@ def _is_apparatus(el) -> bool:
     name the reader can follow through the columns.
     """
     return any(
-        _strip_ns(ancestor.tag) in SKIP_TAGS
+        strip_ns(ancestor.tag) in SKIP_TAGS
         for ancestor in el.iterancestors()
         if isinstance(ancestor.tag, str)
     )
