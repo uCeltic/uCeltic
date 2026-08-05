@@ -27,8 +27,32 @@ export function L({ node, children, anchorId }: TEIElementProps) {
 // are written continuously, so verse-versus-prose is the annotator's analysis
 // rather than the page's own layout. The grey left rule that used to sit beside
 // it said nothing the indent had not already said.
-export function Lg({ children, anchorId }: TEIElementProps) {
-  return <div className="my-3 pl-4" data-tei-anchor-id={anchorId}>{children}</div>;
+//
+// The number hangs in the margin, the way a printed edition sets a numbered
+// quatrain (#165, ADR-0018). The `pl-4` the indent was already worth is the
+// gutter it hangs in, so the number sits left of the verse's own left edge
+// without the indent changing.
+//
+// Having an `@n` is what makes a group numbered — not `@type="quatrain"`. All
+// 202 `lg` in the corpus are quatrains, so a `@type` gate would be a branch no
+// document exercises, which is the trap ADR-0016's own postscript warns about.
+//
+// The number lives in a child span, never in the `lg`'s own text children:
+// highlighting counts a word's offsets against the text nodes whose parent IS
+// the anchor (wordRange.ts), so a bare `4` there would shift every offset in
+// the group — the same reason `supplied`'s ⟨⟩ are nested.
+export function Lg({ node, children, anchorId }: TEIElementProps) {
+  const n = node.attrs?.n;
+  return (
+    <div className="relative my-3 pl-4" data-tei-anchor-id={anchorId} data-tei-n={n}>
+      {n && (
+        <span className="absolute left-0 top-0 select-none" data-tei-lg-n={n}>
+          {n}
+        </span>
+      )}
+      {children}
+    </div>
+  );
 }
 
 export function Ab({ children, anchorId }: TEIElementProps) {

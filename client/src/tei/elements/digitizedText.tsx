@@ -4,23 +4,67 @@ import type { TEIElementProps } from "../elementMap";
 //
 // #153 — none of these decorate the manuscript's text. What they do add is the
 // handful of editorial characters a print edition would also carry (`⟨⟩`, `[…]`,
-// `[* *]`, `‖`) and the `data-tei-*` attributes the DOM is here to hold.
+// `[* *]`) and the `data-tei-*` attributes the DOM is here to hold.
+//
+// #165 (ADR-0018) — `pb` and `cb` are editorial locators, and the printed
+// edition sets them the way `MANUSCRIPT_LOCATOR` and `PRINT_LOCATOR` do below.
 
-export function Pb({ node, anchorId }: TEIElementProps) {
-  // `@n` goes out verbatim. It is a page number in one manuscript and a
-  // folio-column-line locator (`124ra1`) in the next, so any fixed prefix is
-  // wrong for someone — and where the prefix is already in the data, a second
-  // one read `p. p.35`.
+// Bold inside square brackets: the manuscript's own folio or column
+// (`[fol.124ra]`, `[p.36b]`). Inline, because every one of these sits
+// mid-sentence — `í ó sin <pb/> amach go`, and several inside an `<l>`.
+const MANUSCRIPT_LOCATOR = "mx-1 font-bold select-none";
+
+// A tinted box and no brackets: a page of Stokes's printed edition, a different
+// coordinate system from the manuscript's. The box rather than the brackets is
+// what tells the two apart on the page.
+const PRINT_LOCATOR = "mx-1 rounded bg-stone-200 px-1 select-none";
+
+export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
+  // Two coordinate systems, told apart by which attribute the break carries.
+  //
+  // `@n` (with `@edRef`) locates the MANUSCRIPT's page. It goes out verbatim: it
+  // is `p.35` in one manuscript and `fol.124` in the next, so any fixed prefix
+  // is wrong for someone — and where the prefix is already in the data, a second
+  // one read `p. p.35`. The brackets are not a prefix; they are the editor's
+  // mark, and they wrap whatever the value says.
+  //
+  // `xml:id` locates a page of Stokes's PRINTED EDITION. It is shown verbatim
+  // too, underscore and all — `Stokes_p.69`, with nothing added and no substring
+  // parsed out. Parsing here is the same class of risk as the prefix was.
+  //
+  // `xml:id` arrives as plain `id`, because the backend strips namespaces off
+  // attribute names (parse.py), and it is deliberately NOT spread onto the DOM
+  // node: an `id` of that name would land in the document's own id space.
   const n = node.attrs?.n;
+  const xmlId = node.attrs?.id;
+
+  // A page break whose next sibling element is a column break is not shown. In
+  // all 9 corpus cases the `cb`'s `@n` extends the `pb`'s (`fol.124` →
+  // `fol.124ra`, `p.35` → `p.35b`), so showing both reads `[fol.124][fol.124ra]`
+  // and the column locator already says everything the page locator said. It
+  // stays in the DOM under `hidden`, because ADR-0016's surviving premise is
+  // that the markup must be present — `abbr` and `rdg` are hidden the same way.
+  const className = followedByCb
+    ? "hidden"
+    : xmlId
+      ? PRINT_LOCATOR
+      : MANUSCRIPT_LOCATOR;
+
   return (
-    <div
-      className="my-4 select-none"
+    <span
+      className={className}
       data-tei-tag="pb"
       data-tei-anchor-id={anchorId}
       data-tei-n={n}
+      data-tei-id={xmlId}
+      data-tei-ed-ref={node.attrs?.edRef}
+      title={`page break${xmlId ?? n ? ": " + (xmlId ?? n) : ""}`}
     >
-      {n && <span>{n}</span>}
-    </div>
+      {/* Nested, never this anchor's own text children: highlighting counts a
+          word's offsets against the text nodes whose parent IS the anchor
+          (wordRange.ts), the way `supplied`'s ⟨⟩ are kept out. */}
+      {xmlId ? <span data-tei-print-page="">{xmlId}</span> : n && <span>[{n}]</span>}
+    </span>
   );
 }
 
@@ -98,6 +142,10 @@ export function Unclear({ children, anchorId }: TEIElementProps) {
 }
 
 export function Cb({ node, anchorId }: TEIElementProps) {
+  // Every `cb` in the corpus locates the MANUSCRIPT's column, so this is always
+  // the bracketed locator — there is no print-edition column break to tell it
+  // apart from, the way `pb` has one.
+  //
   // `xml:id` arrives as plain `id` — the backend strips namespaces off attribute
   // names (parse.py). It carries the folio-and-column locator the reader wants
   // (`fol.27vb`), so it is shown and exposed as `data-tei-id`, and deliberately
@@ -108,12 +156,17 @@ export function Cb({ node, anchorId }: TEIElementProps) {
   // `@n` alone may be a bare `1`. When `@n` is all there is it goes out raw,
   // like `pb`'s: the research manuscripts put the prefix in the data already, so
   // adding `col. ` produced `col. p.35b`.
+  //
+  // The `‖` ADR-0016 kept is gone (#165). It was there because a lone digit
+  // inside a verse line reads as manuscript text and nothing else marked the
+  // break; the brackets and the weight are that mark now, and `‖[p.35b]` says
+  // the same thing twice.
   const n = node.attrs?.n;
   const xmlId = node.attrs?.id;
   const label = xmlId ?? n;
   return (
     <span
-      className="mx-1 inline-flex items-baseline gap-1 align-baseline select-none"
+      className={MANUSCRIPT_LOCATOR}
       data-tei-tag="cb"
       data-tei-anchor-id={anchorId}
       data-tei-n={n}
@@ -121,8 +174,8 @@ export function Cb({ node, anchorId }: TEIElementProps) {
       data-tei-ed-ref={node.attrs?.edRef}
       title={`column break${label ? ": " + label : ""}`}
     >
-      <span aria-hidden="true">‖</span>
-      {label && <span>{label}</span>}
+      {/* Nested for the same reason `pb`'s and `supplied`'s marks are. */}
+      {label && <span>[{label}]</span>}
     </span>
   );
 }

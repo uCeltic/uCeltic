@@ -14,6 +14,11 @@ export interface TEIElementProps {
   // Which editorial note this is, counted from 1 through the document (#154).
   // Only `note` is given one; every other element ignores it.
   noteNumber?: number;
+  // Whether this element's next sibling element is a `cb` (#165). Only `pb`
+  // reads it, to decide whether the column break already says what it would.
+  // Siblings are not something a component can see, so the renderer's own
+  // pre-pass works it out — the same seam `noteNumber` arrives through.
+  followedByCb?: boolean;
 }
 
 export const elementMap: Record<string, FC<TEIElementProps>> = {

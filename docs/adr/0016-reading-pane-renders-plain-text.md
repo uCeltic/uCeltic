@@ -1,8 +1,16 @@
 # 16. The reading pane renders the document as plain text; the markup lives in the DOM
 
-- Status: Accepted
+- Status: Superseded by [ADR-0018](0018-reading-pane-reproduces-the-printed-editions-conventions.md)
 - Date: 2026-07-28
 - Deciders: Zhou Dejian
+
+> **Superseded, not reverted.** ADR-0018 keeps this document's premise — the
+> markup's job is to be present in the DOM, and every `data-tei-*` attribute
+> still reaches the page — and keeps the guard test that enforces it. What it
+> replaces is the blanket ban below, by answering the question this ADR named and
+> declined ("whose typography?") with a decidable one: the convention the printed
+> edition of this text already uses. Four elements are styled under that rule;
+> the rest of what is written here still holds.
 
 ## Context
 

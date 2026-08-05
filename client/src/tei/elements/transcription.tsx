@@ -12,8 +12,17 @@ export function Abbr({ node, children, anchorId }: TEIElementProps) {
   );
 }
 
+// The letters the editor supplied when expanding an abbreviation — italic, the
+// way a printed diplomatic edition of this text sets them (#165, ADR-0018).
+//
+// This corpus uses `<expan>` non-standardly: it wraps the supplied letters
+// inline inside a word (`rīa<expan>n</expan>`) rather than containing an
+// `abbr` + `ex` pair, and there is no `abbr`, `ex` or `choice` in any of the
+// four files. So the italic lands on exactly the letters the manuscript did not
+// write, which is what the convention is for. 2767 of them: the effect is
+// conspicuous, and that is the edition being faithful rather than a bug.
 export function Expan({ children, anchorId }: TEIElementProps) {
-  return <span data-tei-tag="expan" data-tei-anchor-id={anchorId}>{children}</span>;
+  return <span className="italic" data-tei-tag="expan" data-tei-anchor-id={anchorId}>{children}</span>;
 }
 
 // The letters the editor supplied when expanding an abbreviation. They used to
