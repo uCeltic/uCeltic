@@ -43,6 +43,7 @@ function doc(id: number, title: string): TEIDoc {
         meta: { title, author: "", language: "ga", pbCount: 0 },
         anchors: [],
         word_array: [],
+        name_index: null,
     };
 }
 

@@ -63,6 +63,42 @@ export interface TEIWork {
   slug: string;
 }
 
+// One document's account of one entity it names, keyed in `name_index` by the
+// `@nymRef` group id every occurrence of it carries (#163).
+//
+// The counts are this document's own: `Find` is written 21 times in Franciscan
+// A 4 and 10 in G 126, and the Tag Filter prints one per visible column. The
+// register (`NameEntity`) says what the id NAMES; this says how often this
+// column says it, and the menu is the join of the two.
+export interface TEINameIndexEntry {
+  count: number;
+  /** How often each `@type` was used, un-resolved — the corpus-wide kind is a
+   *  majority over occurrences, so the tally has to survive the trip. */
+  types: Record<string, number>;
+  /** Every spelling this document writes the name with, and how often. */
+  variants: Record<string, number>;
+  /** The anchor of each occurrence, in reading order. */
+  anchors: number[];
+}
+
+/** `null` on a document parsed before the registry existed (#163). */
+export type TEINameIndex = Record<string, TEINameIndexEntry> | null;
+
+// Whether an Entity Grouping is a person or a place: the majority `@type` over
+// every occurrence in the corpus, decided on the backend (CONTEXT.md → Kind).
+export type EntityKind = "person" | "place";
+
+// One entry of the corpus-wide name register — what a `@nymRef` group id is
+// called, which no TEI file in the corpus says (#163).
+export interface NameEntity {
+  /** The `@nymRef` value verbatim, case and all: `A13` is a man, `a13` a hillfort. */
+  code: string;
+  kind: EntityKind;
+  /** What the Tag Filter prints. Derived from the corpus's own spellings until
+   *  a human overrides it in admin. */
+  headword: string;
+}
+
 //detail info for each tei document
 export interface TEIDoc {
   id: number;
@@ -74,6 +110,7 @@ export interface TEIDoc {
   meta: TEIMeta;
   anchors: TEIAnchor[];
   word_array: TEIWordEntry[];
+  name_index: TEINameIndex;
 }
 
 // list all the tei documents in the database

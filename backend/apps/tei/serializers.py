@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TEIDocument, Work
+from .models import NameEntity, TEIDocument, Work
 
 
 class WorkSerializer(serializers.ModelSerializer):
@@ -32,5 +32,26 @@ class TEIDocumentDetailSerializer(serializers.ModelSerializer):
             "id", "title", "language", "work",
             "parsed_json", "meta",
             "anchors", "word_array",      # NEW
+            # How often THIS document writes each grouped name (#163). The
+            # register says what a group id names; this says how loudly this
+            # column says it, and the two are joined into the Tag Filter's rows
+            # on the frontend, where the visible columns are already known.
+            # `null` on a document parsed before the registry existed.
+            "name_index",
             "created_at",
         ]
+
+
+class NameEntitySerializer(serializers.ModelSerializer):
+    """One row of the Tag Filter's menu, before it is narrowed to what is open.
+
+    `code` is carried alongside the headword rather than kept internal: the menu
+    prints both, because a researcher cross-checks against their own name lists
+    and the `@nymRef` code is the only key those lists share with the app.
+    `headword_source` is not — where a name came from is the register's own
+    business, and shows the same row either way.
+    """
+
+    class Meta:
+        model = NameEntity
+        fields = ["code", "kind", "headword"]

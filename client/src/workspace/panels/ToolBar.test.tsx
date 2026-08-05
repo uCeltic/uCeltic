@@ -19,6 +19,7 @@ const teiContent: TEIDoc = {
     meta: { title: "", author: "", language: "", pbCount: 0 },
     anchors: [],
     word_array: [],
+    name_index: null,
 };
 const teiDoc: Document = { id: "doc-a", title: "A", format: "tei", content: teiContent };
 

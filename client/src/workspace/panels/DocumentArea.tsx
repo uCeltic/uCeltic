@@ -425,12 +425,14 @@ export default function DocumentArea() {
   const { entries, columnIndexById } = useEntityMenu();
   const selectedEntity = entries.find((e) => e.id === selectedEntityId);
 
-  // A column whose document never declared this entity gets no card — no
-  // fallback to matching by element name, which is the behaviour #147 removes.
+  // A column that never names this entity gets no card — no fallback to
+  // matching by element name, which is the behaviour #147 removes. With the
+  // corpus grouping by a bare `@nymRef` there is no declaring a name without
+  // using it (#163), so naming it zero times is the whole of "not here".
   function entityCardFor(docId: string): EntityCardState | null {
     const column = columnIndexById.get(docId);
     if (!selectedEntity || column === undefined) return null;
-    if (!selectedEntity.declaredBy[column]) return null;
+    if (!selectedEntity.counts[column]) return null;
     return {
       headword: selectedEntity.headword,
       count: selectedEntity.counts[column],

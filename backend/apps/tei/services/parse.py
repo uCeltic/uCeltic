@@ -39,7 +39,7 @@ SKIP_TAGS = {"teiHeader", "note", "standOff"}
 _TOKEN_RE = re.compile(r"(\w+|[^\w]+)", re.UNICODE)
 
 # get the tag name without the namespace
-def _strip_ns(tag: str) -> str:
+def strip_ns(tag: str) -> str:
     return tag.split("}")[-1] if "}" in tag else tag
 
 # True for real elements only. lxml gives comments and processing instructions
@@ -49,11 +49,25 @@ def _is_element(el) -> bool:
     return isinstance(el.tag, str)
 
 
+# The elements anchor ids are allocated to, in id order.
+#
+# `_flatten` allocates one anchor per element, depth-first in document order,
+# and drops comments and processing instructions before allocating — which is
+# exactly `root.iter()` filtered by `_is_element`. Exposed so a second reader of
+# the same tree (the name index, #163) can name an element by its anchor id
+# without re-implementing the walk or being handed the parser's internals. The
+# equivalence is pinned over the whole corpus by
+# `test_name_index.AnchorIdsAgreeWithTheParserTest`, because a divergence would
+# not fail loudly — it would shift every id after the first extra node.
+def anchor_elements(root) -> list:
+    return [el for el in root.iter() if _is_element(el)]
+
+
 # pipeline: parse the tei xml into parsed_json, anchors and word array
 def parse_tei(xml_bytes: bytes) -> tuple[dict, list[dict], list[dict]]:
     #root is lxml object
     root = etree.fromstring(xml_bytes)
-    tag = _strip_ns(root.tag)
+    tag = strip_ns(root.tag)
     if tag not in ("TEI", "teiCorpus"):
         raise ValueError(f"Root element must be TEI or teiCorpus, got: {tag}")
 
@@ -138,10 +152,10 @@ def _flatten(el, stream: _Stream, in_skip: bool = False):
     if not _is_element(el):
         return None
 
-    tag = _strip_ns(el.tag)
+    tag = strip_ns(el.tag)
     skip = in_skip or tag in SKIP_TAGS
 
-    attrs = {_strip_ns(k): v for k, v in el.attrib.items()}
+    attrs = {strip_ns(k): v for k, v in el.attrib.items()}
     anchor = stream.new_anchor(tag, attrs)
 
     children = []

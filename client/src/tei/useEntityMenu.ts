@@ -1,23 +1,20 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   getVisibleTEIDocuments,
   useDocumentStore,
   type SearchableDocument,
 } from "../store/documentStore";
+import { useNameRegistryStore } from "../store/nameRegistryStore";
 import { useWorkspaceStore } from "../store/workspaceStore";
-import type { EntityMenuEntry } from "./entityMenu";
+import { buildEntityMenu, type EntityMenuEntry } from "./entityMenu";
 
 export interface EntityMenu {
-  /**
-   * The entities on offer. Empty until the registry slice lands (#162); the
-   * order is the producer's to decide, and the one that produced it — most
-   * referenced first — was deleted with the reader it belonged to.
-   */
+  /** The entities on offer, most-referenced first. */
   entries: EntityMenuEntry[];
   /**
-   * Where each TEI column sits in every entry's `counts` / `declaredBy` array.
-   * Columns holding a non-TEI document have no entry here — they carry no
-   * marked-up entities, so there is nothing for them to say about one.
+   * Where each TEI column sits in every entry's `counts` array. Columns holding
+   * a non-TEI document have no entry here — they carry no marked-up entities,
+   * so there is nothing for them to say about one.
    */
   columnIndexById: Map<string, number>;
 }
@@ -27,25 +24,29 @@ export interface EntityMenu {
  *
  * One derivation, two readers: the toolbar menu that offers the entries and the
  * per-column navigation cards that count them. Deriving it twice would let the
- * number in the menu (`12 · 111 · 72`) and the number on a column's card
- * (`1 / 12`) drift apart, which is the one inconsistency this feature cannot
+ * number in the menu (`21 · 10 · 17 · 16`) and the number on a column's card
+ * (`1 / 21`) drift apart, which is the one inconsistency this feature cannot
  * afford — they are the same claim, printed twice.
  *
  * `getVisibleTEIDocuments` is the seam #152 narrows: choosing a work changes
  * which documents this is built from, not what it does with them.
  *
- * It offers nothing at all until the registry slice lands (#162). The corpus it
- * used to read its entries out of is gone, and the reader with it: the ll.
- * re-cut witnesses group their named entities by a `@nymRef` group id that
- * no file explains, so there is no headword in the documents to put in a menu.
- * Which columns are in play is still worked out here, because that is the half
- * of the answer this hook can still give honestly — and the half the registry
- * will need unchanged.
+ * The rows themselves are the join of the corpus-wide register with each of
+ * those columns' own `name_index` (#163). The register is what the corpus does
+ * not carry — a name for a group id — and the counts are what only the open
+ * documents can say.
  */
 export function useEntityMenu(): EntityMenu {
   const openDocuments = useDocumentStore((s) => s.openDocuments);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const selectedWorkId = useWorkspaceStore((s) => s.selectedWorkId);
+  const register = useNameRegistryStore((s) => s.entities);
+  const loadRegister = useNameRegistryStore((s) => s.load);
+
+  // The register is the same for every reader of this hook and for the whole
+  // session, so the request is asked for here and de-duplicated in the store
+  // rather than owned by whichever component happens to mount first.
+  useEffect(() => loadRegister(), [loadRegister]);
 
   return useMemo(() => {
     const docs = documentsInWork(
@@ -53,15 +54,14 @@ export function useEntityMenu(): EntityMenu {
       selectedWorkId,
     );
     return {
-      entries: NO_ENTRIES,
+      entries: buildEntityMenu(
+        register,
+        docs.map((doc) => doc.content.name_index),
+      ),
       columnIndexById: new Map(docs.map((doc, i) => [doc.id, i])),
     };
-  }, [openDocuments, visibleDocumentIds, selectedWorkId]);
+  }, [openDocuments, visibleDocumentIds, selectedWorkId, register]);
 }
-
-// One shared empty array rather than a fresh `[]` per memo, so a re-derivation
-// that changes nothing cannot re-run an effect keyed on the entries.
-const NO_ENTRIES: EntityMenuEntry[] = [];
 
 /**
  * The subset of `docs` belonging to the chosen work — all of them when no work

@@ -92,6 +92,7 @@ function twoWordTei(id: number, w0: string, w1: string): TEIDoc {
             { w: w0, a: 1, sep: " " },
             { w: w1, a: 1, sep: "" },
         ],
+        name_index: null,
     };
 }
 const teiDocA: Document = { id: "doc-a", title: "A", format: "tei", content: twoWordTei(1, "hello", "world") };
@@ -560,6 +561,7 @@ describe("Tag Filter entity navigation", () => {
             meta: { title: "", author: "", language: "", pbCount: 0 },
             anchors: [],
             word_array: [],
+            name_index: null,
         };
     }
 

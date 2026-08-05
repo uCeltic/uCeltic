@@ -29,6 +29,7 @@ function makeTEIDoc(id: number): TEIDoc {
     meta: { title: "", author: "", language: "", pbCount: 0 },
     anchors: [],
     word_array: [],
+    name_index: null,
   };
 }
 

@@ -8,10 +8,15 @@ it is uploaded. Every later fix to the parser — the flat-stream tokeniser
 
 This command re-saves each document so the signal parses it again. It is the
 deploy step that makes a parser fix true of the corpus already on the server.
+
+It is also how a document uploaded before the name registry existed (#163) gets
+one: its `name_index` is null until it is parsed again, and the corpus-wide
+register is folded back out of those indexes, so until every document has been
+through here the Tag Filter is a menu of only part of the corpus.
 """
 from django.core.management.base import BaseCommand
 
-from apps.tei.models import TEIDocument
+from apps.tei.models import NameEntity, TEIDocument
 
 
 class Command(BaseCommand):
@@ -30,7 +35,11 @@ class Command(BaseCommand):
             reparsed += 1
             self.stdout.write(
                 f"{document.pk} {document.title}: "
-                f"{len(document.word_array or [])} words"
+                f"{len(document.word_array or [])} words, "
+                f"{len(document.name_index or {})} named entities"
             )
 
         self.stdout.write(self.style.SUCCESS(f"Re-parsed {reparsed} document(s)."))
+        self.stdout.write(
+            f"Register now holds {NameEntity.objects.count()} name entities."
+        )

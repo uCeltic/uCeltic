@@ -103,6 +103,12 @@ export interface EntityHighlightColumn {
  * instead (`nymRef="F64"`), and it is the only one the shipped corpus carries
  * today (#162). A `standOff` is never rendered, so nothing inside one can be
  * found here either way.
+ *
+ * A name inside a `note` is not one of them. The note is the editor's English
+ * commentary, and the menu's count leaves out any name it holds (the backend's
+ * SKIP_TAGS, #163) — so counting one here would make a column's `1 / 21` a
+ * claim about 22 things, and would let navigation land on a span that is only
+ * on screen while the reader hovers the footnote marker.
  */
 export function entityOccurrences(docId: string, entityId: string): Element[] {
   const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`);
@@ -112,7 +118,7 @@ export function entityOccurrences(docId: string, entityId: string): Element[] {
     ...columnEl.querySelectorAll(
       `[data-tei-ref="#${id}"], [data-tei-nym-ref="${id}"]`,
     ),
-  ];
+  ].filter((el) => !el.closest('[data-tei-tag="note"]'));
 }
 
 /**
