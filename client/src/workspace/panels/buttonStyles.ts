@@ -11,12 +11,10 @@ export const toolbarBtnBase =
   "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium cursor-pointer transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
 
 // Add Text / manuscript / font-size buttons — and the AccountMenu trigger.
-export const secondaryBtn = `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
-
-// A control the workspace cannot honour right now: greyed out, cursor blocked. Used
-// where the button must stay on the bar and say why it is unavailable rather than
-// vanish — the document limit on Add Text, the too-narrow window on Manuscripts (#160).
-export const unavailableBtn = `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`;
+// The `disabled:` variants grey out a control the workspace cannot honour right now
+// — the too-narrow window for Manuscripts (#160) — the same way the dropdowns dim
+// their own actions (WorkPicker), rather than swapping in a second class string.
+export const secondaryBtn = `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6] disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white`;
 
 // The "on" state, for the Search and manuscript toggles.
 export const toggleOnBtn = `${toolbarBtnBase} border border-[#52524F] bg-[#52524F] text-white hover:bg-[#3F3F3C]`;

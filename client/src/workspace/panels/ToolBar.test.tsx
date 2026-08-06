@@ -6,7 +6,6 @@ import ToolBar from "./ToolBar";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useTourStore } from "../../store/tourStore";
-import { useWorkspaceStore } from "../../store/workspaceStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import type { Document } from "../../types/document";
 import type { TEIDoc } from "../../types/tei";
@@ -140,7 +139,7 @@ describe("ToolBar manuscript control label (#124)", () => {
   it("keeps an accessible name and tooltip of 'Manuscripts', never 'Books'", () => {
     renderToolBar();
 
-    // showIIIF defaults on, so the control reads "Hide Manuscripts".
+    // The panel is on screen here, so the control reads "Hide Manuscripts".
     const btn = screen.getByRole("button", { name: /Manuscripts/ });
     expect(btn).toHaveAttribute("title", expect.stringMatching(/Manuscripts/));
     expect(btn.getAttribute("title")).not.toMatch(/Book/i);
@@ -158,33 +157,34 @@ describe("ToolBar manuscript control at narrow widths (#160)", () => {
 
     const btn = screen.getByRole("button", { name: /Manuscripts/ });
     expect(btn).toBeDisabled();
-    // The tooltip lives on the wrapper: browsers swallow hover on a disabled
-    // control, so a `title` on the button itself would never surface.
+    expect(btn.className).toMatch(/disabled:text-gray-300/);
+    // The tooltip lives on the wrapper: Chrome swallows hover on a disabled control,
+    // so a `title` on the button itself would never surface there.
     expect(btn.parentElement).toHaveAttribute(
       "title",
       expect.stringMatching(/widen/i),
     );
+    // ...and the button drops its own title, which Firefox *does* render on a
+    // disabled control and would show instead of the explanation.
+    expect(btn).not.toHaveAttribute("title");
   });
 
   it("reads 'Show Manuscripts' and is unpressed while the panel is force-hidden", () => {
-    // The stored preference is still on — only the viewport is hiding the panel.
-    useWorkspaceStore.setState({ showIIIF: true });
-
     renderToolBar({ iiifVisible: false, iiifTooNarrow: true });
 
     const btn = screen.getByRole("button", { name: "Show Manuscripts" });
     expect(btn).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("keeps the stored showIIIF preference intact, so widening restores the panel", () => {
-    useWorkspaceStore.setState({ showIIIF: true });
+  // Blocking the click is the whole of the disable: the stored preference is never
+  // touched, which is what lets widening the window restore it (see the layout tests).
+  it("swallows the click instead of toggling the stored preference", () => {
     const onToggleIIIF = vi.fn();
 
     renderToolBar({ iiifVisible: false, iiifTooNarrow: true, onToggleIIIF });
     fireEvent.click(screen.getByRole("button", { name: /Manuscripts/ }));
 
     expect(onToggleIIIF).not.toHaveBeenCalled();
-    expect(useWorkspaceStore.getState().showIIIF).toBe(true);
   });
 
   it("stays clickable and pressed once the window is wide enough", () => {

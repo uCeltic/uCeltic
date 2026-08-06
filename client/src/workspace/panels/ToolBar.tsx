@@ -12,13 +12,17 @@ import HamburgerMenu from "./HamburgerMenu";
 import {
   secondaryBtn,
   toggleOnBtn,
+  toolbarBtnBase,
   toolbarLabel,
-  unavailableBtn,
 } from "./buttonStyles";
 import { BookIcon, FilePlusIcon, SearchIcon } from "./icons";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { useTourStore } from "../../store/tourStore";
+
+// Why the manuscript control is unavailable at this width — the one thing a visitor
+// below the breakpoint can act on (#160).
+const WIDEN_TO_SHOW_MANUSCRIPTS = "Widen the window to show Manuscripts";
 
 export default function ToolBar({
   onToggleIIIF,
@@ -42,6 +46,9 @@ export default function ToolBar({
   const query = useSearchStore((s) => s.query);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const startTour = useTourStore((s) => s.start);
+  // One label for the button's accessible name, tooltip and visible text, so the
+  // "Manuscripts" wording cannot drift between them.
+  const manuscriptLabel = iiifVisible ? "Hide Manuscripts" : "Show Manuscripts";
 
   //handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +108,7 @@ export default function ToolBar({
           data-tour="add-text"
           className={
             openDocuments.length >= MAX_OPEN_DOCUMENTS
-              ? unavailableBtn
+              ? `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`
               : secondaryBtn
           }
           onClick={handleAddDocument}
@@ -156,40 +163,30 @@ export default function ToolBar({
       <div className="flex items-center gap-2">
         {/* Below the breakpoint the panel auto-hides (ADR-0011) and no click can bring
             it back, so the control says so instead of flipping into a state it cannot
-            deliver. The tooltip sits on this wrapper because a disabled button swallows
-            the hover a `title` of its own would need (#160). */}
+            deliver (#160). The reason is a tooltip on this wrapper: Chrome drops hover
+            on a disabled button, so a `title` there would never surface — and the
+            button's own title is cleared while disabled, because Firefox *does* show it
+            and it would otherwise shadow the explanation. */}
         <span
           className="inline-flex"
-          title={
-            iiifTooNarrow
-              ? "Widen the window to show Manuscripts"
-              : undefined
-          }
+          title={iiifTooNarrow ? WIDEN_TO_SHOW_MANUSCRIPTS : undefined}
         >
           <button
             type="button"
             onClick={onToggleIIIF}
             disabled={iiifTooNarrow}
-            className={
-              iiifTooNarrow
-                ? unavailableBtn
-                : iiifVisible
-                  ? toggleOnBtn
-                  : secondaryBtn
-            }
+            className={iiifVisible ? toggleOnBtn : secondaryBtn}
             // Pressed state and label follow the panel that is actually on screen,
             // not the stored preference — force-hidden always reads "Show".
             aria-pressed={iiifVisible}
             // Client-requirement term: the label/tooltip stays "Manuscripts" and is
             // distinguished by the book icon — never renamed "Books" (CONTEXT.md).
-            aria-label={iiifVisible ? "Hide Manuscripts" : "Show Manuscripts"}
-            title={iiifVisible ? "Hide Manuscripts" : "Show Manuscripts"}
+            aria-label={manuscriptLabel}
+            title={iiifTooNarrow ? undefined : manuscriptLabel}
             data-tour="manuscripts"
           >
             <BookIcon />
-            <span className={toolbarLabel}>
-              {iiifVisible ? "Hide Manuscripts" : "Show Manuscripts"}
-            </span>
+            <span className={toolbarLabel}>{manuscriptLabel}</span>
           </button>
         </span>
 
