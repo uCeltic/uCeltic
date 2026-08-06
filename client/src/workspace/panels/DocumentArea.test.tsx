@@ -8,6 +8,7 @@ import {
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
+import { COLUMN_MIN_WIDTH_PX } from "../responsive";
 import { searchDocument } from "../../api/search";
 import type { SearchResult } from "../../types/search";
 import type { Document } from "../../types/document";
@@ -481,6 +482,101 @@ describe("drag-reorder discovery hint", () => {
         });
 
         expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+    });
+});
+
+// A shrunk window (or a split screen) is the case these cover: the columns
+// hold a readable width and the strip scrolls, instead of every column
+// shrinking until its own controls fall off the edge (#159, ADR-0019).
+describe("narrow window: columns keep their width and the strip scrolls", () => {
+    function openThreeColumns() {
+        useDocumentStore.setState({
+            openDocuments: [doc, doc2, teiDocA],
+            visibleDocumentIds: ["doc-1", "doc-2", "doc-a"],
+        });
+    }
+
+    it("floors every column at the readable minimum width", () => {
+        openThreeColumns();
+        render(<DocumentArea />);
+
+        const columns = document.querySelectorAll<HTMLElement>(
+            "[data-doc-column-id]",
+        );
+        expect(columns).toHaveLength(3);
+        for (const column of columns) {
+            expect(column.style.minWidth).toBe(`${COLUMN_MIN_WIDTH_PX}px`);
+        }
+    });
+
+    // jsdom lays nothing out, so these three assert the rules the browser then
+    // applies, not the widths it arrives at: the strip's overflow, and the
+    // `shrink-0` on the two controls a squeezed column used to lose.
+    it("wraps the columns in a strip that scrolls sideways and not down", () => {
+        openThreeColumns();
+        render(<DocumentArea />);
+
+        const strip = document.querySelector<HTMLElement>("[data-column-strip]")!;
+        expect(strip.className).toContain("overflow-x-auto");
+        // Vertical overflow is pinned: each column scrolls its own text, so the
+        // strip must never grow a second, outer vertical scrollbar.
+        expect(strip.className).toContain("overflow-y-hidden");
+    });
+
+    it("exempts the close button from shrinking with its header", () => {
+        openThreeColumns();
+        render(<DocumentArea />);
+
+        for (const close of screen.getAllByRole("button", { name: "✕" })) {
+            expect(close.className).toContain("shrink-0");
+        }
+    });
+
+    it("exempts the result card's prev/next arrows, truncating the metadata instead", () => {
+        openThreeColumns();
+        useSearchStore.setState({
+            resultsByDocument: { "doc-1": [result] },
+            activeResultIndexByDocument: { "doc-1": 0 },
+        });
+        render(<DocumentArea />);
+
+        const nav = document.querySelector<HTMLElement>(
+            '[data-tour="result-nav"]',
+        )!;
+        expect(nav.className).toContain("shrink-0");
+        // The line/score metadata is what gives way. `truncate` has to sit on
+        // the spans themselves — `text-overflow` does nothing to a box whose
+        // children are flex items, and it is what lets them shrink at all.
+        const metadata = [...nav.previousElementSibling!.children];
+        expect(metadata).toHaveLength(2);
+        for (const span of metadata) {
+            expect(span.className).toContain("truncate");
+        }
+    });
+
+    // The drag gesture itself needs layout, which jsdom has none of, so what is
+    // pinned here is its outcome: the strip renders in the order a reorder
+    // leaves behind. `computeDragEndReorder` covers the arithmetic below.
+    it("renders the columns in the order a reorder leaves them in", () => {
+        openThreeColumns();
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore
+                .getState()
+                .setVisibleDocumentIds(
+                    computeDragEndReorder(
+                        { active: { id: "doc-1" }, over: { id: "doc-2" } } as never,
+                        useDocumentStore.getState().visibleDocumentIds,
+                    )!,
+                );
+        });
+
+        expect(
+            [...document.querySelectorAll("[data-doc-column-id]")].map((c) =>
+                c.getAttribute("data-doc-column-id"),
+            ),
+        ).toEqual(["doc-2", "doc-1", "doc-a"]);
     });
 });
 
