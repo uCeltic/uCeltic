@@ -17,7 +17,9 @@ export default function WorkspaceLayout() {
   // ADR-0011: below the narrower breakpoint the IIIF Manuscript panel auto-hides,
   // and restores when the window grows back. This is a viewport override layered
   // on top of the user's toggle, not a mutation of it — widen the window and the
-  // panel returns to whatever the user last chose.
+  // panel returns to whatever the user last chose. Both facts go to the tool bar
+  // too, so its Manuscripts control shows the panel's real state rather than the
+  // stored preference it cannot honour here (#160).
   const iiifTooNarrow = useMediaQuery(IIIF_AUTOHIDE_QUERY);
   const iiifVisible = showIIIF && !iiifTooNarrow;
 
@@ -31,7 +33,11 @@ export default function WorkspaceLayout() {
           toolbar Help button. Non-blocking, so it never traps the workspace (#125). */}
       <SpotlightTour />
 
-      <ToolBar onToggleIIIF={toggleIIIF} />
+      <ToolBar
+        onToggleIIIF={toggleIIIF}
+        iiifVisible={iiifVisible}
+        iiifTooNarrow={iiifTooNarrow}
+      />
 
       <div className="min-h-0 flex-1">
         <Group key={iiifVisible ? "with-iiif" : "without-iiif"} orientation="horizontal"

@@ -12,6 +12,17 @@
 > horizontally, deliberately not the measure-and-collapse scheme rejected below.
 > Nothing in this document changes.
 
+> **Update (2026-08-06).** The auto-hide below `lg` left the toolbar's Manuscripts
+> toggle lying: it still darkened, still swapped to "Hide Manuscripts" and still
+> set `aria-pressed`, while no panel could appear at that width. The control now
+> disables itself while the viewport is too narrow — greyed out, with a tooltip
+> asking for a wider window — and takes its pressed state and label from the
+> panel's actual visibility rather than from the stored preference, so it reads
+> "Show Manuscripts" for as long as the panel is force-hidden. Disabling blocks
+> the click only: `showIIIF` is left untouched, so widening the window still
+> restores whatever the visitor last chose (#160). Nothing in the decision below
+> changes.
+
 ## Context
 
 The workspace is built for **desktop browsers only**. "Responsive" here means

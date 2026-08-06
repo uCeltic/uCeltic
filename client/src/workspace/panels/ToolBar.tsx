@@ -5,7 +5,6 @@ import {
   MAX_OPEN_DOCUMENTS,
   getSearchableDocuments,
 } from "../../store/documentStore";
-import { useWorkspaceStore } from "../../store/workspaceStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import TagFilterButton from "./TagFilterButton";
 import WorkPicker from "./WorkPicker";
@@ -13,8 +12,8 @@ import HamburgerMenu from "./HamburgerMenu";
 import {
   secondaryBtn,
   toggleOnBtn,
-  toolbarBtnBase,
   toolbarLabel,
+  unavailableBtn,
 } from "./buttonStyles";
 import { BookIcon, FilePlusIcon, SearchIcon } from "./icons";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
@@ -23,13 +22,19 @@ import { useTourStore } from "../../store/tourStore";
 
 export default function ToolBar({
   onToggleIIIF,
+  iiifVisible,
+  iiifTooNarrow,
 }: {
   onToggleIIIF: () => void;
+  /** Whether the Manuscript panel is on screen right now — the stored preference
+   *  and the viewport override already folded together by the layout (#160). */
+  iiifVisible: boolean;
+  /** The viewport is below the breakpoint the panel needs, so no toggle can show it. */
+  iiifTooNarrow: boolean;
 }) {
   const addDocument = useDocumentStore((state) => state.addDocument);
   const openDocuments = useDocumentStore((state) => state.openDocuments);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const showIIIF = useWorkspaceStore((state) => state.showIIIF);
   const runSearch = useSearchStore((s) => s.runSearch);
   // disable Search while ANY column is still in flight (replaces the old global flag)
   const anySearching = useSearchStore(selectAnySearching);
@@ -96,7 +101,7 @@ export default function ToolBar({
           data-tour="add-text"
           className={
             openDocuments.length >= MAX_OPEN_DOCUMENTS
-              ? `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`
+              ? unavailableBtn
               : secondaryBtn
           }
           onClick={handleAddDocument}
@@ -149,22 +154,44 @@ export default function ToolBar({
       </div>
       {/* Manuscript toggle stays top-level; low-frequency controls live in the menu (#123) */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onToggleIIIF}
-          className={showIIIF ? toggleOnBtn : secondaryBtn}
-          aria-pressed={showIIIF}
-          // Client-requirement term: the label/tooltip stays "Manuscripts" and is
-          // distinguished by the book icon — never renamed "Books" (CONTEXT.md).
-          aria-label={showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
-          title={showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
-          data-tour="manuscripts"
+        {/* Below the breakpoint the panel auto-hides (ADR-0011) and no click can bring
+            it back, so the control says so instead of flipping into a state it cannot
+            deliver. The tooltip sits on this wrapper because a disabled button swallows
+            the hover a `title` of its own would need (#160). */}
+        <span
+          className="inline-flex"
+          title={
+            iiifTooNarrow
+              ? "Widen the window to show Manuscripts"
+              : undefined
+          }
         >
-          <BookIcon />
-          <span className={toolbarLabel}>
-            {showIIIF ? "Hide Manuscripts" : "Show Manuscripts"}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={onToggleIIIF}
+            disabled={iiifTooNarrow}
+            className={
+              iiifTooNarrow
+                ? unavailableBtn
+                : iiifVisible
+                  ? toggleOnBtn
+                  : secondaryBtn
+            }
+            // Pressed state and label follow the panel that is actually on screen,
+            // not the stored preference — force-hidden always reads "Show".
+            aria-pressed={iiifVisible}
+            // Client-requirement term: the label/tooltip stays "Manuscripts" and is
+            // distinguished by the book icon — never renamed "Books" (CONTEXT.md).
+            aria-label={iiifVisible ? "Hide Manuscripts" : "Show Manuscripts"}
+            title={iiifVisible ? "Hide Manuscripts" : "Show Manuscripts"}
+            data-tour="manuscripts"
+          >
+            <BookIcon />
+            <span className={toolbarLabel}>
+              {iiifVisible ? "Hide Manuscripts" : "Show Manuscripts"}
+            </span>
+          </button>
+        </span>
 
         {/* Re-opens the onboarding tour on demand; icon-only, so it stays compact
             at every breakpoint (#125). */}
