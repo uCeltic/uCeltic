@@ -1,3 +1,4 @@
+import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -58,10 +59,18 @@ afterEach(() => {
 });
 
 // The ToolBar holds the AccountMenu, which links to /account/login — so it now needs a router.
-function renderToolBar() {
+// The manuscript props default to the wide case: panel shown, viewport roomy enough for it.
+function renderToolBar(
+    props: Partial<React.ComponentProps<typeof ToolBar>> = {},
+) {
     return render(
         <MemoryRouter>
-            <ToolBar onToggleIIIF={() => {}} />
+            <ToolBar
+                onToggleIIIF={() => {}}
+                iiifVisible
+                iiifTooNarrow={false}
+                {...props}
+            />
         </MemoryRouter>,
     );
 }
@@ -130,13 +139,64 @@ describe("ToolBar manuscript control label (#124)", () => {
   it("keeps an accessible name and tooltip of 'Manuscripts', never 'Books'", () => {
     renderToolBar();
 
-    // showIIIF defaults on, so the control reads "Hide Manuscripts".
+    // The panel is on screen here, so the control reads "Hide Manuscripts".
     const btn = screen.getByRole("button", { name: /Manuscripts/ });
     expect(btn).toHaveAttribute("title", expect.stringMatching(/Manuscripts/));
     expect(btn.getAttribute("title")).not.toMatch(/Book/i);
     expect(
       screen.queryByRole("button", { name: /Books?/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+// Below the narrow breakpoint the panel auto-hides (ADR-0011), so a toggle that still
+// flips claims a state it cannot deliver — it must say so instead (#160).
+describe("ToolBar manuscript control at narrow widths (#160)", () => {
+  it("disables the control and explains that the window must be widened", () => {
+    renderToolBar({ iiifVisible: false, iiifTooNarrow: true });
+
+    const btn = screen.getByRole("button", { name: /Manuscripts/ });
+    expect(btn).toBeDisabled();
+    expect(btn.className).toMatch(/disabled:text-gray-300/);
+    // The tooltip lives on the wrapper: Chrome swallows hover on a disabled control,
+    // so a `title` on the button itself would never surface there.
+    expect(btn.parentElement).toHaveAttribute(
+      "title",
+      expect.stringMatching(/widen/i),
+    );
+    // ...and the button drops its own title, which Firefox *does* render on a
+    // disabled control and would show instead of the explanation.
+    expect(btn).not.toHaveAttribute("title");
+  });
+
+  it("reads 'Show Manuscripts' and is unpressed while the panel is force-hidden", () => {
+    renderToolBar({ iiifVisible: false, iiifTooNarrow: true });
+
+    const btn = screen.getByRole("button", { name: "Show Manuscripts" });
+    expect(btn).toHaveAttribute("aria-pressed", "false");
+  });
+
+  // Blocking the click is the whole of the disable: the stored preference is never
+  // touched, which is what lets widening the window restore it (see the layout tests).
+  it("swallows the click instead of toggling the stored preference", () => {
+    const onToggleIIIF = vi.fn();
+
+    renderToolBar({ iiifVisible: false, iiifTooNarrow: true, onToggleIIIF });
+    fireEvent.click(screen.getByRole("button", { name: /Manuscripts/ }));
+
+    expect(onToggleIIIF).not.toHaveBeenCalled();
+  });
+
+  it("stays clickable and pressed once the window is wide enough", () => {
+    const onToggleIIIF = vi.fn();
+
+    renderToolBar({ iiifVisible: true, iiifTooNarrow: false, onToggleIIIF });
+    const btn = screen.getByRole("button", { name: "Hide Manuscripts" });
+    fireEvent.click(btn);
+
+    expect(btn).toBeEnabled();
+    expect(btn).toHaveAttribute("aria-pressed", "true");
+    expect(onToggleIIIF).toHaveBeenCalledOnce();
   });
 });
 
