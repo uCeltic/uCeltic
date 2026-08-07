@@ -370,3 +370,24 @@ describe("TagFilterButton", () => {
         expect(screen.queryByLabelText(/filter named entities/i)).not.toBeInTheDocument();
     });
 });
+
+// The trigger's label is the selected entity's headword — the only place on screen
+// that says what the workspace is currently filtered to. The tag icon cannot say it,
+// so this label outlives the ones that merely repeat their icon (#174).
+describe("Tag Filter label survives the first collapse (#174)", () => {
+    it("keeps its label down to `lg`, not just `xl`", () => {
+        render(<TagFilterButton />);
+
+        expect(screen.getByText(/All Tags/, { selector: "span" })).toHaveClass(
+            "lg:inline",
+        );
+    });
+
+    it("shows the selected entity's headword, so there is something to keep", () => {
+        useWorkspaceStore.setState({ selectedEntityId: "F64" });
+        render(<TagFilterButton />);
+
+        const label = screen.getByText(/Find/, { selector: "span" });
+        expect(label).toHaveClass("lg:inline");
+    });
+});

@@ -14,8 +14,9 @@ import {
   toggleOnBtn,
   toolbarBtnBase,
   toolbarLabel,
+  toolbarLabelPersistent,
 } from "./buttonStyles";
-import { BookIcon, FilePlusIcon, SearchIcon } from "./icons";
+import { BookIcon, FilePlusIcon, SearchIcon, SpinnerIcon } from "./icons";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { useTourStore } from "../../store/tourStore";
@@ -137,6 +138,7 @@ export default function ToolBar({
         title="Search"
         className={toggleOnBtn}
         disabled={anySearching}
+        aria-busy={anySearching}
         onClick={() => {
           // Nothing typed, nothing searched: runSearch bails on a blank query
           // per document, so returning here changes no search behaviour — it
@@ -155,8 +157,12 @@ export default function ToolBar({
           }
         }}
       >
-        <SearchIcon />
-        <span className={toolbarLabel}>{anySearching ? "..." : "Search"}</span>
+        {/* The busy state lives in the icon, not the label: below `lg` the label
+            is gone and a search in flight would otherwise look like an idle bar
+            (#174). The word stays "Search" throughout, so the button keeps its
+            width while the search runs. */}
+        {anySearching ? <SpinnerIcon /> : <SearchIcon />}
+        <span className={toolbarLabelPersistent}>Search</span>
       </button>
       </div>
       {/* Manuscript toggle stays top-level; low-frequency controls live in the menu (#123) */}

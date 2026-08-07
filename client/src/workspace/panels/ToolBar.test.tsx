@@ -200,6 +200,65 @@ describe("ToolBar manuscript control at narrow widths (#160)", () => {
   });
 });
 
+// One flip at `xl` made icon-only the *normal* state of the toolbar: a 1080p window
+// that is not maximised already sits below 1280. Labels now go in two stages, ordered
+// by how much the label says that the icon does not (#174).
+describe("ToolBar staged label collapse (#174)", () => {
+  const labelSpan = (text: string | RegExp) =>
+    screen.getByText(text, { selector: "span" });
+
+  it("drops the manuscript toggle's label first — its state is already in the colour and aria-pressed", () => {
+    renderToolBar();
+
+    expect(labelSpan("Hide Manuscripts")).toHaveClass("xl:inline");
+  });
+
+  it("drops Add Text at the same stage — the file-plus icon says the same thing", () => {
+    renderToolBar();
+
+    expect(labelSpan("Add Text")).toHaveClass("xl:inline");
+  });
+
+  it("keeps Search's label to the narrower stage", () => {
+    renderToolBar();
+
+    expect(labelSpan("Search")).toHaveClass("lg:inline");
+  });
+});
+
+// `{anySearching ? "..." : "Search"}` put the only sign of a search in flight inside
+// the label — so below the collapse breakpoint a running search looked like an idle
+// one. The icon carries it now, identically at every width (#174).
+describe("ToolBar search busy state (#174)", () => {
+  it("spins the icon and marks the button busy while a column is searching", () => {
+    useSearchStore.setState({ isSearchingByDocument: { "doc-a": true } });
+
+    renderToolBar();
+
+    const btn = screen.getByRole("button", { name: "Search" });
+    expect(btn).toHaveAttribute("aria-busy", "true");
+    expect(btn.querySelector(".animate-spin")).toBeInTheDocument();
+  });
+
+  it("shows the plain magnifier and no busy flag when nothing is in flight", () => {
+    renderToolBar();
+
+    const btn = screen.getByRole("button", { name: "Search" });
+    expect(btn).toHaveAttribute("aria-busy", "false");
+    expect(btn.querySelector(".animate-spin")).not.toBeInTheDocument();
+  });
+
+  // The label no longer flickers to "..." — a word that changes width mid-search
+  // shifted every control to its right, and said nothing the spinner does not.
+  it("keeps the label reading 'Search' throughout", () => {
+    useSearchStore.setState({ isSearchingByDocument: { "doc-a": true } });
+
+    renderToolBar();
+
+    expect(screen.getByText("Search", { selector: "span" })).toBeInTheDocument();
+  });
+});
+
 describe("ToolBar Help button (#125)", () => {
   it("re-opens the onboarding tour on demand", () => {
     useTourStore.setState({ isOpen: false, stepIndex: 3 });

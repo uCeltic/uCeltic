@@ -238,3 +238,15 @@ describe("WorkPicker", () => {
         expect(await screen.findByText(/no documents/i)).toBeInTheDocument();
     });
 });
+
+// The trigger names the work being read — the layers icon cannot. So its label is one
+// of the two that survive the first collapse, alongside the Tag Filter's (#174).
+describe("Works label survives the first collapse (#174)", () => {
+    it("keeps its label down to `lg`, not just `xl`", () => {
+        render(<WorkPicker />);
+
+        expect(screen.getByText(/Works/, { selector: "span" })).toHaveClass(
+            "lg:inline",
+        );
+    });
+});

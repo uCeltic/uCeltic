@@ -2,7 +2,8 @@
 // these from ToolBar without a cycle — they live here, and both import them.
 
 // `inline-flex items-center gap-1.5` lets every toolbar button pair an icon with
-// its label; below `xl` the label span hides and the icon stands alone (ADR-0011).
+// its label; as the bar tightens the label spans hide in stages and the icons
+// stand alone (ADR-0011, staged by ADR-0020).
 // `shrink-0` keeps the buttons at their intrinsic width so only the search input
 // gives up space when the bar tightens — the bar never overflows the page body.
 // Exported so the dropdown triggers (Scope, Tag Filter, …) compose their own
@@ -25,7 +26,27 @@ export const toggleOnBtn = `${toolbarBtnBase} border border-[#52524F] bg-[#52524
 export const dropdownTriggerIdle = `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6]`;
 export const dropdownTriggerOpen = `${toolbarBtnBase} border border-[#52524F] bg-[#F0EEE6] text-[#52524F]`;
 
-// The label that sits beside a toolbar icon: shown wide, hidden (icon-only) below `xl`.
-// The button still carries an `aria-label`/`title`, so hiding the text keeps the
-// control both tooltipped and named for assistive tech.
+// The label that sits beside a toolbar icon. Hiding one is always safe for assistive
+// tech — the button keeps its `aria-label`/`title` — so the only question is what a
+// sighted reader loses, and the answer differs per control. Labels therefore collapse
+// in two stages, ordered by how much the label says that its icon does not (ADR-0020).
+//
+// Stock Tailwind breakpoints only. `responsive.ts` already needs `lg`/`xl` kept in
+// step with the layout; a bespoke width here would be a third number to keep in step.
+
+/**
+ * Stage one, hidden below `xl` (1280px): the label repeats what the icon and the
+ * button's own state already say. Add Text beside a file-plus glyph; "Hide
+ * Manuscripts" beside a book glyph on a button whose colour and `aria-pressed`
+ * carry the toggle state; "Advanced" beside sliders.
+ */
 export const toolbarLabel = "hidden xl:inline";
+
+/**
+ * Stage two, hidden below `lg` (1024px): the label is the control's only statement
+ * of *content*, not just of identity. The Tag Filter and Works triggers render the
+ * selected entity and work, so their labels are the one place the workspace says
+ * what it is currently filtered to; Search's is the bar's primary action. These go
+ * last, at the same width where the Manuscript panel itself auto-hides.
+ */
+export const toolbarLabelPersistent = "hidden lg:inline";

@@ -2,16 +2,22 @@
  * What the workspace does with a shrunk window — the JS-side half of the
  * desktop-only responsive scope (ADR-0011, extended to the columns by ADR-0019).
  *
- * The tool bar has two breakpoints:
+ * The tool bar has three tiers. Labels do not all go at once: each collapses at the
+ * width where it stops earning its space, which is not the same width for all of them
+ * (ADR-0020).
  *
- * Wide (≥ xl, 1280px)      → toolbar controls show text labels.
- * Below xl                 → controls render icon-only with tooltips.
- * Narrower still (< lg)     → the IIIF Manuscript panel auto-hides.
+ * Wide (≥ xl, 1280px)      → every toolbar control shows its text label.
+ * Below xl                 → Manuscripts, Add Text and Advanced go icon-only: their
+ *                            labels repeat their glyph and their own pressed state.
+ * Narrower still (< lg)     → Tags, Works and Search follow — the Tag Filter and Works
+ *                            labels name the *selected* entity and work, so they are
+ *                            the last thing the bar gives up — and the IIIF Manuscript
+ *                            panel auto-hides.
  *
- * The text→icon swap is pure CSS: controls carry Tailwind's `xl:` variants, so
- * there is nothing to configure here for it — the query below is what the layout
- * listens on to auto-hide the IIIF panel. Keep the `lg`/`xl` values here in step
- * with the Tailwind classes used in the toolbar.
+ * The text→icon swap is pure CSS: labels carry Tailwind's `xl:`/`lg:` variants from
+ * `buttonStyles.ts`, so there is nothing to configure here for it — the query below is
+ * what the layout listens on to auto-hide the IIIF panel. Keep the `lg`/`xl` values
+ * here in step with the Tailwind classes used in the toolbar.
  *
  * The document area below it answers to no breakpoint at all: the columns take a
  * floor and the strip scrolls, at every width alike.
