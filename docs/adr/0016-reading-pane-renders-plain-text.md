@@ -81,6 +81,7 @@ when it has one, because that names the folio *and* the column.
   entity.** `[data-entity-focus] [data-tei-entity]` in `index.css` greys the
   entities not being followed; nothing colours them otherwise. Its
   `text-decoration-color` went with the dotted underline it used to tint.
+  *(Retired — that rule is gone; see the Update below.)*
 - **A `cb` with only a bare `@n` now reads `‖ 1`** in the built-in corpus, where
   it used to read `‖ col. 1`. The prefix was there because a lone digit inside a
   verse line can be read as manuscript text; `‖` is what distinguishes it now.
@@ -93,6 +94,17 @@ when it has one, because that names the folio *and* the column.
   DOM (`<h3>`, `data-tei-anchor-id`) for anything that later wants to set it.
 - **`rubric` gained `data-tei-tag="rubric"`.** With the styling gone it had no
   mark in the DOM at all, which contradicts the premise above.
+
+## Update (2026-08-07, #176)
+
+The third-tier bullet above no longer holds. That rule — and with it the last
+thing that painted a name the reader had not asked to follow — is deleted; see
+[ADR-0021](0021-tag-filter-marks-what-is-followed-only.md). Nothing paints a
+named entity now except the two tiers the Tag Filter puts on the *one* entity
+being followed. This ADR's premise is untouched: `data-tei-entity` is still on
+every name element, still unstyled, and still the seam that opt-in highlighting
+would hang off — which is exactly what the last of the Considered options below
+predicted.
 
 ## Note on the issue's evidence
 

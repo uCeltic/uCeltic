@@ -155,8 +155,8 @@ export function entityOccurrences(docId: string, entityId: string): Element[] {
 /**
  * Repaint the Tag Filter's two highlight tiers for every visible column at once
  * — the current occurrence, and that entity's other occurrences in the same
- * column. The third tier, dimming every *other* named entity, is plain CSS on
- * `data-tei-entity` and needs nothing here.
+ * column. Two is all there is: nothing marks the names the reader is *not*
+ * following (ADR-0021).
  *
  * Same shape and same reason as `rebuildHighlights` above: one global Highlight
  * per tier holds every column's ranges, so this clears and repaints from all

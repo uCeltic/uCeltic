@@ -139,10 +139,9 @@ describe("setQuerySourceHighlight", () => {
 /**
  * #147, #162 — following one person through every open manuscript at once.
  *
- * Two tiers live in the CSS Highlight registry: the occurrence the column is
- * sitting on, and that entity's other occurrences in the same column. The third
- * tier (every *other* named entity, dimmed) is plain CSS on `data-tei-entity`
- * and needs no registry entry.
+ * Both tiers live in the CSS Highlight registry: the occurrence the column is
+ * sitting on, and that entity's other occurrences in the same column. There is
+ * no third — the names the reader is not following are left alone (ADR-0021).
  *
  * The markup is the re-cut corpus's: `data-tei-nym-ref="F64"`, the bare
  * group id those witnesses carry. `data-tei-ref` — a pointer into a document's

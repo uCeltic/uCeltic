@@ -207,19 +207,24 @@
   and a column that names it zero times still keeps its slot in the counts, so
   they line up with what is on screen.
 
-  Three visual tiers, matching the ctrl+F convention: the current occurrence is
-  solid, the entity's other occurrences in that column are tinted, and every
-  other named entity greys out. They are violet, deliberately not the search
-  highlight's orange: both features are allowed on screen at once and must stay
-  telling apart (`client/src/tei/highlight.ts`, `client/src/index.css`). Where
-  two land on the **same words** — searching for the very name being followed —
-  which colour covers which is fixed by a **priority table**, not by whichever
-  feature the reader reached for first: the current search result over the
-  current occurrence, over its siblings, over the query source.
+  Two visual tiers, matching the ctrl+F convention exactly as far as it goes:
+  the current occurrence is solid, the entity's other occurrences in that column
+  are tinted. Names the reader is **not** following are left alone — browser
+  find highlights matches, it never dims the rest of the page, and a third tier
+  that greyed every other name out was dropped for that reason
+  ([ADR-0021](docs/adr/0021-tag-filter-marks-what-is-followed-only.md)). The two
+  are violet, deliberately not the search highlight's orange: both features are
+  allowed on screen at once and must stay telling apart
+  (`client/src/tei/highlight.ts`, `client/src/index.css`). Where two land on the
+  **same words** — searching for the very name being followed — which colour
+  covers which is fixed by a **priority table**, not by whichever feature the
+  reader reached for first: the current search result over the current
+  occurrence, over its siblings, over the query source.
 
-  These tiers are the **only** thing that marks a named entity on the page. The
-  TEI markup lives in the DOM as `data-tei-*` attributes rather than as styling,
-  so an entity is unmarked until this control asks for it. The reading pane does
+  These tiers are the **only** thing that marks a named entity on the page, and
+  they mark one entity at a time — every other name reads as plain text. The TEI
+  markup lives in the DOM as `data-tei-*` attributes rather than as styling, so
+  an entity is unmarked until this control asks for it. The reading pane does
   set the manuscript — in italic, bold and brackets where the printed edition of
   the text does
   ([ADR-0018](docs/adr/0018-reading-pane-reproduces-the-printed-editions-conventions.md),
