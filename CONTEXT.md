@@ -606,3 +606,33 @@
   report reproducible. _Avoid_: bug report (only one of its categories), review,
   survey, questionnaire (the questionnaire is a prompted purpose question, ADR-0007;
   Feedback is visitor-initiated).
+
+  ### Tour
+
+  The workspace's **taught** first-run walkthrough: a spotlight ring on one
+  control at a time, with a card that names **one action to perform now**. It is
+  non-blocking — the page underneath stays fully interactive — and it advances
+  because the reader performs that action, not because they press Next
+  ([ADR-0022](docs/adr/0022-the-tour-advances-as-the-workspace-changes.md)). Next
+  is still there, and always moves forward, so a step nobody wants to perform
+  never holds anyone; Back returns as far as the workspace's own answer. Shown
+  once on a first visit, re-openable from **Help** forever after.
+
+  The third and most demanding member of the workspace's first-run triad, and the
+  three divide the work cleanly:
+
+  - The **Entry Notice** *discloses* (usage is recorded) — one banner, shown to
+    everyone, dismissed and gone. It states a fact; nothing is being taught.
+  - The **drag-reorder hint** *reveals one affordance* the column strip does not
+    advertise (columns can be dragged into a different order). One line, no ring,
+    no sequence, and it dismisses itself the moment a drag proves the reader
+    already knew — the smallest version of "taught" there is.
+  - The **Tour** *teaches a workflow*: an ordered script whose steps build on one
+    another (open documents → search one against the others → move through the
+    matches), each waiting on the workspace itself.
+
+  All three persist their dismissal in `localStorage` and never reach the
+  backend, so what a visitor has been shown is a property of the browser, not of
+  a User — none of it is study data. _Avoid_: onboarding modal, walkthrough
+  wizard, tutorial — a Tour blocks nothing, takes no control of the workspace,
+  and teaches by having the reader use the real thing.

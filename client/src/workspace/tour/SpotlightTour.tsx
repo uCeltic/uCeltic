@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
 import { TOUR_STEPS } from "./tourSteps";
 import { tourDismissedBefore } from "./tourStorage";
-
-// Padding between an anchor's edge and the spotlight ring around it.
-const RING_PAD = 6;
-// Gap between the ring and the copy card that sits beside it.
-const CARD_GAP = 12;
-const CARD_WIDTH = 320;
+import { deriveStepIndex, visibleStepIndex } from "./tourProgress";
+import { useTourSignals } from "./tourSignals";
+import {
+  CARD_GAP,
+  RING_PAD,
+  TOUR_CARD_WIDTH,
+  placeTourCard,
+  type Rect,
+} from "./tourCardPlacement";
 
 // The card's own controls, not toolbar buttons, so they don't reuse the
 // toolbar's shape from buttonStyles.ts (different padding, no icon slot). They
@@ -15,39 +18,62 @@ const CARD_WIDTH = 320;
 const CARD_FOCUS_RING =
   "cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30";
 
-interface Box {
-  top: number;
-  left: number;
-  right: number;
-  bottom: number;
-}
-
 // The box that encloses every currently-rendered anchor of a step — *every*
 // match, not just the first, so the per-column result nav (one `result-nav` per
 // open column) is ringed across all its columns, not only the leftmost. A
 // selector matching nothing (the floating search button before a selection, the
 // result nav before a search) contributes nothing; when none match, there is
 // nothing to ring and the card falls back to a fixed position (see below).
-function measureAnchors(anchors: string[]): Box | null {
-  let box: Box | null = null;
+function measureAnchors(anchors: string[]): Rect | null {
+  let box: Rect | null = null;
   for (const anchor of anchors) {
     for (const el of document.querySelectorAll(`[data-tour="${anchor}"]`)) {
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 && r.height === 0) continue;
-      box = box
-        ? {
-            top: Math.min(box.top, r.top),
-            left: Math.min(box.left, r.left),
-            right: Math.max(box.right, r.right),
-            bottom: Math.max(box.bottom, r.bottom),
-          }
-        : { top: r.top, left: r.left, right: r.right, bottom: r.bottom };
+      box = grow(box, el);
     }
   }
   return box;
 }
 
-function boxesEqual(a: Box | null, b: Box | null): boolean {
+/**
+ * The dropdown the ringed control has open, if any: the card has to keep clear
+ * of it as well as of the ring (tourCardPlacement.ts).
+ *
+ * Only a panel touching the ring counts. A dropdown hangs directly off the
+ * button that opens it, so it always touches; a panel open elsewhere on the
+ * toolbar is somebody else's and must not drag the card across the screen.
+ */
+function measurePanel(ring: Rect | null): Rect | null {
+  if (!ring) return null;
+  let box: Rect | null = null;
+  for (const el of document.querySelectorAll("[data-tour-panel]")) {
+    const r = el.getBoundingClientRect();
+    if (
+      r.left > ring.right + RING_PAD ||
+      r.right < ring.left - RING_PAD ||
+      r.top > ring.bottom + RING_PAD ||
+      r.bottom < ring.top - RING_PAD
+    ) {
+      continue;
+    }
+    box = grow(box, el);
+  }
+  return box;
+}
+
+function grow(box: Rect | null, el: Element): Rect | null {
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return box;
+  return box
+    ? {
+        top: Math.min(box.top, r.top),
+        left: Math.min(box.left, r.left),
+        right: Math.max(box.right, r.right),
+        bottom: Math.max(box.bottom, r.bottom),
+      }
+    : { top: r.top, left: r.left, right: r.right, bottom: r.bottom };
+}
+
+function boxesEqual(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return (
@@ -59,13 +85,21 @@ function boxesEqual(a: Box | null, b: Box | null): boolean {
 }
 
 /**
- * The onboarding spotlight tour overlay (#125).
+ * The onboarding spotlight tour overlay (#125), which advances as the workspace
+ * changes (#177, ADR-0022).
+ *
+ * The step showing is not this component's decision, nor the store's: it is
+ * derived from the workspace itself (tourProgress.ts), so opening a second
+ * document or finishing a search moves the card with no press of Next. All this
+ * component does is read the live signals, fold them into what the tour treats
+ * as taught, and render the step that comes out.
  *
  * Non-blocking by construction: the whole overlay is `pointer-events-none` except
  * the copy card, so the dimmed page underneath stays fully interactive — the user
  * opens documents and selects text (bringing the ephemeral anchors on screen)
- * without leaving the tour. The dim + cutout is a single element's giant
- * box-shadow, purely cosmetic.
+ * without leaving the tour. That is also what makes an advancing tour possible:
+ * every step's action is performed on the page the tour is drawn over. The dim +
+ * cutout is a single element's giant box-shadow, purely cosmetic.
  *
  * Anchor rects are re-measured every animation frame while the tour is open, so
  * the ring tracks scrolling and snaps onto anchors that appear mid-step (the
@@ -73,19 +107,36 @@ function boxesEqual(a: Box | null, b: Box | null): boolean {
  */
 export default function SpotlightTour() {
   const isOpen = useTourStore((s) => s.isOpen);
-  const stepIndex = useTourStore((s) => s.stepIndex);
+  const manualIndex = useTourStore((s) => s.manualIndex);
+  const latched = useTourStore((s) => s.latched);
   const start = useTourStore((s) => s.start);
+  const syncProgress = useTourStore((s) => s.syncProgress);
   const next = useTourStore((s) => s.next);
   const back = useTourStore((s) => s.back);
   const end = useTourStore((s) => s.end);
 
-  const [box, setBox] = useState<Box | null>(null);
+  const signals = useTourSignals();
+
+  const [box, setBox] = useState<Rect | null>(null);
+  const [panel, setPanel] = useState<Rect | null>(null);
 
   // First-run auto-show: open once, unless a previous finish/skip was recorded.
   useEffect(() => {
     if (!tourDismissedBefore()) start();
   }, [start]);
 
+  // Remember what the workspace has taught while the tour is watching. Only
+  // while it is open: a workspace used with the tour closed teaches the tour
+  // nothing, and re-opening from Help is what decides where to resume.
+  useEffect(() => {
+    if (isOpen) syncProgress(signals);
+  }, [isOpen, signals, syncProgress]);
+
+  // The floor the workspace itself sets, and the step actually on screen. Back
+  // stops at the floor rather than pretending to move: below it, the next frame
+  // would derive the same step again.
+  const derivedIndex = deriveStepIndex(TOUR_STEPS, signals, latched);
+  const stepIndex = visibleStepIndex(TOUR_STEPS, signals, latched, manualIndex);
   const step = TOUR_STEPS[stepIndex];
 
   // Track the current step's anchor box across scrolling and late-appearing
@@ -94,12 +145,18 @@ export default function SpotlightTour() {
   useEffect(() => {
     if (!isOpen || !step) return;
     let frame = 0;
-    let current: Box | null = null;
+    let currentBox: Rect | null = null;
+    let currentPanel: Rect | null = null;
     const tick = () => {
       const measured = measureAnchors(step.anchors);
-      if (!boxesEqual(measured, current)) {
-        current = measured;
+      if (!boxesEqual(measured, currentBox)) {
+        currentBox = measured;
         setBox(measured);
+      }
+      const measuredPanel = measurePanel(measured);
+      if (!boxesEqual(measuredPanel, currentPanel)) {
+        currentPanel = measuredPanel;
+        setPanel(measuredPanel);
       }
       frame = requestAnimationFrame(tick);
     };
@@ -111,25 +168,21 @@ export default function SpotlightTour() {
 
   const isLast = stepIndex === TOUR_STEPS.length - 1;
 
-  // Card placement: below the ring when there's room, above it otherwise; centred
-  // near the top when the step has no on-screen anchor yet.
+  // Beside the ring, never on top of what the step asks the reader to use; a
+  // step with no on-screen anchor yet has nothing to sit beside, so the card
+  // waits near the top.
   const cardStyle: React.CSSProperties = box
-    ? (() => {
-        const belowRoom = window.innerHeight - box.bottom;
-        const top =
-          belowRoom > 180
-            ? box.bottom + RING_PAD + CARD_GAP
-            : Math.max(CARD_GAP, box.top - RING_PAD - CARD_GAP - 180);
-        const left = Math.min(
-          Math.max(CARD_GAP, box.left),
-          Math.max(CARD_GAP, window.innerWidth - CARD_WIDTH - CARD_GAP),
-        );
-        return { top, left, width: CARD_WIDTH };
-      })()
+    ? {
+        ...placeTourCard(box, panel, {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        }),
+        width: TOUR_CARD_WIDTH,
+      }
     : {
-        top: 24,
+        top: CARD_GAP,
         left: "50%",
-        width: CARD_WIDTH,
+        width: TOUR_CARD_WIDTH,
         transform: "translateX(-50%)",
       };
 
@@ -182,15 +235,15 @@ export default function SpotlightTour() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={back}
-              disabled={stepIndex === 0}
+              onClick={() => back(stepIndex)}
+              disabled={stepIndex <= derivedIndex}
               className={`rounded-md border border-[#E5E2D6] bg-white px-3 py-1 text-sm font-medium text-[#52524F] hover:bg-[#F0EEE6] disabled:cursor-not-allowed disabled:opacity-50 ${CARD_FOCUS_RING}`}
             >
               Back
             </button>
             <button
               type="button"
-              onClick={next}
+              onClick={() => next(stepIndex)}
               className={`rounded-md border border-[#52524F] bg-[#52524F] px-3 py-1 text-sm font-medium text-white hover:bg-[#3F3F3C] ${CARD_FOCUS_RING}`}
             >
               {isLast ? "Done" : "Next"}

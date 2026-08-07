@@ -165,7 +165,12 @@ export default function WorkPicker() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-96 w-80 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-md">
+        <div
+          // The tour's card keeps clear of an open panel, not just of the
+          // button it rings (tourCardPlacement.ts).
+          data-tour-panel=""
+          className="absolute left-0 top-full z-50 mt-1 max-h-96 w-80 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-md"
+        >
           {loading ? (
             <p className="px-3 py-1.5 text-sm text-gray-400">Loading…</p>
           ) : groups.length === 0 ? (

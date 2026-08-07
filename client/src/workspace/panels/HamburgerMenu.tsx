@@ -30,6 +30,9 @@ export default function HamburgerMenu() {
       {open && (
         <div
           role="menu"
+          // The tour's card keeps clear of an open panel, not just of the
+          // button it rings (tourCardPlacement.ts).
+          data-tour-panel=""
           className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-[#D8D4C3] bg-white py-1 shadow-md"
         >
           <div className="flex items-center gap-2 px-3 py-1.5">

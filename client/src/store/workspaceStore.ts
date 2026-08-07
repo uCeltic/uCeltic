@@ -11,6 +11,13 @@ function logFontSizeChanged(from: number, to: number): void {
 }
 
 
+/**
+ * The reading text's size before anybody touches it. Exported because the tour
+ * asks "has the reader changed the text size?" and has to compare against
+ * something (#177).
+ */
+export const DEFAULT_FONT_SIZE = 14;
+
 interface WorkspaceStore {
   // status
   status: WorkspaceStatus;
@@ -55,7 +62,7 @@ interface WorkspaceStore {
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   status: "ready",
   statusText: "Ready",
-  fontSize: 14,
+  fontSize: DEFAULT_FONT_SIZE,
   showIIIF: true,
   selectedWorkId: null,
   selectedEntityId: null,

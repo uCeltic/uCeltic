@@ -278,14 +278,15 @@ describe("ToolBar search busy state (#174)", () => {
 
 describe("ToolBar Help button (#125)", () => {
   it("re-opens the onboarding tour on demand", () => {
-    useTourStore.setState({ isOpen: false, stepIndex: 3 });
+    useTourStore.setState({ isOpen: false, manualIndex: 3 });
 
     renderToolBar();
     fireEvent.click(screen.getByRole("button", { name: /help/i }));
 
-    // start() opens the tour back at the first step, regardless of a prior run.
+    // start() opens the tour and drops the manual pointer back to the first
+    // step; where it resumes from there is the workspace's answer (#177).
     expect(useTourStore.getState().isOpen).toBe(true);
-    expect(useTourStore.getState().stepIndex).toBe(0);
+    expect(useTourStore.getState().manualIndex).toBe(0);
   });
 });
 
