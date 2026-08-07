@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
+import { ADD_TEXT_TITLE } from "./localDocumentCopy";
 import { toolbarLabelFirstToGo, toolbarLabelLastToGo } from "./buttonStyles";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
@@ -332,5 +333,35 @@ describe("ToolBar search button", () => {
         fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
         expect(paintedQuerySource()).toEqual(["the hound of culann"]);
+    });
+});
+
+// The first of the three places a Local Document's limit is stated (#175): before
+// the file is even opened, on the control that opens it.
+describe("ToolBar Add Text tooltip (#175)", () => {
+    const addText = () => screen.getByRole("button", { name: "Add Text" });
+
+    //Test: the limit is stated where a visitor can still act on it — before the
+    //file is opened — and the accessible name stays the two words the button is
+    //known by, rather than a sentence.
+    it("explains the reading-only limit in the tooltip, keeping Add Text as the name", () => {
+        renderToolBar();
+
+        const tooltip = addText().getAttribute("title")!;
+        expect(tooltip).toBe(ADD_TEXT_TITLE);
+        expect(tooltip).toMatch(/reading only/i);
+        expect(tooltip).toMatch(/not searchable/i);
+        expect(addText()).toHaveAttribute("aria-label", "Add Text");
+    });
+
+    //Test: a Local Document is never uploaded and never stored (CONTEXT.md), so
+    //the one word that would tell a visitor their private file left the machine
+    //must not appear in the sentence that describes the feature.
+    it("never calls opening a local file an upload", () => {
+        renderToolBar();
+
+        const tooltip = addText().getAttribute("title")!;
+        expect(tooltip).not.toMatch(/upload/i);
+        expect(tooltip).toMatch(/stay in your browser/i);
     });
 });

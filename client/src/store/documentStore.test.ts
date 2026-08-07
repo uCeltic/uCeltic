@@ -3,6 +3,7 @@ import {
   useDocumentStore,
   MAX_OPEN_DOCUMENTS,
   getSearchableDocuments,
+  isSearchableDocument,
   planTEIOpen,
 } from "./documentStore";
 import { logEvent } from "../api/log";
@@ -179,6 +180,48 @@ describe("documentStore.addTEIDocument open-once", () => {
     useDocumentStore.getState().addTEIDocument(doc);
 
     expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("isSearchableDocument", () => {
+  //Test: the one rule the search side and the column UI both read, so a column
+  //that is skipped by a search can never be a column that shows a search card.
+  it("says yes to a TEI document and no to a Local Document", () => {
+    expect(
+      isSearchableDocument({
+        id: "doc-tei-1",
+        title: "First",
+        format: "tei",
+        content: makeTEIDoc(1, "First"),
+      }),
+    ).toBe(true);
+    expect(
+      isSearchableDocument({
+        id: "doc-1",
+        title: "Notes",
+        format: "txt",
+        content: "hello",
+      }),
+    ).toBe(false);
+    expect(
+      isSearchableDocument({
+        id: "doc-2",
+        title: "Letter",
+        format: "docx",
+        content: "hello",
+      }),
+    ).toBe(false);
+  });
+
+  //Test: the predicate and the list builder cannot disagree about a column
+  it("agrees with getSearchableDocuments about every visible column", () => {
+    useDocumentStore.getState().addDocument("Notes", "hello");
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1, "First"));
+    const state = useDocumentStore.getState();
+
+    expect(getSearchableDocuments(state).map((d) => d.id)).toEqual(
+      state.openDocuments.filter(isSearchableDocument).map((d) => d.id),
+    );
   });
 });
 

@@ -34,20 +34,35 @@ vi.mock("../../tei/useEntityMenu", () => ({
     useEntityMenu: () => entityMenu.current,
 }));
 
+// The default column these tests search in. It is TEI because a search card is
+// a TEI column's furniture: a Local Document is never searched, so it never
+// shows one (#175).
 const doc: Document = {
     id: "doc-1",
     title: "Acallam",
+    format: "tei",
+    content: twoWordTei(1, "hound", "culann"),
+};
+
+// A Local Document — a `.txt` a visitor opened from their own machine. Not
+// searchable, and the workspace has to say so rather than let a column report
+// on a search it never ran (#175).
+const localDoc: Document = {
+    id: "doc-local",
+    title: "My Notes",
     format: "txt",
     content: "the hound of culann hunts",
 };
 
+// A hit in `doc`, anchored on the <p> it renders (word_array.a=1), so a column
+// showing it scrolls the way the app does rather than down the no-anchor path.
 const result: SearchResult = {
     score: 0.1,
     snippet: "the hound of culann",
     word_start: 0,
-    word_end: 4,
-    anchor_id: null,
-    anchor_tag: null,
+    word_end: 2,
+    anchor_id: 1,
+    anchor_tag: "p",
     line_no: null,
 };
 
@@ -352,21 +367,15 @@ describe("DocumentArea search flow", () => {
     });
 
     it("renders columns independently: one Searching… while another shows its result", () => {
-        const doc2: Document = {
-            id: "doc-2",
-            title: "Cattle Raid",
-            format: "txt",
-            content: "the morrigan watches",
-        };
         useDocumentStore.setState({
-            openDocuments: [doc, doc2],
-            visibleDocumentIds: ["doc-1", "doc-2"],
+            openDocuments: [doc, teiDocB],
+            visibleDocumentIds: ["doc-1", "doc-b"],
             activeDocumentId: "doc-1",
         });
         useSearchStore.setState({
             isSearchingByDocument: { "doc-1": true }, // doc-1 still loading
-            resultsByDocument: { "doc-2": [result] }, // doc-2 already resolved
-            activeResultIndexByDocument: { "doc-2": 0 },
+            resultsByDocument: { "doc-b": [result] }, // doc-b already resolved
+            activeResultIndexByDocument: { "doc-b": 0 },
         });
 
         render(<DocumentArea />);
@@ -865,5 +874,103 @@ describe("Tag Filter entity navigation", () => {
 
         expect([...(CSS.highlights.get("search-match-active") ?? [])]
             .map((r) => r.toString())).toEqual(["hello"]);
+    });
+});
+
+// The other two of the three places a Local Document's limit is stated (#175).
+// Search runs against TEI only, so a `.txt`/`.docx` column is filtered out
+// before the request is built — and a column that was never asked the question
+// must not print an answer to it. This is the distinction #164 already settled
+// on the entity side, applied to search.
+describe("a Local Document says it is reading-only (#175)", () => {
+    const READING_ONLY = "Reading only";
+
+    function openLocalColumn() {
+        useDocumentStore.setState({
+            openDocuments: [localDoc],
+            visibleDocumentIds: ["doc-local"],
+            activeDocumentId: "doc-local",
+        });
+    }
+
+    //Test: the chip is a property of the Document, true from the moment it
+    //opens — before any search has been attempted.
+    it("marks the column Reading only in its header, from the moment it opens", () => {
+        openLocalColumn();
+        render(<DocumentArea />);
+
+        const chip = screen.getByText(READING_ONLY);
+        expect(chip).toBeInTheDocument();
+        expect(
+            chip.closest("header")?.contains(screen.getByText("My Notes")),
+        ).toBe(true);
+    });
+
+    //Test: the chip is the only thing the column says about itself, and at the
+    //column's floor width its two words can clip — so it carries the whole
+    //sentence, the way the truncating title button carries its own.
+    it("explains itself in a tooltip that never calls the file an upload", () => {
+        openLocalColumn();
+        render(<DocumentArea />);
+
+        const tooltip = screen.getByText(READING_ONLY).getAttribute("title")!;
+        expect(tooltip).toMatch(/not searchable/i);
+        expect(tooltip).toMatch(/stay in your browser/i);
+        expect(tooltip).not.toMatch(/upload/i);
+    });
+
+    //Test: "No search results" is a claim about the file's text; the truth is
+    //that the file was never searched. The column stays silent instead.
+    it("renders no result card at all, not an empty one", () => {
+        openLocalColumn();
+        render(<DocumentArea />);
+
+        expect(screen.queryByText("No search results")).not.toBeInTheDocument();
+        expect(screen.queryByText("Searching…")).not.toBeInTheDocument();
+        expect(screen.queryByText(/^Result \d/)).not.toBeInTheDocument();
+    });
+
+    //Test: a search the visitor runs from the toolbar reaches every TEI column
+    //and skips this one — so the silence has to survive that search, not just
+    //the state before it.
+    it("keeps its silence while a search of the other columns is in flight", () => {
+        useDocumentStore.setState({
+            openDocuments: [localDoc, doc],
+            visibleDocumentIds: ["doc-local", "doc-1"],
+            activeDocumentId: "doc-1",
+        });
+        useSearchStore.setState({
+            isSearchingByDocument: { "doc-1": true },
+        });
+
+        render(<DocumentArea />);
+
+        const localColumn = screen.getByText("My Notes").closest("article")!;
+        expect(localColumn.textContent).not.toMatch(/Searching|search results/i);
+        // ...while the TEI column beside it reports on the search it is running
+        expect(screen.getByText("Searching…")).toBeInTheDocument();
+    });
+
+    //Test: the chip belongs to the Local Document alone — a TEI column is
+    //searchable and must not be labelled as if it were not.
+    it("leaves a TEI column unmarked and keeps its result card", () => {
+        useSearchStore.setState({
+            resultsByDocument: { "doc-1": [result] },
+            activeResultIndexByDocument: { "doc-1": 0 },
+        });
+
+        render(<DocumentArea />);
+
+        expect(screen.queryByText(READING_ONLY)).not.toBeInTheDocument();
+        expect(screen.getByText("Result 1 / 1")).toBeInTheDocument();
+    });
+
+    //Test: a Local Document is never uploaded and never stored (CONTEXT.md), so
+    //nothing the column says may suggest the file left the machine.
+    it("never calls the file an upload", () => {
+        openLocalColumn();
+        render(<DocumentArea />);
+
+        expect(document.body.textContent).not.toMatch(/upload/i);
     });
 });

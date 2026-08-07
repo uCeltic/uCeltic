@@ -17,6 +17,7 @@ import {
   toolbarLabelLastToGo,
 } from "./buttonStyles";
 import { BookIcon, FilePlusIcon, SearchIcon, SpinnerIcon } from "./icons";
+import { ADD_TEXT_TITLE } from "./localDocumentCopy";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { useTourStore } from "../../store/tourStore";
@@ -105,7 +106,7 @@ export default function ToolBar({
         <button
           type="button"
           aria-label="Add Text"
-          title="Add Text"
+          title={ADD_TEXT_TITLE}
           data-tour="add-text"
           className={
             openDocuments.length >= MAX_OPEN_DOCUMENTS

@@ -32,7 +32,10 @@ export const TOUR_STEPS: TourStep[] = [
     title: "Open two documents",
     // "versions", not "manuscripts": the toolbar's Manuscripts button means the
     // physical originals' page images, and these are digitized texts (CONTEXT.md).
-    body: "Open “Works”, pick a story, and tick the versions you want side by side — or add your own file with “+ Add Text”. Open two: the next step searches one against the others.",
+    // "your own file ... to read alongside them", never "to search": a Local
+    // Document is not searchable, and this step is where a visitor decides what
+    // to open (#175).
+    body: "Open “Works”, pick a story, and tick the versions you want side by side — or add your own file with “+ Add Text” to read alongside them. Open two of the versions: the next step searches one against the others.",
   },
   {
     id: "select-to-search",
