@@ -1,9 +1,11 @@
 import type { TEIElementProps } from "../elementMap";
 
 // Every component here is a named entity, and every one carries
-// `data-tei-entity` to say so. The Tag Filter dims the entities it is not
-// following (#147), which needs a marker only these elements set —
-// `data-tei-tag` is on most of the reader's spans, not just these.
+// `data-tei-entity` to say so — a marker only these elements set, where
+// `data-tei-tag` is on most of the reader's spans. Nothing styles it today
+// (ADR-0021 dropped the rule that greyed out the names the Tag Filter was not
+// following); it stays because it is the seam any later opt-in highlighting of
+// names hangs off, and it costs one attribute to keep.
 //
 // Two attributes carry "which entity is this", because two corpora answer it
 // differently. `data-tei-ref` is a pointer into the document's own authority

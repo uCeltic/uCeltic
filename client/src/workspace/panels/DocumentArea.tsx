@@ -388,16 +388,8 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
           {doc.format === "tei" ? (
             // data-tei-content marks the searchable rendered text: select-to-search
             // only offers itself for selections landing inside one of these.
-            //
-            // data-entity-focus is the third highlight tier: while this column
-            // is showing someone's occurrences, every OTHER named entity in it
-            // greys out, so the ones that matter stand out of a page that is
-            // otherwise full of coloured names (index.css).
             <div
               data-tei-content
-              data-entity-focus={
-                entityCard && entityCard.count > 0 ? "" : undefined
-              }
               className="leading-6 text-gray-800"
               style={{ fontSize }}
             >

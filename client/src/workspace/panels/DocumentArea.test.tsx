@@ -814,19 +814,6 @@ describe("Tag Filter entity navigation", () => {
         expect(screen.getAllByLabelText("Previous occurrence")[1]).toBeDisabled();
     });
 
-    //Test: a column with nothing to highlight is not dimmed either — greying
-    //every other name out is what makes the followed one stand out, and there
-    //is no followed one here
-    it("leaves a column that never names the entity undimmed", () => {
-        show(noFind);
-        entityMenu.current = menuFor(["doc-d", 0]);
-        const { container } = render(<DocumentArea />);
-
-        act(() => useWorkspaceStore.getState().setSelectedEntityId("F64"));
-
-        expect(container.querySelector("[data-entity-focus]")).toBeNull();
-    });
-
     //Test: stepping a column brings the occurrence it landed on into view, in
     //that column — the spans are already rendered, so this is the whole of
     //"go to the next one"

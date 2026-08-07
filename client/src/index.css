@@ -26,20 +26,14 @@ color: #1F2937;
 }
 
 /* The same entity's other occurrences in the same column: present, findable,
-   but plainly not the one the ← → arrows are sitting on. */
-::highlight(tag-entity-other) {
-background-color: #EDE9FE;
-color: #1F2937;
-}
+   but plainly not the one the ← → arrows are sitting on.
 
-/* Third tier — while a column is showing someone's occurrences, every OTHER
-   named entity greys out. This is the only rule that paints a named entity at
-   all: `persName` and its siblings carry the markup and no styling (#153, and
-   still so under ADR-0018 — a name is not one of the printed edition's four
-   conventions, and none of those four is a colour), so
-   `[data-tei-entity]` is the seam any later opt-in highlighting hangs off too.
-   The two highlights above outrank it, because ::highlight paints over an
-   element's own colour. */
-[data-entity-focus] [data-tei-entity] {
-color: #9CA3AF;
+   This tint carries the tier on its own, against the column's warm parchment
+   ground (#f5f6ee) and nothing else — the third tier that used to grey every
+   other name out is gone (ADR-0021), and with it the darkened page that made a
+   1.09:1 lilac readable. #C4B5FD is 1.70:1 there, still plainly under the
+   current occurrence's 2.50:1, so the two tiers stay ranked. */
+::highlight(tag-entity-other) {
+background-color: #C4B5FD;
+color: #1F2937;
 }
