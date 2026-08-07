@@ -626,10 +626,17 @@
   - The **drag-reorder hint** *reveals one affordance* the column strip does not
     advertise (columns can be dragged into a different order). One line, no ring,
     no sequence, and it dismisses itself the moment a drag proves the reader
-    already knew — the smallest version of "taught" there is.
-  - The **Tour** *teaches a workflow*: an ordered script whose steps build on one
-    another (open documents → search one against the others → move through the
-    matches), each waiting on the workspace itself.
+    already knew — the smallest version of "taught" there is. It appears the
+    moment a second column does, which is why the Tour, whose ninth step teaches
+    the same thing, keeps it out of the way while it runs and marks it
+    acknowledged once that step is passed; a skipped Tour leaves it untouched.
+  - The **Tour** *teaches a workflow*: eleven steps that build on one another —
+    open two versions of one work, search a passage of one against the other,
+    move through what comes back — each waiting on the workspace itself. Names
+    and quotations in its copy are **examples, never targets**: every step waits
+    on the shape of the action (any work expanded, any two versions ticked, any
+    passage selected), because the corpus decides what is listed and in what
+    order.
 
   All three persist their dismissal in `localStorage` and never reach the
   backend, so what a visitor has been shown is a property of the browser, not of

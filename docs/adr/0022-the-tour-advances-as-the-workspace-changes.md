@@ -85,6 +85,40 @@ mechanism and proves it against signals the stores already carry; the eleven-ste
 script is a follow-up, and shipping both at once would leave a failure in either
 one indistinguishable from a failure in the other.
 
+## Update (#178) — the script this was built for
+
+The five cards this slice kept have been replaced by the eleven steps of the
+select-to-search workflow. The mechanism above is unchanged; three things it did
+not have to answer with five general cards, it does now.
+
+**Gates may probe the DOM.** Three of the eleven steps wait on state no store
+holds — the Works dropdown being open, how many versions are ticked, whether a
+passage is selected. All three live in component state or in the browser's
+selection, and none of them belongs in a store: they are disclosure and transient
+input, not workspace state anybody else reads. The tour probes the rendered
+markup instead (`tourDomSignals.ts`), in the animation frame it already runs for
+the ring — a dropdown opening fires no event the tour could listen for anyway.
+The coupling to how those panels render is real and deliberate: each `data-tour`
+attribute is placed for exactly one gate, and the probes are tested against the
+**real panels**, so a change in their shape fails a test rather than quietly
+stalling the tour.
+
+**A gate may also accept evidence that the step is behind the reader.** Clicking
+"Open selected" closes the dropdown and clears the ticks: the one action that
+satisfies step 4 un-satisfies steps 1–3, and before the latch boundary gates read
+live state. So those three gates read "…or the versions are open". This is the
+narrow exception, not a pattern — it applies exactly where the workspace erases
+the evidence *as a direct consequence of the next step*, and each such gate says
+so where it is written.
+
+**The tour and the drag-reorder hint divide one lesson.** The hint appears the
+moment a second column does — during step 4, five steps before the tour has
+anything to say about dragging. While the tour is open the hint stays out of the
+way, and once the tour's own reorder step is passed it is marked acknowledged
+through the same `localStorage` key it has always used, so it does not surface
+after the tour ends. A reader who skips the tour keeps the hint exactly as it
+behaves today: skipping records nothing about it.
+
 ## Consequences
 
 - **This corrects [#125](https://github.com/uCeltic/uCeltic/issues/125).** Its

@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { resultNavigated, searchCompleted, useTourSignals } from "./tourSignals";
+import {
+  columnsReordered,
+  resultNavigated,
+  searchCompleted,
+  searchFired,
+  useTourStoreSignals,
+} from "./tourSignals";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore, type SearchAttempt } from "../../store/searchStore";
 import { DEFAULT_FONT_SIZE, useWorkspaceStore } from "../../store/workspaceStore";
@@ -34,7 +40,7 @@ function emptySearch() {
 }
 
 beforeEach(() => {
-  useDocumentStore.setState({ openDocuments: [] });
+  useDocumentStore.setState({ openDocuments: [], visibleDocumentIds: [] });
   useSearchStore.setState({ ...emptySearch(), resultsByDocument: {} });
   useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE });
 });
@@ -98,34 +104,89 @@ describe("resultNavigated", () => {
   });
 });
 
-describe("useTourSignals", () => {
+describe("searchFired", () => {
+  it("is true from the moment an attempt is recorded, before it comes back", () => {
+    expect(
+      searchFired(
+        searchState({
+          lastAttemptByDocument: { a: attempt() },
+          isSearchingByDocument: { a: true },
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is false when nothing has been searched", () => {
+    expect(searchFired(searchState())).toBe(false);
+  });
+});
+
+describe("columnsReordered", () => {
+  const opened = [column("a"), column("b"), column("c")];
+
+  it("is false while the columns stand in the order they were opened", () => {
+    expect(
+      columnsReordered({
+        openDocuments: opened,
+        visibleDocumentIds: ["a", "b", "c"],
+      }),
+    ).toBe(false);
+  });
+
+  it("is false when a column is closed — the rest keep their order", () => {
+    expect(
+      columnsReordered({
+        openDocuments: opened,
+        visibleDocumentIds: ["a", "c"],
+      }),
+    ).toBe(false);
+  });
+
+  it("is true once a drag has moved one", () => {
+    expect(
+      columnsReordered({
+        openDocuments: opened,
+        visibleDocumentIds: ["c", "a", "b"],
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("useTourStoreSignals", () => {
   it("reads an untouched workspace as nothing done", () => {
-    expect(renderHook(() => useTourSignals()).result.current).toEqual({
+    expect(renderHook(() => useTourStoreSignals()).result.current).toEqual({
       openDocumentCount: 0,
+      searchFired: false,
       searchCompleted: false,
       resultNavigated: false,
+      columnsReordered: false,
       fontSizeChanged: false,
     });
   });
 
-  it("reads the whole workspace: columns, search, and text size", () => {
-    useDocumentStore.setState({ openDocuments: [column("a"), column("b")] });
+  it("reads the whole workspace: columns, search, order, and text size", () => {
+    useDocumentStore.setState({
+      openDocuments: [column("a"), column("b")],
+      visibleDocumentIds: ["b", "a"],
+    });
     useSearchStore.setState({
       lastAttemptByDocument: { a: attempt() },
       activeResultIndexByDocument: { a: 2 },
     });
     useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE + 2 });
 
-    expect(renderHook(() => useTourSignals()).result.current).toEqual({
+    expect(renderHook(() => useTourStoreSignals()).result.current).toEqual({
       openDocumentCount: 2,
+      searchFired: true,
       searchCompleted: true,
       resultNavigated: true,
+      columnsReordered: true,
       fontSizeChanged: true,
     });
   });
 
   it("hands back the same object while nothing it reads has changed", () => {
-    const { result, rerender } = renderHook(() => useTourSignals());
+    const { result, rerender } = renderHook(() => useTourStoreSignals());
     const first = result.current;
     rerender();
     // The overlay folds these into its latches from an effect keyed on this

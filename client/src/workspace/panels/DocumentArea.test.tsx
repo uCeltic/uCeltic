@@ -4,7 +4,9 @@ import DocumentArea from "./DocumentArea";
 import {
     computeDragEndReorder,
     DRAG_REORDER_HINT_DISMISSED_KEY,
+    markDragReorderHintDismissed,
 } from "./dragReorderHint";
+import { useTourStore } from "../../store/tourStore";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
@@ -134,6 +136,7 @@ const doc2: Document = {
 beforeEach(() => {
     mockedSearch.mockReset();
     localStorage.clear();
+    useTourStore.setState({ isOpen: false, manualIndex: 0, latched: [] });
     useDocumentStore.setState({
         openDocuments: [doc],
         visibleDocumentIds: ["doc-1"],
@@ -476,6 +479,59 @@ describe("drag-reorder discovery hint", () => {
                 visibleDocumentIds: ["doc-1", "doc-2"],
             });
         });
+        expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+    });
+
+    it("stays out of the way while the guided tour is running", () => {
+        // The tour teaches dragging at its own step, five steps after the second
+        // column appears; two things teaching it at once teaches neither (#178).
+        useTourStore.setState({ isOpen: true });
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+
+        expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
+    });
+
+    it("appears after a tour that was skipped before it taught dragging", () => {
+        useTourStore.setState({ isOpen: true });
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+        // Skip: the tour records its own dismissal, and nothing about the hint.
+        act(() => {
+            useTourStore.setState({ isOpen: false });
+        });
+
+        expect(screen.getByText("Drag to reorder columns")).toBeInTheDocument();
+    });
+
+    it("does not appear after a tour that taught dragging itself", () => {
+        useTourStore.setState({ isOpen: true });
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore.setState({
+                openDocuments: [doc, doc2],
+                visibleDocumentIds: ["doc-1", "doc-2"],
+            });
+        });
+        // What the overlay does once its reorder step is passed (#178).
+        act(() => {
+            markDragReorderHintDismissed();
+            useTourStore.setState({ isOpen: false });
+        });
+
         expect(screen.queryByText("Drag to reorder columns")).not.toBeInTheDocument();
     });
 

@@ -6,7 +6,7 @@ import {
   latchProgress,
   visibleStepIndex,
 } from "./tourProgress";
-import type { TourSignals } from "./tourProgress";
+import { NOTHING_DONE, signals } from "./tourSignals.fixture";
 import type { TourStep } from "./tourSteps";
 
 // A miniature script with the same shape as the real one: an opening step, the
@@ -46,17 +46,7 @@ const STEPS: TourStep[] = [
   { id: "last", anchors: [], title: "Last", body: "" },
 ];
 
-const NOTHING_DONE: TourSignals = {
-  openDocumentCount: 0,
-  searchCompleted: false,
-  resultNavigated: false,
-  fontSizeChanged: false,
-};
 
-const signals = (over: Partial<TourSignals> = {}): TourSignals => ({
-  ...NOTHING_DONE,
-  ...over,
-});
 
 describe("deriveStepIndex", () => {
   it("is the first step whose action has not happened", () => {

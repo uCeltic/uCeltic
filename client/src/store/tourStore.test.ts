@@ -2,19 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useTourStore } from "./tourStore";
 import { TOUR_STEPS } from "../workspace/tour/tourSteps";
 import { TOUR_DISMISSED_KEY } from "../workspace/tour/tourStorage";
-import type { TourSignals } from "../workspace/tour/tourProgress";
-
-const NOTHING_DONE: TourSignals = {
-  openDocumentCount: 0,
-  searchCompleted: false,
-  resultNavigated: false,
-  fontSizeChanged: false,
-};
-
-const signals = (over: Partial<TourSignals> = {}): TourSignals => ({
-  ...NOTHING_DONE,
-  ...over,
-});
+import { signals } from "../workspace/tour/tourSignals.fixture";
 
 const searchStepIndex = TOUR_STEPS.findIndex((s) => s.latchBoundary);
 

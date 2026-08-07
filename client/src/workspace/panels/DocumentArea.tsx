@@ -4,6 +4,7 @@ import {
   useDocumentStore,
 } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
+import { useTourStore } from "../../store/tourStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import TEIRenderer from "../../tei/TEIRenderer";
 import TEIErrorBoundary from "../../tei/ErrorBoundary";
@@ -260,6 +261,9 @@ function SortableDocumentColumn({
             <button
               type="button"
               title={doc.title}
+              // What the tour's reorder step rings: the grip *is* the title
+              // button, which is why the hint beside it exists at all (#178).
+              data-tour="column-grip"
               {...attributes}
               {...listeners}
               className="flex w-[160px] cursor-grab items-center gap-1.5 truncate rounded-md border border-gray-200
@@ -298,7 +302,7 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
             Searching…
           </div>
         ) : docResults.length > 0 ? (
-          <div className="border-b border-gray-200 bg-gray-50">
+          <div className="border-b border-gray-200 bg-gray-50" data-tour="result-card">
             <div className="flex items-center justify-between gap-2 px-3 py-2">
               <div className="shrink-0 text-sm font-medium text-gray-800">
                 Result {activeIndex + 1} / {docResults.length}
@@ -383,7 +387,9 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
         )}
 
         {/* document text content */}
-        <div className="min-h-0 flex-1 overflow-auto p-4">
+        {/* data-tour: the tour's "select a passage" step rings this pane, and
+            its gate counts a selection only if both ends land inside one (#178). */}
+        <div className="min-h-0 flex-1 overflow-auto p-4" data-tour="column-text">
           {/* if the document is a TEI document, hand it to the TEIRenderer, let it render the tei document. */}
           {doc.format === "tei" ? (
             // data-tei-content marks the searchable rendered text: select-to-search
@@ -598,10 +604,21 @@ export default function DocumentArea() {
   const [dragHintDismissed, setDragHintDismissed] = useState(
     dragReorderHintDismissedBefore,
   );
+  // The tour teaches dragging itself, at its own step — five steps after the
+  // second column appears. While it is running the hint would be teaching the
+  // wrong thing at the wrong moment, so it stays out of the way; and the tour
+  // records the dismissal once it has taught that step, which is what this
+  // re-reads when the tour closes (#178).
+  const tourOpen = useTourStore((s) => s.isOpen);
+  useEffect(() => {
+    if (!tourOpen) setDragHintDismissed(dragReorderHintDismissedBefore());
+  }, [tourOpen]);
   const [dragHintDocId, setDragHintDocId] = useState<string | null>(null);
   const [prevVisibleCount, setPrevVisibleCount] = useState(
     visibleDocumentIds.length,
   );
+
+  const showDragHintFor = tourOpen || dragHintDismissed ? null : dragHintDocId;
 
   if (visibleDocumentIds.length !== prevVisibleCount) {
     const newCount = visibleDocumentIds.length;
@@ -662,7 +679,7 @@ export default function DocumentArea() {
                 hasError={searchErrorByDocument[doc.id] ?? false}
                 activeIndex={activeIndex}
                 activeResult={activeResult}
-                showDragHint={doc.id === dragHintDocId}
+                showDragHint={doc.id === showDragHintFor}
                 entityCard={entityCardFor(doc.id)}
                 onDismissDragHint={dismissDragHint}
                 onEntityPrev={() => {

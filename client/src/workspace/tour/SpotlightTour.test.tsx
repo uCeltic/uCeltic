@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import SpotlightTour from "./SpotlightTour";
-import { TOUR_STEPS } from "./tourSteps";
+import { DRAG_REORDER_STEP_ID, TOUR_STEPS } from "./tourSteps";
 import { TOUR_DISMISSED_KEY } from "./tourStorage";
+import { DRAG_REORDER_HINT_DISMISSED_KEY } from "../panels/dragReorderHint";
 import { useTourStore } from "../../store/tourStore";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore, type SearchAttempt } from "../../store/searchStore";
@@ -17,6 +18,9 @@ vi.mock("../../api/log", () => ({ logEvent: vi.fn() }));
 const stepTitle = (id: string) =>
   TOUR_STEPS.find((step) => step.id === id)!.title;
 
+const stepNumber = (id: string) =>
+  TOUR_STEPS.findIndex((step) => step.id === id) + 1;
+
 // Only the id matters here: the tour counts columns, it never reads one.
 const column = (id: string) => ({ id, title: id }) as Document;
 
@@ -28,11 +32,12 @@ const attempt = (): SearchAttempt => ({
   params: { matchLength: 130, precision: 1, dissimilarityScore: 0.5, topK: 10 },
 });
 
-/** Two documents open, as the first step asks for. */
+/** Two documents open, as the fourth step asks for. */
 function openTwoDocuments() {
   act(() => {
     useDocumentStore.setState({
       openDocuments: [column("a"), column("b")],
+      visibleDocumentIds: ["a", "b"],
     });
   });
 }
@@ -48,10 +53,30 @@ function completeSearch() {
   });
 }
 
+/**
+ * Put a panel the tour probes for on the page. The real panels are probed in
+ * tourDomSignals.test.tsx; what is under test here is that the overlay reads
+ * them at all, every frame, with no event to prompt it.
+ */
+function renderPanel(anchor: string): HTMLElement {
+  const el = document.createElement("div");
+  el.setAttribute("data-tour", anchor);
+  document.body.appendChild(el);
+  return el;
+}
+
+/** The card showing, once the animation frame that probes the DOM has run. */
+async function expectCard(id: string) {
+  await waitFor(() =>
+    expect(screen.getByText(stepTitle(id))).toBeInTheDocument(),
+  );
+}
+
 beforeEach(() => {
   localStorage.clear();
+  document.body.querySelectorAll("[data-tour]").forEach((el) => el.remove());
   useTourStore.setState({ isOpen: false, manualIndex: 0, latched: [] });
-  useDocumentStore.setState({ openDocuments: [] });
+  useDocumentStore.setState({ openDocuments: [], visibleDocumentIds: [] });
   useSearchStore.setState({
     lastAttemptByDocument: {},
     isSearchingByDocument: {},
@@ -61,12 +86,6 @@ beforeEach(() => {
   });
   useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE });
 });
-
-function advanceToLast() {
-  for (let i = 0; i < TOUR_STEPS.length - 1; i++) {
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-  }
-}
 
 describe("SpotlightTour", () => {
   it("auto-shows on first visit, opening at the first step", () => {
@@ -81,7 +100,7 @@ describe("SpotlightTour", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("walks the five anchors in order, then finishes on Done and persists", () => {
+  it("walks the whole script in order, then finishes on Done and persists", () => {
     render(<SpotlightTour />);
     TOUR_STEPS.forEach((step, i) => {
       expect(screen.getByText(step.title)).toBeInTheDocument();
@@ -95,11 +114,11 @@ describe("SpotlightTour", () => {
   });
 
   it("the search step points at the floating select-to-search button, not the toolbar Search", () => {
-    const searchStep = TOUR_STEPS.find((s) => s.anchors.includes("selection-search"));
+    const searchStep = TOUR_STEPS.find((s) =>
+      s.anchors.includes("selection-search"),
+    );
     expect(searchStep).toBeDefined();
-    render(<SpotlightTour />);
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByText(/floating .Search. button/i)).toBeInTheDocument();
+    expect(searchStep!.body).toMatch(/“Search” button appears under your selection/);
   });
 
   it("skips at any step and persists the dismissal", () => {
@@ -120,7 +139,9 @@ describe("SpotlightTour", () => {
   it("labels only the final step's advance control as Done", () => {
     render(<SpotlightTour />);
     expect(screen.queryByRole("button", { name: "Done" })).not.toBeInTheDocument();
-    advanceToLast();
+    for (let i = 0; i < TOUR_STEPS.length - 1; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
     expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
   });
 
@@ -131,37 +152,73 @@ describe("SpotlightTour", () => {
   });
 });
 
-describe("SpotlightTour advancing with the workspace (#177)", () => {
-  it("advances when a second document is opened, with no press of Next", () => {
+describe("SpotlightTour advancing with the workspace (#177, #178)", () => {
+  it("advances when the Works dropdown opens, with no press of Next", async () => {
     render(<SpotlightTour />);
-    expect(screen.getByText(stepTitle("open-documents"))).toBeInTheDocument();
+    await expectCard("open-works");
 
-    openTwoDocuments();
+    renderPanel("works-panel");
 
-    expect(screen.getByText(stepTitle("select-to-search"))).toBeInTheDocument();
+    await expectCard("expand-work");
   });
 
-  it("stays on the opening step while only one document is open", () => {
+  it("follows the reader backwards: the dropdown closed again asks for it again", async () => {
     render(<SpotlightTour />);
+    const panel = renderPanel("works-panel");
+    await expectCard("expand-work");
+
+    panel.remove();
+
+    await expectCard("open-works");
+  });
+
+  it("advances through the opening steps as the versions are ticked", async () => {
+    render(<SpotlightTour />);
+    renderPanel("works-panel");
+    const list = renderPanel("version-list");
+    await expectCard("tick-versions");
+
+    list.innerHTML =
+      '<input type="checkbox" checked /><input type="checkbox" checked />';
+
+    await expectCard("open-selected");
+  });
+
+  it("does not fall back to the dropdown steps once the columns are open", async () => {
+    render(<SpotlightTour />);
+    renderPanel("works-panel");
+    await expectCard("expand-work");
+
+    // "Open selected" closes the dropdown and clears the ticks — the very
+    // action that satisfies the next step erases the evidence for the last two.
     act(() => {
-      useDocumentStore.setState({ openDocuments: [column("a")] });
+      document.querySelector('[data-tour="works-panel"]')!.remove();
     });
-    expect(screen.getByText(stepTitle("open-documents"))).toBeInTheDocument();
+    openTwoDocuments();
+
+    await expectCard("select-passage");
   });
 
-  it("advances when a search comes back, whether or not it found anything", () => {
+  it("advances when a search is fired, and again when it comes back", async () => {
     render(<SpotlightTour />);
     openTwoDocuments();
+    await expectCard("select-passage");
+
+    act(() => {
+      useSearchStore.setState({
+        lastAttemptByDocument: { a: attempt() },
+        isSearchingByDocument: { a: true },
+      });
+    });
+    await expectCard("read-result");
 
     completeSearch();
-
-    expect(screen.getByText(stepTitle("navigate-results"))).toBeInTheDocument();
+    await expectCard("navigate-results");
   });
 
-  it("does not advance on a search that errored — that column offers Retry", () => {
+  it("waits on the result card while the search is failing", async () => {
     render(<SpotlightTour />);
     openTwoDocuments();
-
     act(() => {
       useSearchStore.setState({
         lastAttemptByDocument: { a: attempt() },
@@ -169,96 +226,64 @@ describe("SpotlightTour advancing with the workspace (#177)", () => {
       });
     });
 
-    expect(screen.getByText(stepTitle("select-to-search"))).toBeInTheDocument();
+    await expectCard("read-result");
   });
 
-  it("advances when the reader moves through the results", () => {
-    render(<SpotlightTour />);
-    openTwoDocuments();
-    completeSearch();
-
-    act(() => {
-      useSearchStore.setState({ activeResultIndexByDocument: { a: 1 } });
-    });
-
-    expect(screen.getByText(stepTitle("font-size"))).toBeInTheDocument();
-  });
-
-  it("advances when the text size changes", () => {
+  it("advances when the reader reorders the columns, and does not go back", async () => {
     render(<SpotlightTour />);
     openTwoDocuments();
     completeSearch();
     act(() => {
       useSearchStore.setState({ activeResultIndexByDocument: { a: 1 } });
     });
+    await expectCard(DRAG_REORDER_STEP_ID);
+
+    act(() => {
+      useDocumentStore.setState({ visibleDocumentIds: ["b", "a"] });
+    });
+    await expectCard("font-size");
+
+    // Dragged back where it came from: the reorder is undone, having been
+    // taught it is not.
+    act(() => {
+      useDocumentStore.setState({ visibleDocumentIds: ["a", "b"] });
+    });
+    await expectCard("font-size");
+  });
+
+  it("advances when the text size changes", async () => {
+    render(<SpotlightTour />);
+    openTwoDocuments();
+    completeSearch();
+    act(() => {
+      useSearchStore.setState({ activeResultIndexByDocument: { a: 1 } });
+      useDocumentStore.setState({ visibleDocumentIds: ["b", "a"] });
+    });
+    await expectCard("font-size");
 
     act(() => {
       useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE + 2 });
     });
 
-    expect(screen.getByText(stepTitle("manuscripts"))).toBeInTheDocument();
-  });
-
-  it("follows the workspace backwards before any search has completed", () => {
-    render(<SpotlightTour />);
-    openTwoDocuments();
-    expect(screen.getByText(stepTitle("select-to-search"))).toBeInTheDocument();
-
-    // A column closed again: nothing has been taught for good yet, so the tour
-    // goes back to asking for what it asked for.
-    act(() => {
-      useDocumentStore.setState({ openDocuments: [column("a")] });
-    });
-
-    expect(screen.getByText(stepTitle("open-documents"))).toBeInTheDocument();
-  });
-
-  it("does not go back to the opening steps when a column is closed after a search", () => {
-    render(<SpotlightTour />);
-    openTwoDocuments();
-    completeSearch();
-
-    act(() => {
-      useDocumentStore.setState({ openDocuments: [column("a")] });
-      useSearchStore.setState({ lastAttemptByDocument: {} });
-    });
-
-    expect(screen.getByText(stepTitle("navigate-results"))).toBeInTheDocument();
-  });
-
-  it("keeps a later step taught when its action is undone", () => {
-    render(<SpotlightTour />);
-    openTwoDocuments();
-    completeSearch();
-    act(() => {
-      useSearchStore.setState({ activeResultIndexByDocument: { a: 1 } });
-    });
-    expect(screen.getByText(stepTitle("font-size"))).toBeInTheDocument();
-
-    // Back on the first match. Navigating is reversible; having been taught it
-    // is not.
-    act(() => {
-      useSearchStore.setState({ activeResultIndexByDocument: { a: 0 } });
-    });
-
-    expect(screen.getByText(stepTitle("font-size"))).toBeInTheDocument();
+    await expectCard("manuscripts");
   });
 
   it("lets Next jump a step whose action the reader does not want to perform", () => {
     render(<SpotlightTour />);
-    expect(screen.getByText(stepTitle("open-documents"))).toBeInTheDocument();
+    expect(screen.getByText(stepTitle("open-works"))).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByText(stepTitle("select-to-search"))).toBeInTheDocument();
+    expect(screen.getByText(stepTitle("expand-work"))).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.getByText(stepTitle("open-documents"))).toBeInTheDocument();
+    expect(screen.getByText(stepTitle("open-works"))).toBeInTheDocument();
   });
 
-  it("re-opening from Help with two documents open starts past the opening step", () => {
+  it("re-opening from Help with two documents open starts past the opening steps", async () => {
     localStorage.setItem(TOUR_DISMISSED_KEY, "1");
     useDocumentStore.setState({
       openDocuments: [column("a"), column("b")],
+      visibleDocumentIds: ["a", "b"],
     });
     render(<SpotlightTour />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -267,33 +292,41 @@ describe("SpotlightTour advancing with the workspace (#177)", () => {
       useTourStore.getState().start();
     });
 
-    expect(screen.getByText(stepTitle("select-to-search"))).toBeInTheDocument();
+    await expectCard("select-passage");
+    expect(
+      screen.getByText(`Step ${stepNumber("select-passage")} of ${TOUR_STEPS.length}`),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("SpotlightTour and the drag-reorder hint (#178)", () => {
+  it("marks the hint acknowledged once its step is passed", () => {
+    render(<SpotlightTour />);
+    expect(localStorage.getItem(DRAG_REORDER_HINT_DISMISSED_KEY)).toBeNull();
+
+    const dragStep = TOUR_STEPS.findIndex((s) => s.id === DRAG_REORDER_STEP_ID);
+    for (let i = 0; i <= dragStep; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
+
+    expect(localStorage.getItem(DRAG_REORDER_HINT_DISMISSED_KEY)).toBe("1");
   });
 
-  it("re-opening from Help teaches the steps after the search again", () => {
+  it("leaves it alone while the reader is still short of that step", () => {
     render(<SpotlightTour />);
-    openTwoDocuments();
-    completeSearch();
-    act(() => {
-      useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE + 2 });
-    });
-    // The text-size step is taught by now, even though the reader never reached
-    // its card. Put the size back and close the tour.
-    act(() => {
-      useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE });
-      useTourStore.getState().end();
-    });
+    const dragStep = TOUR_STEPS.findIndex((s) => s.id === DRAG_REORDER_STEP_ID);
+    for (let i = 0; i < dragStep; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
 
-    act(() => {
-      useTourStore.getState().start();
-    });
+    expect(screen.getByText(stepTitle(DRAG_REORDER_STEP_ID))).toBeInTheDocument();
+    expect(localStorage.getItem(DRAG_REORDER_HINT_DISMISSED_KEY)).toBeNull();
+  });
 
-    // The workspace is untouched — the two documents are still open, so the
-    // opening step stays behind us — but the text size is asked for again.
-    expect(useDocumentStore.getState().openDocuments).toHaveLength(2);
-    expect(screen.queryByText(stepTitle("open-documents"))).not.toBeInTheDocument();
-    expect(screen.getByText(stepTitle("navigate-results"))).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByText(stepTitle("font-size"))).toBeInTheDocument();
+  it("leaves it alone when the reader skips the tour on the first card", () => {
+    render(<SpotlightTour />);
+    fireEvent.click(screen.getByRole("button", { name: /skip/i }));
+
+    expect(localStorage.getItem(DRAG_REORDER_HINT_DISMISSED_KEY)).toBeNull();
   });
 });

@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
-import { TOUR_STEPS } from "./tourSteps";
+import { DRAG_REORDER_STEP_ID, TOUR_STEPS } from "./tourSteps";
 import { tourDismissedBefore } from "./tourStorage";
 import { deriveStepIndex, visibleStepIndex } from "./tourProgress";
-import { useTourSignals } from "./tourSignals";
+import { useTourStoreSignals } from "./tourSignals";
+import {
+  NO_DOM_SIGNALS,
+  domSignalsEqual,
+  probeTourDom,
+  type TourDomSignals,
+} from "./tourDomSignals";
+import { markDragReorderHintDismissed } from "../panels/dragReorderHint";
 import {
   CARD_GAP,
   RING_PAD,
@@ -13,6 +20,10 @@ import {
   unionRects,
   type Rect,
 } from "./tourCardPlacement";
+
+const DRAG_STEP_INDEX = TOUR_STEPS.findIndex(
+  (step) => step.id === DRAG_REORDER_STEP_ID,
+);
 
 // The card's own controls, not toolbar buttons, so they don't reuse the
 // toolbar's shape from buttonStyles.ts (different padding, no icon slot). They
@@ -101,7 +112,12 @@ export default function SpotlightTour() {
   const back = useTourStore((s) => s.back);
   const end = useTourStore((s) => s.end);
 
-  const signals = useTourSignals();
+  const storeSignals = useTourStoreSignals();
+  const [domSignals, setDomSignals] = useState<TourDomSignals>(NO_DOM_SIGNALS);
+  const signals = useMemo(
+    () => ({ ...storeSignals, ...domSignals }),
+    [storeSignals, domSignals],
+  );
 
   const [box, setBox] = useState<Rect | null>(null);
   const [panel, setPanel] = useState<Rect | null>(null);
@@ -134,6 +150,14 @@ export default function SpotlightTour() {
     let currentBox: Rect | null = null;
     let currentPanel: Rect | null = null;
     const tick = () => {
+      // Three of the gates read the markup rather than a store (#178). This
+      // loop is already running for the ring, and a dropdown opening fires no
+      // event the tour could listen for anyway. The probe runs every frame; the
+      // state only moves when what it saw changed.
+      const probed = probeTourDom();
+      setDomSignals((current) =>
+        domSignalsEqual(current, probed) ? current : probed,
+      );
       const measured = measureAnchors(step.anchors);
       if (!boxesEqual(measured, currentBox)) {
         currentBox = measured;
@@ -149,6 +173,20 @@ export default function SpotlightTour() {
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [isOpen, step]);
+
+  // Stop probing the moment the tour closes: a stale "a passage is selected"
+  // would otherwise be the state the tour resumes from when Help re-opens it.
+  useEffect(() => {
+    if (!isOpen) setDomSignals(NO_DOM_SIGNALS);
+  }, [isOpen]);
+
+  // The tour teaches drag-reordering itself, so once that step is behind the
+  // reader the one-time hint has nothing left to say. Marking it acknowledged
+  // (rather than only hiding it) is what keeps it from appearing after the tour
+  // ends — DocumentArea re-reads this when the tour closes (#178).
+  useEffect(() => {
+    if (isOpen && stepIndex > DRAG_STEP_INDEX) markDragReorderHintDismissed();
+  }, [isOpen, stepIndex]);
 
   if (!isOpen || !step) return null;
 

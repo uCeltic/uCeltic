@@ -26,12 +26,29 @@ import type { TourStep } from "./tourSteps";
  */
 
 /**
- * A snapshot of the workspace, as the gates read it. Assembled from the stores
- * by `tourSignals.ts` — nothing in this module knows a store exists.
+ * A snapshot of the workspace, as the gates read it.
+ *
+ * Assembled from two places, because the workflow the tour walks is not all
+ * held in stores: `tourSignals.ts` reads the stores, and `tourDomSignals.ts`
+ * probes the rendered panels for the three facts no store keeps (#178).
+ * Nothing in this module knows that either exists.
  */
 export interface TourSignals {
+  /** The Works dropdown is open. Probed: no store holds it. */
+  worksDropdownOpen: boolean;
+  /** Some work in the Works dropdown is showing its versions. Probed. */
+  workExpanded: boolean;
+  /** How many versions are ticked in the expanded work. Probed. */
+  versionsTicked: number;
   /** How many documents are open, in columns or not. */
   openDocumentCount: number;
+  /** Text is selected inside a column's reading pane. Probed. */
+  passageSelected: boolean;
+  /**
+   * A search has been fired from at least one column — recorded the moment the
+   * request goes out, so this is true while it is still in flight.
+   */
+  searchFired: boolean;
   /**
    * At least one column has a search that ran to completion — any number of
    * matches, including none. A search that errored does not count: the column
@@ -40,6 +57,8 @@ export interface TourSignals {
   searchCompleted: boolean;
   /** At least one column is sitting on something other than its first match. */
   resultNavigated: boolean;
+  /** The columns are no longer in the order they were opened in. */
+  columnsReordered: boolean;
   /** The reading text is no longer at the size it started at. */
   fontSizeChanged: boolean;
 }
