@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import WorkPicker from "./WorkPicker";
+import { toolbarLabelLastToGo } from "./buttonStyles";
 import { useDocumentStore, MAX_OPEN_DOCUMENTS } from "../../store/documentStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import type { TEICatalogEntry, TEIDoc, TEIWork } from "../../types/tei";
@@ -236,5 +237,17 @@ describe("WorkPicker", () => {
         fireEvent.click(screen.getByRole("button", { name: /works/i }));
 
         expect(await screen.findByText(/no documents/i)).toBeInTheDocument();
+    });
+});
+
+// The trigger names the work being read — the layers icon cannot. So its label is one
+// of the two that survive the first collapse, alongside the Tag Filter's (#174).
+describe("Works label survives the first collapse (#174)", () => {
+    it("keeps its label down to `lg`, not just `xl`", () => {
+        render(<WorkPicker />);
+
+        expect(screen.getByText(/Works/, { selector: "span" })).toHaveClass(
+            toolbarLabelLastToGo,
+        );
     });
 });

@@ -23,6 +23,19 @@
 > restores whatever the visitor last chose (#160). Nothing in the decision below
 > changes.
 
+> **Update (2026-08-07).** "A two-breakpoint toolbar" below is the part that
+> changes. Built as one class on every label, it made icon-only the *normal*
+> state of the bar: the full-label toolbar measures ~1250px, so a 1080p window
+> that is not maximised already sits under the 1280px flip, and all six labels
+> went together.
+> [ADR-0020](0020-toolbar-labels-collapse-in-stages.md) keeps the scheme and
+> splits the flip in two — labels collapse at `xl` or at `lg` depending on how
+> much the label says that its icon does not, so the Tag Filter and Works labels
+> (which name the *selected* entity and work) outlive the manuscript toggle's.
+> Still stock Tailwind breakpoints, still no measuring. Everything else here —
+> the desktop-only scope, the client-requirement wording, the hamburger menu —
+> is unchanged.
+
 ## Context
 
 The workspace is built for **desktop browsers only**. "Responsive" here means

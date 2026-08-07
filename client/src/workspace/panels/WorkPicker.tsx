@@ -13,7 +13,7 @@ import { useDismissableDropdown } from "./useDismissableDropdown";
 import {
   dropdownTriggerIdle,
   dropdownTriggerOpen,
-  toolbarLabel,
+  toolbarLabelLastToGo,
 } from "./buttonStyles";
 import { LayersIcon } from "./icons";
 
@@ -159,7 +159,9 @@ export default function WorkPicker() {
         data-tour="open-works"
       >
         <LayersIcon />
-        <span className={toolbarLabel}>{label} ▾</span>
+        {/* Names the work being read, which the layers icon cannot; it collapses
+            with the Tag Filter's label, one stage later than the rest (#174). */}
+        <span className={toolbarLabelLastToGo}>{label} ▾</span>
       </button>
 
       {open && (

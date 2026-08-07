@@ -1,6 +1,7 @@
 /**
- * Small inline toolbar icons (the repo ships no icon library). They surface when
- * a control collapses to icon-only below the `xl` breakpoint (ADR-0011).
+ * Small inline toolbar icons (the repo ships no icon library). They surface when a
+ * control collapses to icon-only — in stages, at `xl` or at `lg` (ADR-0011/0020), so
+ * for most controls the glyph is what the reader normally sees.
  *
  * All are 16×16 line icons drawn in `currentColor` and marked `aria-hidden`: the
  * accessible name comes from the button's own label/tooltip, never the glyph. In
@@ -82,6 +83,26 @@ export function SearchIcon({ className }: IconProps) {
     <Svg className={className}>
       <circle cx="11" cy="11" r="7" />
       <path d="m21 21-4.3-4.3" />
+    </Svg>
+  );
+}
+
+/**
+ * Search, in flight — the magnifier's slot while a column is still searching.
+ *
+ * A three-quarter ring, spun by `animate-spin`. It replaces the icon rather than
+ * sitting beside it so the button's width never changes mid-search, and it is what
+ * carries the busy state at *every* width: the label that used to flicker to "..."
+ * was invisible below the collapse breakpoint, which is most of the time (#174).
+ *
+ * `motion-reduce:animate-none` stops the spin for a reader who asked for less
+ * motion; the button's `aria-busy` and its `disabled` state say the same thing
+ * without it.
+ */
+export function SpinnerIcon({ className }: IconProps) {
+  return (
+    <Svg className={`${className ?? base} animate-spin motion-reduce:animate-none`}>
+      <path d="M12 3a9 9 0 1 0 9 9" />
     </Svg>
   );
 }

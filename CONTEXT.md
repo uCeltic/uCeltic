@@ -170,7 +170,11 @@
   renamed to "Books"; disambiguation from Documents is done with an **icon**
   next to the label, never by changing the word (see
   [ADR-0011](docs/adr/0011-desktop-only-responsive-scope.md) for the icon-driven
-  responsive treatment). _Avoid_: Book (a physical Manuscript is book-like but
+  responsive treatment, staged by
+  [ADR-0020](docs/adr/0020-toolbar-labels-collapse-in-stages.md)). The book icon
+  is what carries the term below 1280px: this is the *first* label the toolbar
+  drops, because the toggle's colour and `aria-pressed` already say what it says.
+  The word survives in the button's `aria-label` and tooltip at every width. _Avoid_: Book (a physical Manuscript is book-like but
   "Book" is a forbidden UI rename); calling a digitized text a "manuscript".
 
   ### Tag Filter

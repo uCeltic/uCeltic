@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useSearchStore } from "../../store/searchStore";
-import { toolbarLabel } from "./buttonStyles";
+import { toolbarLabelFirstToGo } from "./buttonStyles";
 import { SlidersIcon } from "./icons";
 
 /* AdvancedSearchPopover: allows the user to adjust the search parameters */
@@ -53,7 +53,7 @@ export default function AdvancedSearchPopover() {
         }`}
       >
         <SlidersIcon />
-        <span className={toolbarLabel}>Advanced</span>
+        <span className={toolbarLabelFirstToGo}>Advanced</span>
       </button>
 
       {open && (

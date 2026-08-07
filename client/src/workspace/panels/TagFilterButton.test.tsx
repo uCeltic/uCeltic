@@ -15,6 +15,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import TagFilterButton from "./TagFilterButton";
+import { toolbarLabelLastToGo } from "./buttonStyles";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { useDocumentStore } from "../../store/documentStore";
 import { useNameRegistryStore } from "../../store/nameRegistryStore";
@@ -368,5 +369,26 @@ describe("TagFilterButton", () => {
         expect(screen.queryByText(/Person \(/)).not.toBeInTheDocument();
         expect(screen.queryByText(/Place \(/)).not.toBeInTheDocument();
         expect(screen.queryByLabelText(/filter named entities/i)).not.toBeInTheDocument();
+    });
+});
+
+// The trigger's label is the selected entity's headword — the only place on screen
+// that says what the workspace is currently filtered to. The tag icon cannot say it,
+// so this label outlives the ones that merely repeat their icon (#174).
+describe("Tag Filter label survives the first collapse (#174)", () => {
+    it("keeps its label down to `lg`, not just `xl`", () => {
+        render(<TagFilterButton />);
+
+        expect(screen.getByText(/All Tags/, { selector: "span" })).toHaveClass(
+            toolbarLabelLastToGo,
+        );
+    });
+
+    it("shows the selected entity's headword, so there is something to keep", () => {
+        useWorkspaceStore.setState({ selectedEntityId: "F64" });
+        render(<TagFilterButton />);
+
+        const label = screen.getByText(/Find/, { selector: "span" });
+        expect(label).toHaveClass(toolbarLabelLastToGo);
     });
 });
