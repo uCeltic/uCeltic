@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useDocumentStore } from "../../store/documentStore";
+import {
+  isSearchableDocument,
+  useDocumentStore,
+} from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import TEIRenderer from "../../tei/TEIRenderer";
@@ -122,6 +125,23 @@ function EntityNavCard({
   );
 }
 
+// A column whose document cannot be searched says so in its header, for as long
+// as it is open. Not searchable is a property of the *Document* — true from the
+// moment it opens, whether or not anyone ever runs a search — so it belongs
+// beside the title and not to a search result card (#175). Olive, the same
+// muted note colour the toolbar's secondary text uses: this is a standing fact
+// about the column, not a warning about something that went wrong.
+function ReadingOnlyChip() {
+  return (
+    // `min-w-0 truncate`: at the column's floor width the header has the 160px
+    // title button and the ✕ to fit first, and both are `shrink-0` (#159) — so
+    // the chip is what gives way, the way the result card's metadata does.
+    <span className="min-w-0 truncate rounded-md border border-[#D8D4C3] bg-[#F5F1DF] px-2 py-0.5 text-xs font-medium text-[#8A8778]">
+      Reading only
+    </span>
+  );
+}
+
 // One-time popover pointing at the grip icon, telling the user the title
 // button is draggable. Rendered as a sibling of the draggable button (not a
 // child) so its own pointer events never reach the button's drag listeners.
@@ -216,6 +236,9 @@ function SortableDocumentColumn({
     minWidth: COLUMN_MIN_WIDTH_PX,
   };
   const fontSize = useWorkspaceStore((state) => state.fontSize);
+  // The same rule the search itself is built from, so this column can only ever
+  // report on a search that was actually run against it (#175).
+  const searchable = isSearchableDocument(doc);
   return (
     <article
       data-doc-column-id={doc.id}
@@ -225,19 +248,22 @@ function SortableDocumentColumn({
         }`}
     >
       <header className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-1">
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            title={doc.title}
-            {...attributes}
-            {...listeners}
-            className="flex w-[160px] cursor-grab items-center gap-1.5 truncate rounded-md border border-gray-200
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              title={doc.title}
+              {...attributes}
+              {...listeners}
+              className="flex w-[160px] cursor-grab items-center gap-1.5 truncate rounded-md border border-gray-200
 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
-          >
-            <span aria-hidden="true" className="shrink-0 text-gray-400">⋮⋮</span>
-            <span className="truncate">{doc.title}</span>
-          </button>
-          {showDragHint && <DragReorderHint onDismiss={onDismissDragHint} />}
+            >
+              <span aria-hidden="true" className="shrink-0 text-gray-400">⋮⋮</span>
+              <span className="truncate">{doc.title}</span>
+            </button>
+            {showDragHint && <DragReorderHint onDismiss={onDismissDragHint} />}
+          </div>
+          {!searchable && <ReadingOnlyChip />}
         </div>
         {/* shrink-0: the column has a floor of its own now, but the ✕ is what
             the header sacrifices first without one — it must keep its full hit
@@ -253,8 +279,14 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {/* result card — fixed below header */}
-        {isSearching ? (
+        {/* Result card — fixed below the header, and only for a column a search
+            can reach. A Local Document is filtered out before the request is
+            built, so every branch below would be an answer to a question this
+            column was never asked: "No search results" reads as *we looked and
+            your file does not contain it*. It gets no slot at all, the way a
+            document with no Name Index gets no entity card (#164, #175); the
+            header's chip is what says why, once, for as long as it is open. */}
+        {!searchable ? null : isSearching ? (
           <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
             Searching…
           </div>

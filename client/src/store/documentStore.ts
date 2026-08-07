@@ -45,6 +45,21 @@ interface DocumentStore {
 export type SearchableDocument = Extract<Document, { format: "tei" }>;
 
 /**
+ * Whether a search can run against this column at all.
+ *
+ * One rule, read from both sides: the list this module hands the search, and
+ * the column UI that has to say what it is showing. A column skipped here can
+ * therefore never be a column that reports on a search — reporting "No search
+ * results" for a Local Document was a claim about the file's text made out of
+ * a decision about its format (#175).
+ */
+export function isSearchableDocument(
+  doc: Document,
+): doc is SearchableDocument {
+  return doc.format === "tei";
+}
+
+/**
  * The documents a search should currently run against: every visible column
  * that holds a TEI document, in visible order. Search is TEI-only end to end,
  * so `.txt`/`.docx` columns are never searchable.
@@ -78,7 +93,8 @@ export function getVisibleTEIDocuments(
 ): SearchableDocument[] {
   return state.visibleDocumentIds
     .map((id) => state.openDocuments.find((doc) => doc.id === id))
-    .filter((doc): doc is SearchableDocument => doc?.format === "tei");
+    .filter((doc) => doc !== undefined)
+    .filter(isSearchableDocument);
 }
 
 /** The workspace column id a backend TEI document id is opened under. */

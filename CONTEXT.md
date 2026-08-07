@@ -502,6 +502,22 @@
   contract for a future local TEI file stays **well-formed XML with a TEI root** —
   *not* schema-valid TEI (see "Well-formed vs Valid").
 
+  Because it is not searchable, the workspace **says so three times, each where it
+  is useful** (#175): the `Add Text` tooltip states the limit *before* a file is
+  picked; a **`Reading only`** chip sits beside the column title *for as long as
+  the column is open* — not searchable is a property of the Document, true from
+  the moment it opens and independent of any Search Attempt, so it belongs to the
+  header and never to a result card; and *after* a search the column shows **no
+  result card at all**. The silence is the same distinction the **Tag Filter**
+  keeps (#164): "No search results" is a claim about the file's text, made where
+  the truth is that the file was never asked — so the column that was not asked
+  gets no answer slot. `isSearchableDocument` (`client/src/store/documentStore.ts`)
+  is the single rule both the search and the column read, so the two cannot drift.
+
+  The wording never says **"upload"** — a Local Document never reaches a server,
+  and calling it an upload would tell visitors the opposite of the best property
+  this feature has.
+
   ### Well-formed vs Valid
 
   **Well-formed** = syntactically legal XML (tags balanced, one root). **Valid** =
