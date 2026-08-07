@@ -9,6 +9,8 @@ import {
   RING_PAD,
   TOUR_CARD_WIDTH,
   placeTourCard,
+  touchesRing,
+  unionRects,
   type Rect,
 } from "./tourCardPlacement";
 
@@ -36,41 +38,25 @@ function measureAnchors(anchors: string[]): Rect | null {
 
 /**
  * The dropdown the ringed control has open, if any: the card has to keep clear
- * of it as well as of the ring (tourCardPlacement.ts).
- *
- * Only a panel touching the ring counts. A dropdown hangs directly off the
- * button that opens it, so it always touches; a panel open elsewhere on the
- * toolbar is somebody else's and must not drag the card across the screen.
+ * of it as well as of the ring. Which panels count is `touchesRing`'s rule
+ * (tourCardPlacement.ts).
  */
 function measurePanel(ring: Rect | null): Rect | null {
   if (!ring) return null;
   let box: Rect | null = null;
   for (const el of document.querySelectorAll("[data-tour-panel]")) {
-    const r = el.getBoundingClientRect();
-    if (
-      r.left > ring.right + RING_PAD ||
-      r.right < ring.left - RING_PAD ||
-      r.top > ring.bottom + RING_PAD ||
-      r.bottom < ring.top - RING_PAD
-    ) {
-      continue;
-    }
+    if (!touchesRing(ring, el.getBoundingClientRect())) continue;
     box = grow(box, el);
   }
   return box;
 }
 
+/** Widen a box to include one more element, ignoring elements with no box at all. */
 function grow(box: Rect | null, el: Element): Rect | null {
   const r = el.getBoundingClientRect();
   if (r.width === 0 && r.height === 0) return box;
-  return box
-    ? {
-        top: Math.min(box.top, r.top),
-        left: Math.min(box.left, r.left),
-        right: Math.max(box.right, r.right),
-        bottom: Math.max(box.bottom, r.bottom),
-      }
-    : { top: r.top, left: r.left, right: r.right, bottom: r.bottom };
+  const rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom };
+  return box ? unionRects(box, rect) : rect;
 }
 
 function boxesEqual(a: Rect | null, b: Rect | null): boolean {

@@ -3,6 +3,7 @@ import {
   TOUR_CARD_HEIGHT,
   TOUR_CARD_WIDTH,
   placeTourCard,
+  touchesRing,
   type Rect,
 } from "./tourCardPlacement";
 
@@ -56,6 +57,16 @@ describe("placeTourCard", () => {
     expect(overlaps(cardRect(nearRightEdge, panel), panel)).toBe(false);
   });
 
+  it("goes above the open panel too, not just above the ring", () => {
+    // Narrow and short: no room to the right of the panel, none below it.
+    const viewport = { width: 600, height: 640 };
+    const ring: Rect = { top: 380, left: 16, right: 132, bottom: 412 };
+    const panel: Rect = { top: 416, left: 16, right: 336, bottom: 600 };
+    const card = cardRect(ring, panel, viewport);
+    expect(overlaps(card, panel)).toBe(false);
+    expect(card.bottom).toBeLessThan(ring.top);
+  });
+
   it("goes above the ring when there is room neither right nor below", () => {
     const bottomRight: Rect = {
       top: 820,
@@ -76,5 +87,24 @@ describe("placeTourCard", () => {
 
   it("is exactly as wide as the Works dropdown", () => {
     expect(TOUR_CARD_WIDTH).toBe(WORKS_DROPDOWN.right - WORKS_DROPDOWN.left);
+  });
+});
+
+describe("touchesRing", () => {
+  it("counts the dropdown hanging off the ringed button", () => {
+    expect(touchesRing(WORKS_BUTTON, WORKS_DROPDOWN)).toBe(true);
+  });
+
+  it("ignores a panel open elsewhere on the toolbar", () => {
+    // The overflow menu's panel, open on the far right while the ring is on
+    // Works: somebody else's, and no reason to push the card across the screen.
+    expect(
+      touchesRing(WORKS_BUTTON, {
+        top: 48,
+        left: 1240,
+        right: 1428,
+        bottom: 200,
+      }),
+    ).toBe(false);
   });
 });

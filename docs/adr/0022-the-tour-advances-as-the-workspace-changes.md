@@ -105,6 +105,13 @@ one indistinguishable from a failure in the other.
   keep clear of an open panel as well as of the ring. It is one attribute with
   no behaviour of its own; a panel that forgets it will be covered, which is
   visible the moment that step is walked.
+- **A reader who performs a step's action early is never shown that step.**
+  Change the text size before searching and the text-size card is derived past
+  the moment it is reached. This follows from derivation itself — a gate cannot
+  tell "already knows how" from "happened to have done it" — and it is the
+  behaviour worth having: the tour asks for what has not been done. It also
+  bounds what re-opening from Help gives back, since a step whose action still
+  holds is skipped whether or not its latch was cleared.
 - A step with no gate stops derivation. That is what makes the final card final,
   and it means the eleven-step script must give every non-final step a gate — a
   card without one silently becomes a wall.

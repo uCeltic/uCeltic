@@ -42,7 +42,8 @@ export const TOUR_CARD_WIDTH = 320;
  */
 export const TOUR_CARD_HEIGHT = 180;
 
-function union(a: Rect, b: Rect | null): Rect {
+/** The box enclosing both, so a ring and the panel hanging off it read as one obstacle. */
+export function unionRects(a: Rect, b: Rect | null): Rect {
   if (!b) return a;
   return {
     top: Math.min(a.top, b.top),
@@ -57,6 +58,21 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
+ * Whether a panel hangs off this ring — the test for "the ringed control opened
+ * it", made of geometry alone: a dropdown sits directly against the control that
+ * opens it, so it touches the ring. A panel open elsewhere on the toolbar is
+ * somebody else's, and must not drag the card across the screen.
+ */
+export function touchesRing(ring: Rect, panel: Rect): boolean {
+  return !(
+    panel.left > ring.right + RING_PAD ||
+    panel.right < ring.left - RING_PAD ||
+    panel.top > ring.bottom + RING_PAD ||
+    panel.bottom < ring.top - RING_PAD
+  );
+}
+
+/**
  * @param ring   the anchor box the spotlight rings.
  * @param panel  a dropdown the ringed control has open, or null.
  * @param viewport the window, in the same client coordinates as the rects.
@@ -66,7 +82,7 @@ export function placeTourCard(
   panel: Rect | null,
   viewport: Viewport,
 ): { top: number; left: number } {
-  const obstacle = union(ring, panel);
+  const obstacle = unionRects(ring, panel);
   const minLeft = CARD_GAP;
   const maxLeft = viewport.width - TOUR_CARD_WIDTH - CARD_GAP;
   const minTop = CARD_GAP;
@@ -83,8 +99,12 @@ export function placeTourCard(
   const below = obstacle.bottom + RING_PAD + CARD_GAP;
   if (below <= maxTop) return { top: below, left };
 
+  // Above the whole obstacle, not just the ring: a panel reaching up beside the
+  // ring must stay uncovered here too. On a viewport with room on no side the
+  // clamp wins and the card does cover the control — the least bad of three bad
+  // options, and only below the desktop widths this app supports (ADR-0011).
   return {
-    top: Math.max(minTop, ring.top - RING_PAD - CARD_GAP - TOUR_CARD_HEIGHT),
+    top: Math.max(minTop, obstacle.top - RING_PAD - CARD_GAP - TOUR_CARD_HEIGHT),
     left,
   };
 }

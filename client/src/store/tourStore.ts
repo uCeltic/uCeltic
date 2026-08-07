@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { markTourDismissed } from "../workspace/tour/tourStorage";
 import { TOUR_STEPS } from "../workspace/tour/tourSteps";
 import {
+  NO_LATCHES,
   clearLatchesAfterBoundary,
   latchProgress,
   type TourSignals,
@@ -32,7 +33,7 @@ interface TourState {
    */
   manualIndex: number;
   /** Per step: taught for good, whatever the workspace looks like now. */
-  latched: boolean[];
+  latched: readonly boolean[];
   /**
    * Open the tour (first-run auto-show, and the Help button). Steps after the
    * search are taught again — a reader coming back mid-session keeps the
@@ -52,7 +53,7 @@ interface TourState {
 export const useTourStore = create<TourState>((set, get) => ({
   isOpen: false,
   manualIndex: 0,
-  latched: [],
+  latched: NO_LATCHES,
   start: () =>
     set((s) => ({
       isOpen: true,
@@ -63,7 +64,8 @@ export const useTourStore = create<TourState>((set, get) => ({
     set((s) => {
       const latched = latchProgress(TOUR_STEPS, signals, s.latched);
       // Signals are re-read on every store change; keep the old array when
-      // nothing new was taught so subscribers see no change at all.
+      // nothing new was taught, so a selector on `latched` sees no change and
+      // the overlay does not re-render.
       const changed = latched.some((value, i) => value !== s.latched[i]);
       return changed ? { latched } : {};
     }),

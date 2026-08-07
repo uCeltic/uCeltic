@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { tourSignalsFrom } from "./tourSignals";
+import { renderHook } from "@testing-library/react";
+import { resultNavigated, searchCompleted, useTourSignals } from "./tourSignals";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore, type SearchAttempt } from "../../store/searchStore";
 import { DEFAULT_FONT_SIZE, useWorkspaceStore } from "../../store/workspaceStore";
@@ -18,29 +19,88 @@ const attempt = (): SearchAttempt => ({
   params: { matchLength: 130, precision: 1, dissimilarityScore: 0.5, topK: 10 },
 });
 
-function signals() {
-  return tourSignalsFrom(
-    useDocumentStore.getState(),
-    useSearchStore.getState(),
-    useWorkspaceStore.getState(),
-  );
+const searchState = (over: Partial<ReturnType<typeof emptySearch>> = {}) => ({
+  ...emptySearch(),
+  ...over,
+});
+
+function emptySearch() {
+  return {
+    lastAttemptByDocument: {} as Record<string, SearchAttempt>,
+    isSearchingByDocument: {} as Record<string, boolean>,
+    searchErrorByDocument: {} as Record<string, boolean>,
+    activeResultIndexByDocument: {} as Record<string, number>,
+  };
 }
 
 beforeEach(() => {
   useDocumentStore.setState({ openDocuments: [] });
-  useSearchStore.setState({
-    lastAttemptByDocument: {},
-    isSearchingByDocument: {},
-    searchErrorByDocument: {},
-    activeResultIndexByDocument: {},
-    resultsByDocument: {},
-  });
+  useSearchStore.setState({ ...emptySearch(), resultsByDocument: {} });
   useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE });
 });
 
-describe("tourSignalsFrom", () => {
+describe("searchCompleted", () => {
+  it("is false when nothing has ever been searched", () => {
+    expect(searchCompleted(searchState())).toBe(false);
+  });
+
+  it("is true once a column's search has come back", () => {
+    expect(
+      searchCompleted(searchState({ lastAttemptByDocument: { a: attempt() } })),
+    ).toBe(true);
+  });
+
+  it("is false while the search is still in flight", () => {
+    expect(
+      searchCompleted(
+        searchState({
+          lastAttemptByDocument: { a: attempt() },
+          isSearchingByDocument: { a: true },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false for a search that errored — that column offers Retry", () => {
+    expect(
+      searchCompleted(
+        searchState({
+          lastAttemptByDocument: { a: attempt() },
+          searchErrorByDocument: { a: true },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is true when one column succeeded and another failed", () => {
+    expect(
+      searchCompleted(
+        searchState({
+          lastAttemptByDocument: { a: attempt(), b: attempt() },
+          searchErrorByDocument: { b: true },
+        }),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("resultNavigated", () => {
+  it("is true for any column sitting past its first match", () => {
+    expect(
+      resultNavigated(searchState({ activeResultIndexByDocument: { a: 0, b: 3 } })),
+    ).toBe(true);
+  });
+
+  it("does not call sitting on the first match navigation", () => {
+    expect(
+      resultNavigated(searchState({ activeResultIndexByDocument: { a: 0 } })),
+    ).toBe(false);
+  });
+});
+
+describe("useTourSignals", () => {
   it("reads an untouched workspace as nothing done", () => {
-    expect(signals()).toEqual({
+    expect(renderHook(() => useTourSignals()).result.current).toEqual({
       openDocumentCount: 0,
       searchCompleted: false,
       resultNavigated: false,
@@ -48,65 +108,28 @@ describe("tourSignalsFrom", () => {
     });
   });
 
-  it("counts the open documents", () => {
+  it("reads the whole workspace: columns, search, and text size", () => {
     useDocumentStore.setState({ openDocuments: [column("a"), column("b")] });
-    expect(signals().openDocumentCount).toBe(2);
-  });
-
-  describe("searchCompleted", () => {
-    it("is true once a column's search has come back with matches", () => {
-      useSearchStore.setState({
-        lastAttemptByDocument: { a: attempt() },
-        resultsByDocument: { a: [{ start: 0, end: 1, score: 0.9 } as never] },
-      });
-      expect(signals().searchCompleted).toBe(true);
+    useSearchStore.setState({
+      lastAttemptByDocument: { a: attempt() },
+      activeResultIndexByDocument: { a: 2 },
     });
-
-    it("is true for a search that came back with no matches at all", () => {
-      useSearchStore.setState({
-        lastAttemptByDocument: { a: attempt() },
-        resultsByDocument: { a: [] },
-      });
-      expect(signals().searchCompleted).toBe(true);
-    });
-
-    it("is false while the search is still in flight", () => {
-      useSearchStore.setState({
-        lastAttemptByDocument: { a: attempt() },
-        isSearchingByDocument: { a: true },
-      });
-      expect(signals().searchCompleted).toBe(false);
-    });
-
-    it("is false for a search that errored — that column offers Retry", () => {
-      useSearchStore.setState({
-        lastAttemptByDocument: { a: attempt() },
-        searchErrorByDocument: { a: true },
-      });
-      expect(signals().searchCompleted).toBe(false);
-    });
-
-    it("is true when one column succeeded and another failed", () => {
-      useSearchStore.setState({
-        lastAttemptByDocument: { a: attempt(), b: attempt() },
-        searchErrorByDocument: { b: true },
-      });
-      expect(signals().searchCompleted).toBe(true);
-    });
-  });
-
-  it("reads result navigation off any column sitting past its first match", () => {
-    useSearchStore.setState({ activeResultIndexByDocument: { a: 0, b: 3 } });
-    expect(signals().resultNavigated).toBe(true);
-  });
-
-  it("does not call sitting on the first match navigation", () => {
-    useSearchStore.setState({ activeResultIndexByDocument: { a: 0 } });
-    expect(signals().resultNavigated).toBe(false);
-  });
-
-  it("reads the text size against the size the workspace starts at", () => {
     useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE + 2 });
-    expect(signals().fontSizeChanged).toBe(true);
+
+    expect(renderHook(() => useTourSignals()).result.current).toEqual({
+      openDocumentCount: 2,
+      searchCompleted: true,
+      resultNavigated: true,
+      fontSizeChanged: true,
+    });
+  });
+
+  it("hands back the same object while nothing it reads has changed", () => {
+    const { result, rerender } = renderHook(() => useTourSignals());
+    const first = result.current;
+    rerender();
+    // The overlay folds these into its latches from an effect keyed on this
+    // object; a fresh one every render would run that effect every render.
+    expect(result.current).toBe(first);
   });
 });
