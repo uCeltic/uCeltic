@@ -19,14 +19,14 @@ const STEPS: TourStep[] = [
     anchors: [],
     title: "Open",
     body: "",
-    gate: (s) => s.openDocumentCount >= 2,
+    gate: (s) => s.openVersionCount >= 2,
   },
   {
     id: "search",
     anchors: [],
     title: "Search",
     body: "",
-    gate: (s) => s.searchCompleted,
+    gate: (s) => s.selectionSearchCompleted,
     latchBoundary: true,
   },
   {
@@ -55,12 +55,12 @@ describe("deriveStepIndex", () => {
 
   it("advances as each step's action happens", () => {
     expect(
-      deriveStepIndex(STEPS, signals({ openDocumentCount: 2 }), NO_LATCHES),
+      deriveStepIndex(STEPS, signals({ openVersionCount: 2 }), NO_LATCHES),
     ).toBe(1);
     expect(
       deriveStepIndex(
         STEPS,
-        signals({ openDocumentCount: 2, searchCompleted: true }),
+        signals({ openVersionCount: 2, selectionSearchCompleted: true }),
         NO_LATCHES,
       ),
     ).toBe(2);
@@ -68,8 +68,8 @@ describe("deriveStepIndex", () => {
       deriveStepIndex(
         STEPS,
         signals({
-          openDocumentCount: 2,
-          searchCompleted: true,
+          openVersionCount: 2,
+          selectionSearchCompleted: true,
           resultNavigated: true,
         }),
         NO_LATCHES,
@@ -79,8 +79,8 @@ describe("deriveStepIndex", () => {
 
   it("stops on the final step, which has no action to wait for", () => {
     const done = signals({
-      openDocumentCount: 2,
-      searchCompleted: true,
+      openVersionCount: 2,
+      selectionSearchCompleted: true,
       resultNavigated: true,
       fontSizeChanged: true,
     });
@@ -90,7 +90,7 @@ describe("deriveStepIndex", () => {
   it("follows the workspace backwards before any search has completed", () => {
     const latched = latchProgress(
       STEPS,
-      signals({ openDocumentCount: 2 }),
+      signals({ openVersionCount: 2 }),
       NO_LATCHES,
     );
     expect(deriveStepIndex(STEPS, NOTHING_DONE, latched)).toBe(0);
@@ -99,7 +99,7 @@ describe("deriveStepIndex", () => {
   it("does not rewind past a completed search once one has completed", () => {
     const latched = latchProgress(
       STEPS,
-      signals({ openDocumentCount: 2, searchCompleted: true }),
+      signals({ openVersionCount: 2, selectionSearchCompleted: true }),
       NO_LATCHES,
     );
     // Every column closed and the results thrown away: the workspace is back to
@@ -110,14 +110,14 @@ describe("deriveStepIndex", () => {
   it("keeps a step after the search taught once its action has happened", () => {
     const afterSearch = latchProgress(
       STEPS,
-      signals({ openDocumentCount: 2, searchCompleted: true }),
+      signals({ openVersionCount: 2, selectionSearchCompleted: true }),
       NO_LATCHES,
     );
     const afterNavigating = latchProgress(
       STEPS,
       signals({
-        openDocumentCount: 2,
-        searchCompleted: true,
+        openVersionCount: 2,
+        selectionSearchCompleted: true,
         resultNavigated: true,
       }),
       afterSearch,
@@ -126,7 +126,7 @@ describe("deriveStepIndex", () => {
     expect(
       deriveStepIndex(
         STEPS,
-        signals({ openDocumentCount: 2, searchCompleted: true }),
+        signals({ openVersionCount: 2, selectionSearchCompleted: true }),
         afterNavigating,
       ),
     ).toBe(3);
@@ -138,7 +138,7 @@ describe("visibleStepIndex", () => {
     expect(
       visibleStepIndex(
         STEPS,
-        signals({ openDocumentCount: 2 }),
+        signals({ openVersionCount: 2 }),
         NO_LATCHES,
         0,
       ),
@@ -161,7 +161,7 @@ describe("latchProgress", () => {
     expect(
       latchProgress(
         STEPS,
-        signals({ openDocumentCount: 2, fontSizeChanged: true }),
+        signals({ openVersionCount: 2, fontSizeChanged: true }),
         NO_LATCHES,
       ),
     ).toEqual([false, false, false, false, false]);
@@ -169,7 +169,7 @@ describe("latchProgress", () => {
 
   it("latches every step up to the search once one completes", () => {
     expect(
-      latchProgress(STEPS, signals({ searchCompleted: true }), NO_LATCHES),
+      latchProgress(STEPS, signals({ selectionSearchCompleted: true }), NO_LATCHES),
     ).toEqual([true, true, false, false, false]);
   });
 
@@ -177,7 +177,7 @@ describe("latchProgress", () => {
     expect(
       latchProgress(
         STEPS,
-        signals({ searchCompleted: true, fontSizeChanged: true }),
+        signals({ selectionSearchCompleted: true, fontSizeChanged: true }),
         NO_LATCHES,
       ),
     ).toEqual([true, true, false, true, false]);
@@ -186,7 +186,7 @@ describe("latchProgress", () => {
   it("never unlatches what is already latched", () => {
     const latched = [true, true, true, true, false];
     expect(
-      latchProgress(STEPS, signals({ searchCompleted: true }), latched),
+      latchProgress(STEPS, signals({ selectionSearchCompleted: true }), latched),
     ).toEqual(latched);
   });
 });

@@ -81,7 +81,7 @@ export const DRAG_REORDER_STEP_ID = "reorder-columns";
  * backwards), so without this the tour would snap back to "Click Works" the
  * instant the columns opened.
  */
-const versionsAreOpen = (s: TourSignals) => s.openDocumentCount >= 2;
+const versionsAreOpen = (s: TourSignals) => s.openVersionCount >= 2;
 
 export const TOUR_STEPS: TourStep[] = [
   {
@@ -127,21 +127,21 @@ export const TOUR_STEPS: TourStep[] = [
     // Gate: a selection with both ends inside a `data-tour="column-text"` pane.
     // A fired search counts too: clicking Search can collapse the selection,
     // and having selected a passage is not undone by having searched it.
-    gate: (s) => s.passageSelected || s.searchFired,
+    gate: (s) => s.passageSelected || s.selectionSearchFired,
   },
   {
     id: "selection-search",
     anchors: ["selection-search"],
     title: "Search the other columns",
-    body: "A “Search” button appears under your selection. Click it: it looks for that passage in the *other* open documents, never in the one you selected from.",
-    gate: (s) => s.searchFired,
+    body: "A “Search” button appears under your selection. Click it: it looks for that passage in the other open documents — never in the one you selected from.",
+    gate: (s) => s.selectionSearchFired,
   },
   {
     id: "read-result",
     anchors: ["result-card"],
     title: "Read what came back",
     body: "Each searched column reports its own best match at the top: which match you are on, its line, and a score. “No search results” is an answer too — that witness may simply not carry the passage.",
-    gate: (s) => s.searchCompleted,
+    gate: (s) => s.selectionSearchCompleted,
     // Everything up to here is taught for good once a search has come back:
     // closing a column afterwards must not send the reader back to open it
     // again (ADR-0022).

@@ -35,6 +35,21 @@ function reader(from: TourSignals = NOTHING_DONE) {
 }
 
 describe("the eleven-step script", () => {
+  it("names a reorder step the overlay can find", () => {
+    // The overlay marks the drag-reorder hint acknowledged once this step is
+    // passed; an id that no longer resolves would silently mark it at step one.
+    expect(TOUR_STEPS.some((s) => s.id === DRAG_REORDER_STEP_ID)).toBe(true);
+  });
+
+  it("writes its copy as plain text — the card renders no markdown", () => {
+    // SpotlightTour prints `step.body` as it stands (with `whitespace-pre-line`
+    // for the one step that quotes a passage), so emphasis markers would print
+    // literally.
+    for (const step of TOUR_STEPS) {
+      expect(step.body).not.toMatch(/\*|_[a-z]|<[a-z]/i);
+    }
+  });
+
   it("has a gate on every step but the last", () => {
     const withoutGate = TOUR_STEPS.filter((step) => !step.gate);
     expect(withoutGate.map((s) => s.id)).toEqual([TOUR_STEPS.at(-1)!.id]);
@@ -55,7 +70,7 @@ describe("the eleven-step script", () => {
     expect(
       walker
         .does({
-          openDocumentCount: 2,
+          openVersionCount: 2,
           worksDropdownOpen: false,
           workExpanded: false,
           versionsTicked: 0,
@@ -66,10 +81,10 @@ describe("the eleven-step script", () => {
     expect(walker.does({ passageSelected: true }).at()).toBe(5);
     // 6. Click the floating Search — the click can collapse the selection.
     expect(
-      walker.does({ searchFired: true, passageSelected: false }).at(),
+      walker.does({ selectionSearchFired: true, passageSelected: false }).at(),
     ).toBe(6);
     // 7. The result card arrives.
-    expect(walker.does({ searchCompleted: true }).at()).toBe(7);
+    expect(walker.does({ selectionSearchCompleted: true }).at()).toBe(7);
     // 8. Move between matches.
     expect(walker.does({ resultNavigated: true }).at()).toBe(8);
     // 9. Drag a column.
@@ -87,13 +102,13 @@ describe("the eleven-step script", () => {
       .does({ worksDropdownOpen: true })
       .does({ workExpanded: true })
       .does({ versionsTicked: 2 })
-      .does({ openDocumentCount: 2 })
+      .does({ openVersionCount: 2 })
       .does({ passageSelected: true })
-      .does({ searchFired: true });
+      .does({ selectionSearchFired: true });
     expect(walker.at()).toBe(stepIndex("read-result"));
 
     // A search that returned nothing still completed.
-    expect(walker.does({ searchCompleted: true }).at()).toBe(
+    expect(walker.does({ selectionSearchCompleted: true }).at()).toBe(
       stepIndex("navigate-results"),
     );
     // And with no matches to move between, the rest is still reachable — by
@@ -126,12 +141,12 @@ describe("the eleven-step script", () => {
   it("keeps the search steps taught when a column is closed afterwards", () => {
     const walker = reader()
       .does({ worksDropdownOpen: true, workExpanded: true, versionsTicked: 2 })
-      .does({ openDocumentCount: 2, passageSelected: true })
-      .does({ searchFired: true, searchCompleted: true });
+      .does({ openVersionCount: 2, passageSelected: true })
+      .does({ selectionSearchFired: true, selectionSearchCompleted: true });
     expect(walker.at()).toBe(stepIndex("navigate-results"));
 
     expect(
-      walker.does({ openDocumentCount: 1, searchFired: false, searchCompleted: false }).at(),
+      walker.does({ openVersionCount: 1, selectionSearchFired: false, selectionSearchCompleted: false }).at(),
     ).toBe(stepIndex("navigate-results"));
   });
 
@@ -141,10 +156,10 @@ describe("the eleven-step script", () => {
         worksDropdownOpen: true,
         workExpanded: true,
         versionsTicked: 2,
-        openDocumentCount: 2,
+        openVersionCount: 2,
         passageSelected: true,
-        searchFired: true,
-        searchCompleted: true,
+        selectionSearchFired: true,
+        selectionSearchCompleted: true,
       });
 
     it("moving back to the first match does not un-teach navigation", () => {

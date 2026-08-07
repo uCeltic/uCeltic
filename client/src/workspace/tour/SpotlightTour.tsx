@@ -245,7 +245,12 @@ export default function SpotlightTour() {
         <h2 id="tour-title" className="mt-1 text-base font-semibold text-[#52524F]">
           {step.title}
         </h2>
-        <p className="mt-1.5 text-sm leading-5 text-[#6B6B67]">{step.body}</p>
+        {/* whitespace-pre-line: one step prints a quotation on its own lines,
+            and a card's copy is written as it should read (#178). There is no
+            markdown pass — a step's body is plain text. */}
+        <p className="mt-1.5 whitespace-pre-line text-sm leading-5 text-[#6B6B67]">
+          {step.body}
+        </p>
 
         <div className="mt-4 flex items-center justify-between gap-2">
           <button

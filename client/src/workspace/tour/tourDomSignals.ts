@@ -80,10 +80,10 @@ export function probeTourDom(root: ParentNode & Node = document): TourDomSignals
 }
 
 export function domSignalsEqual(a: TourDomSignals, b: TourDomSignals): boolean {
-  return (
-    a.worksDropdownOpen === b.worksDropdownOpen &&
-    a.workExpanded === b.workExpanded &&
-    a.versionsTicked === b.versionsTicked &&
-    a.passageSelected === b.passageSelected
+  // Over the keys of NO_DOM_SIGNALS rather than a list written out again: a
+  // probed signal added above is compared here without anybody remembering to,
+  // and a signal left out of this comparison is a gate frozen at its last value.
+  return (Object.keys(NO_DOM_SIGNALS) as (keyof TourDomSignals)[]).every(
+    (key) => a[key] === b[key],
   );
 }

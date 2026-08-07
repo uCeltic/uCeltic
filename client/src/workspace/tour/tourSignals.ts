@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { useDocumentStore } from "../../store/documentStore";
+import {
+  isSearchableDocument,
+  useDocumentStore,
+} from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { DEFAULT_FONT_SIZE, useWorkspaceStore } from "../../store/workspaceStore";
 import type { TourSignals } from "./tourProgress";
@@ -18,17 +21,35 @@ type SearchSignalState = Pick<
 >;
 
 /**
- * A search has been fired from at least one column.
+ * A **selection** search has been fired from at least one column.
  *
  * The attempt is recorded before the request goes out (ADR-0012), so this is
- * true the instant the reader clicks Search — which is what the step asking for
- * that click is waiting for. Whether anything came back is the next step's
- * question.
+ * true the instant the reader clicks the floating Search — which is what the
+ * step asking for that click is waiting for. Whether anything came back is the
+ * next step's question.
+ *
+ * Origin matters here and nowhere else in the tour: the step asks for the
+ * floating select-to-search button, deliberately never the toolbar's typed query
+ * (ADR-0008), and a typed search would otherwise satisfy both it and the step
+ * before it — teaching neither.
  */
-export function searchFired(
+export function selectionSearchFired(
   search: Pick<SearchSignalState, "lastAttemptByDocument">,
 ): boolean {
-  return Object.keys(search.lastAttemptByDocument).length > 0;
+  return Object.values(search.lastAttemptByDocument).some(
+    (attempt) => attempt.origin === "selection",
+  );
+}
+
+/**
+ * How many of the open documents are **Versions** — TEI witnesses a search can
+ * run against. Not every open column: a Local Document is not searchable (#175),
+ * so two of them are not the pair the tour's next step needs.
+ */
+export function openVersionCount(
+  documents: Pick<DocumentState, "openDocuments">,
+): number {
+  return documents.openDocuments.filter(isSearchableDocument).length;
 }
 
 /**
@@ -39,6 +60,10 @@ export function searchFired(
  * a new one. Nothing has to be remembered for the tour, and a reader who drags a
  * column back where it came from has genuinely undone the reorder — which is why
  * the step latches instead (tourProgress.ts).
+ *
+ * It reads the two lists as one order because `MAX_OPEN_DOCUMENTS` and
+ * `MAX_VISIBLE_DOCUMENTS` are equal: no document is ever open without a column,
+ * so re-focusing one can never append it to the visible list out of open order.
  */
 export function columnsReordered(
   documents: Pick<DocumentState, "openDocuments" | "visibleDocumentIds">,
@@ -62,7 +87,7 @@ export function columnsReordered(
  */
 
 /**
- * At least one column has a search that ran to completion — any number of
+ * At least one column's select-to-search ran to completion — any number of
  * matches, including none.
  *
  * A recorded attempt that is neither in flight nor failed is a search that came
@@ -70,11 +95,18 @@ export function columnsReordered(
  * still taught the reader what searching does, and an empty result list is also
  * what a column looks like before it has searched at all. A failed search does
  * not count — the column offers its own Retry, and nothing has been shown yet.
+ *
+ * Selection-origin, like `selectionSearchFired`, and here it matters most: this
+ * is the tour's latch boundary, so a typed toolbar search counting as this one
+ * would teach every step before it as done — including the two that ask the
+ * reader to select a passage and search it (ADR-0008).
  */
-export function searchCompleted(search: SearchSignalState): boolean {
-  return Object.keys(search.lastAttemptByDocument).some(
-    (id) =>
-      !search.isSearchingByDocument[id] && !search.searchErrorByDocument[id],
+export function selectionSearchCompleted(search: SearchSignalState): boolean {
+  return Object.entries(search.lastAttemptByDocument).some(
+    ([id, attempt]) =>
+      attempt.origin === "selection" &&
+      !search.isSearchingByDocument[id] &&
+      !search.searchErrorByDocument[id],
   );
 }
 
@@ -101,22 +133,22 @@ export type TourStoreSignals = Omit<TourSignals, keyof TourDomSignals>;
  * every render.
  */
 export function useTourStoreSignals(): TourStoreSignals {
-  const openDocumentCount = useDocumentStore((s) => s.openDocuments.length);
+  const openVersions = useDocumentStore(openVersionCount);
   const reordered = useDocumentStore(columnsReordered);
-  const fired = useSearchStore(searchFired);
-  const searched = useSearchStore(searchCompleted);
+  const fired = useSearchStore(selectionSearchFired);
+  const searched = useSearchStore(selectionSearchCompleted);
   const navigated = useSearchStore(resultNavigated);
   const fontSize = useWorkspaceStore((s) => s.fontSize);
 
   return useMemo(
     () => ({
-      openDocumentCount,
-      searchFired: fired,
-      searchCompleted: searched,
+      openVersionCount: openVersions,
+      selectionSearchFired: fired,
+      selectionSearchCompleted: searched,
       resultNavigated: navigated,
       columnsReordered: reordered,
       fontSizeChanged: fontSize !== DEFAULT_FONT_SIZE,
     }),
-    [openDocumentCount, fired, searched, navigated, reordered, fontSize],
+    [openVersions, fired, searched, navigated, reordered, fontSize],
   );
 }

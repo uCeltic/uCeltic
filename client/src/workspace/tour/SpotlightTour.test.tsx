@@ -21,13 +21,17 @@ const stepTitle = (id: string) =>
 const stepNumber = (id: string) =>
   TOUR_STEPS.findIndex((step) => step.id === id) + 1;
 
-// Only the id matters here: the tour counts columns, it never reads one.
-const column = (id: string) => ({ id, title: id }) as Document;
+// A Version — a TEI witness. Only the id and the format matter here: the tour
+// counts the columns a search can reach, and never reads one (#175).
+const column = (id: string) =>
+  ({ id, title: id, format: "tei" }) as Document;
 
-const attempt = (): SearchAttempt => ({
+const attempt = (
+  origin: SearchAttempt["origin"] = "selection",
+): SearchAttempt => ({
   docId: 1,
   query: "cath",
-  origin: "typed",
+  origin,
   excludedDocId: null,
   params: { matchLength: 130, precision: 1, dissimilarityScore: 0.5, topK: 10 },
 });
@@ -145,6 +149,22 @@ describe("SpotlightTour", () => {
     expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
   });
 
+  it("prints the quoted passage on its own lines, as the step writes it", () => {
+    const quoting = TOUR_STEPS.find((step) => step.body.includes("\n"))!;
+    render(<SpotlightTour />);
+    act(() => {
+      useTourStore.setState({ manualIndex: TOUR_STEPS.indexOf(quoting) });
+    });
+
+    const body = screen.getByText(quoting.body.split("\n")[0], {
+      exact: false,
+    });
+    // Without this the browser collapses the blank lines and the quotation runs
+    // into the prose around it.
+    expect(body.className).toMatch(/whitespace-pre-line/);
+    expect(body.textContent).toBe(quoting.body);
+  });
+
   it("is non-blocking: the overlay never traps pointer events on the workspace below", () => {
     render(<SpotlightTour />);
     const overlay = screen.getByTestId("spotlight-tour");
@@ -214,6 +234,21 @@ describe("SpotlightTour advancing with the workspace (#177, #178)", () => {
 
     completeSearch();
     await expectCard("navigate-results");
+  });
+
+  it("does not take a typed toolbar search for the step it asks for", async () => {
+    render(<SpotlightTour />);
+    openTwoDocuments();
+    await expectCard("select-passage");
+
+    act(() => {
+      useSearchStore.setState({
+        lastAttemptByDocument: { a: attempt("typed") },
+      });
+    });
+
+    // ADR-0008: this step is the floating select-to-search button's.
+    await expectCard("select-passage");
   });
 
   it("waits on the result card while the search is failing", async () => {

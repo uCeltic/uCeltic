@@ -107,7 +107,6 @@ export default function ToolBar({
           type="button"
           aria-label="Add Text"
           title={ADD_TEXT_TITLE}
-          data-tour="add-text"
           className={
             openDocuments.length >= MAX_OPEN_DOCUMENTS
               ? `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`

@@ -40,21 +40,22 @@ export interface TourSignals {
   workExpanded: boolean;
   /** How many versions are ticked in the expanded work. Probed. */
   versionsTicked: number;
-  /** How many documents are open, in columns or not. */
-  openDocumentCount: number;
+  /** How many open documents are Versions — TEI witnesses a search can reach. */
+  openVersionCount: number;
   /** Text is selected inside a column's reading pane. Probed. */
   passageSelected: boolean;
   /**
-   * A search has been fired from at least one column — recorded the moment the
-   * request goes out, so this is true while it is still in flight.
+   * A select-to-search has been fired from at least one column — recorded the
+   * moment the request goes out, so this is true while it is still in flight.
+   * A typed toolbar search is not one (ADR-0008).
    */
-  searchFired: boolean;
+  selectionSearchFired: boolean;
   /**
-   * At least one column has a search that ran to completion — any number of
+   * At least one column's select-to-search ran to completion — any number of
    * matches, including none. A search that errored does not count: the column
    * offers its own Retry, and the reader has not yet seen what a search does.
    */
-  searchCompleted: boolean;
+  selectionSearchCompleted: boolean;
   /** At least one column is sitting on something other than its first match. */
   resultNavigated: boolean;
   /** The columns are no longer in the order they were opened in. */
@@ -72,7 +73,7 @@ function isSatisfied(step: TourStep, signals: TourSignals): boolean {
   return step.gate ? step.gate(signals) : false;
 }
 
-/** The step that closes the rewindable stretch — the search step. */
+/** The step that closes the rewindable stretch — the one the search comes back to. */
 function boundaryIndex(steps: TourStep[]): number {
   return steps.findIndex((step) => step.latchBoundary);
 }

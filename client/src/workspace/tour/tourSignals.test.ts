@@ -3,8 +3,8 @@ import { renderHook } from "@testing-library/react";
 import {
   columnsReordered,
   resultNavigated,
-  searchCompleted,
-  searchFired,
+  selectionSearchCompleted,
+  selectionSearchFired,
   useTourStoreSignals,
 } from "./tourSignals";
 import { useDocumentStore } from "../../store/documentStore";
@@ -14,13 +14,15 @@ import type { Document } from "../../types/document";
 
 vi.mock("../../api/log", () => ({ logEvent: vi.fn() }));
 
-// Only the id matters here: these signals count columns, they never read one.
-const column = (id: string) => ({ id, title: id }) as Document;
+// A Version — a TEI witness. Only the id and the format matter here: the tour
+// counts the columns a search can reach, and never reads one (#175).
+const column = (id: string) =>
+  ({ id, title: id, format: "tei" }) as Document;
 
-const attempt = (): SearchAttempt => ({
+const attempt = (origin: SearchAttempt["origin"] = "selection"): SearchAttempt => ({
   docId: 1,
   query: "cath",
-  origin: "typed",
+  origin,
   excludedDocId: null,
   params: { matchLength: 130, precision: 1, dissimilarityScore: 0.5, topK: 10 },
 });
@@ -45,20 +47,20 @@ beforeEach(() => {
   useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE });
 });
 
-describe("searchCompleted", () => {
+describe("selectionSearchCompleted", () => {
   it("is false when nothing has ever been searched", () => {
-    expect(searchCompleted(searchState())).toBe(false);
+    expect(selectionSearchCompleted(searchState())).toBe(false);
   });
 
   it("is true once a column's search has come back", () => {
     expect(
-      searchCompleted(searchState({ lastAttemptByDocument: { a: attempt() } })),
+      selectionSearchCompleted(searchState({ lastAttemptByDocument: { a: attempt() } })),
     ).toBe(true);
   });
 
   it("is false while the search is still in flight", () => {
     expect(
-      searchCompleted(
+      selectionSearchCompleted(
         searchState({
           lastAttemptByDocument: { a: attempt() },
           isSearchingByDocument: { a: true },
@@ -69,7 +71,7 @@ describe("searchCompleted", () => {
 
   it("is false for a search that errored — that column offers Retry", () => {
     expect(
-      searchCompleted(
+      selectionSearchCompleted(
         searchState({
           lastAttemptByDocument: { a: attempt() },
           searchErrorByDocument: { a: true },
@@ -78,9 +80,19 @@ describe("searchCompleted", () => {
     ).toBe(false);
   });
 
+  it("is false for a typed toolbar search, however well it went", () => {
+    // The latch boundary sits on this signal: a typed search counting here would
+    // teach the two select-to-search steps as done (ADR-0008).
+    expect(
+      selectionSearchCompleted(
+        searchState({ lastAttemptByDocument: { a: attempt("typed") } }),
+      ),
+    ).toBe(false);
+  });
+
   it("is true when one column succeeded and another failed", () => {
     expect(
-      searchCompleted(
+      selectionSearchCompleted(
         searchState({
           lastAttemptByDocument: { a: attempt(), b: attempt() },
           searchErrorByDocument: { b: true },
@@ -104,10 +116,10 @@ describe("resultNavigated", () => {
   });
 });
 
-describe("searchFired", () => {
+describe("selectionSearchFired", () => {
   it("is true from the moment an attempt is recorded, before it comes back", () => {
     expect(
-      searchFired(
+      selectionSearchFired(
         searchState({
           lastAttemptByDocument: { a: attempt() },
           isSearchingByDocument: { a: true },
@@ -117,7 +129,17 @@ describe("searchFired", () => {
   });
 
   it("is false when nothing has been searched", () => {
-    expect(searchFired(searchState())).toBe(false);
+    expect(selectionSearchFired(searchState())).toBe(false);
+  });
+
+  it("is false for a typed toolbar search — the step asks for the floating one", () => {
+    // ADR-0008: the tour's search step points at the select-to-search button,
+    // never the toolbar's typed query.
+    expect(
+      selectionSearchFired(
+        searchState({ lastAttemptByDocument: { a: attempt("typed") } }),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -155,9 +177,9 @@ describe("columnsReordered", () => {
 describe("useTourStoreSignals", () => {
   it("reads an untouched workspace as nothing done", () => {
     expect(renderHook(() => useTourStoreSignals()).result.current).toEqual({
-      openDocumentCount: 0,
-      searchFired: false,
-      searchCompleted: false,
+      openVersionCount: 0,
+      selectionSearchFired: false,
+      selectionSearchCompleted: false,
       resultNavigated: false,
       columnsReordered: false,
       fontSizeChanged: false,
@@ -176,9 +198,9 @@ describe("useTourStoreSignals", () => {
     useWorkspaceStore.setState({ fontSize: DEFAULT_FONT_SIZE + 2 });
 
     expect(renderHook(() => useTourStoreSignals()).result.current).toEqual({
-      openDocumentCount: 2,
-      searchFired: true,
-      searchCompleted: true,
+      openVersionCount: 2,
+      selectionSearchFired: true,
+      selectionSearchCompleted: true,
       resultNavigated: true,
       columnsReordered: true,
       fontSizeChanged: true,

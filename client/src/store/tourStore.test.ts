@@ -28,15 +28,15 @@ describe("tourStore", () => {
   });
 
   it("syncProgress records what the workspace has taught", () => {
-    useTourStore.getState().syncProgress(signals({ searchCompleted: true }));
+    useTourStore.getState().syncProgress(signals({ selectionSearchCompleted: true }));
     expect(useTourStore.getState().latched[searchStepIndex]).toBe(true);
   });
 
   it("syncProgress keeps the same array when nothing new latched", () => {
     const store = useTourStore.getState();
-    store.syncProgress(signals({ searchCompleted: true }));
+    store.syncProgress(signals({ selectionSearchCompleted: true }));
     const first = useTourStore.getState().latched;
-    store.syncProgress(signals({ searchCompleted: true }));
+    store.syncProgress(signals({ selectionSearchCompleted: true }));
     // Same reference, so a signal that changes nothing cannot re-render the
     // overlay every animation frame.
     expect(useTourStore.getState().latched).toBe(first);

@@ -106,10 +106,21 @@ stalling the tour.
 **A gate may also accept evidence that the step is behind the reader.** Clicking
 "Open selected" closes the dropdown and clears the ticks: the one action that
 satisfies step 4 un-satisfies steps 1–3, and before the latch boundary gates read
-live state. So those three gates read "…or the versions are open". This is the
-narrow exception, not a pattern — it applies exactly where the workspace erases
-the evidence *as a direct consequence of the next step*, and each such gate says
-so where it is written.
+live state. So those three gates read "…or the versions are open", and for the
+same reason "select a passage" also accepts a search having been fired — clicking
+Search can collapse the selection. This is the narrow exception, not a pattern —
+it applies exactly where the workspace erases the evidence *as a direct
+consequence of the next step*, and each such gate says so where it is written.
+
+**Two gates read the search's origin, and the opening gates count Versions.**
+The steps ask for the floating select-to-search button, deliberately never the
+toolbar's typed query (ADR-0008), so both the "fired" and the "came back" gates
+ignore a typed search. It matters most at the second: that gate is the latch
+boundary, and a typed search counting there would teach every step before it as
+done — including the two that ask the reader to select a passage and search it.
+For the same reason the opening gates count **Versions** rather than open
+columns: a Local Document cannot be searched (#175), so two of those are not the
+pair the next step needs.
 
 **The tour and the drag-reorder hint divide one lesson.** The hint appears the
 moment a second column does — during step 4, five steps before the tour has
