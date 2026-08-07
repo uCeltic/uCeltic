@@ -2,10 +2,7 @@ import type { TEIElementProps } from "../elementMap";
 
 // Every component here is a named entity, and every one carries
 // `data-tei-entity` to say so — a marker only these elements set, where
-// `data-tei-tag` is on most of the reader's spans. Nothing styles it today
-// (ADR-0021 dropped the rule that greyed out the names the Tag Filter was not
-// following); it stays because it is the seam any later opt-in highlighting of
-// names hangs off, and it costs one attribute to keep.
+// `data-tei-tag` is on most of the reader's spans.
 //
 // Two attributes carry "which entity is this", because two corpora answer it
 // differently. `data-tei-ref` is a pointer into the document's own authority
@@ -16,10 +13,12 @@ import type { TEIElementProps } from "../elementMap";
 // Both are emitted as they are found; making sense of either is the Tag
 // Filter's job, not this module's.
 //
-// None of them decorates the text (#153). A name is not marked on the page at
-// all until something asks for it to be: the attributes are here so that
-// highlighting a chosen person, or opting entities back into colour, is a CSS
-// rule against `[data-tei-entity]` rather than a change to these components.
+// None of them decorates the text (#153), and nothing else styles them either
+// since ADR-0021 dropped the rule that greyed out the names the Tag Filter was
+// not following. A name is not marked on the page at all until something asks
+// for it to be: the attributes are here so that highlighting a chosen person,
+// or opting entities back into colour, is a CSS rule against
+// `[data-tei-entity]` rather than a change to these components.
 
 // The components below are the whole of `ENTITY_TAGS` (../entityElements.ts),
 // and `entityElements.test.tsx` fails if the two ever disagree.

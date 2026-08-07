@@ -71,16 +71,24 @@ Everything else is unchanged: `#FB923C` (search), `#93C5FD` (query source),
 - CONTEXT.md's "three visual tiers" becomes two, and "these tiers are the only
   thing that marks a named entity on the page" gains the clause that matters:
   they mark **one entity at a time**.
-- Nothing in the render path changes. The deleted tier was one attribute and one
-  CSS rule; `rebuildEntityHighlights` never knew about it, and the entity
-  navigation card, the counts, and the ←/→ stepping are untouched.
+- **[ADR-0016](0016-reading-pane-renders-plain-text.md) recorded the deleted rule
+  as "the only rule that paints a named entity", and an Update there now retires
+  that bullet.** Its premise survives intact — the markup lives in the DOM as
+  `data-tei-*` and carries no styling — and this decision only takes away the one
+  exception it had noted.
+- No logic changes. The deleted tier was one rendered attribute and one CSS rule;
+  `rebuildEntityHighlights` never knew about it, and the entity navigation card,
+  the counts, and the ←/→ stepping are untouched.
 - The parchment scheme is unchanged. The warm ground (`#f5f6ee`, `#E8E3CE`,
   `#F0EEE6` — hue 60–70°, very low chroma) and its cool complementary highlights
   were already coherent; only the tier that could not be seen moved.
-- **A page with the Tag Filter on now looks close to a page with it off** when
-  the followed entity is absent from that column, which is correct: a column
-  that never names the entity has nothing to say, and its navigation card
-  already says so (#164).
+- **The deletion is pinned by no new test, deliberately.** The tier was one CSS
+  rule, and jsdom applies no stylesheet — the only thing a test could assert is
+  that a deleted attribute is absent, which is a test of nothing. The guard that
+  matters is already there and already passing:
+  `tei/presentation.test.tsx` walks `elementMap` and fails on any mapped element
+  carrying a style ADR-0018 does not name, so a name element cannot quietly
+  regain a colour of its own.
 
 ## Rejected alternatives
 
