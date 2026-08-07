@@ -512,11 +512,15 @@
   keeps (#164): "No search results" is a claim about the file's text, made where
   the truth is that the file was never asked — so the column that was not asked
   gets no answer slot. `isSearchableDocument` (`client/src/store/documentStore.ts`)
-  is the single rule both the search and the column read, so the two cannot drift.
+  is the single rule both the search and the column read, so the two cannot drift;
+  the words themselves live together in
+  `client/src/workspace/panels/localDocumentCopy.ts`, so no later change fixes one
+  surface and leaves another claiming the opposite.
 
   The wording never says **"upload"** — a Local Document never reaches a server,
   and calling it an upload would tell visitors the opposite of the best property
-  this feature has.
+  this feature has. For the same reason the onboarding tour offers a visitor's own
+  file "to read alongside" the versions, and never as something to search.
 
   ### Well-formed vs Valid
 

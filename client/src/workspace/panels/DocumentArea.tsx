@@ -33,6 +33,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities"; // dnd-kit transform object to CSS string
 import SelectionSearchButton from "./SelectionSearchButton";
+import { READING_ONLY_LABEL, READING_ONLY_TITLE } from "./localDocumentCopy";
 import {
   computeDragEndReorder,
   dragReorderHintDismissedBefore,
@@ -135,9 +136,15 @@ function ReadingOnlyChip() {
   return (
     // `min-w-0 truncate`: at the column's floor width the header has the 160px
     // title button and the ✕ to fit first, and both are `shrink-0` (#159) — so
-    // the chip is what gives way, the way the result card's metadata does.
-    <span className="min-w-0 truncate rounded-md border border-[#D8D4C3] bg-[#F5F1DF] px-2 py-0.5 text-xs font-medium text-[#8A8778]">
-      Reading only
+    // the chip is what gives way, the way the result card's metadata does. It
+    // carries the full sentence as a `title` for the same reason the title
+    // button does: two words clipped to "Reading o…" would otherwise be the
+    // only thing the column says about itself.
+    <span
+      title={READING_ONLY_TITLE}
+      className="min-w-0 truncate rounded-md border border-[#D8D4C3] bg-[#F5F1DF] px-2 py-0.5 text-xs font-medium text-[#8A8778]"
+    >
+      {READING_ONLY_LABEL}
     </span>
   );
 }
@@ -286,7 +293,7 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
             your file does not contain it*. It gets no slot at all, the way a
             document with no Name Index gets no entity card (#164, #175); the
             header's chip is what says why, once, for as long as it is open. */}
-        {!searchable ? null : isSearching ? (
+        {searchable && (isSearching ? (
           <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
             Searching…
           </div>
@@ -365,7 +372,7 @@ bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 activ
           <div className="border-b border-gray-200 px-3 py-2 text-xs text-gray-400">
             No search results
           </div>
-        )}
+        ))}
 
         {entityCard && (
           <EntityNavCard

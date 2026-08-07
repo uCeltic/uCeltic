@@ -17,6 +17,7 @@ import {
   toolbarLabelLastToGo,
 } from "./buttonStyles";
 import { BookIcon, FilePlusIcon, SearchIcon, SpinnerIcon } from "./icons";
+import { ADD_TEXT_TITLE } from "./localDocumentCopy";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { useTourStore } from "../../store/tourStore";
@@ -24,20 +25,6 @@ import { useTourStore } from "../../store/tourStore";
 // Why the manuscript control is unavailable at this width — the one thing a visitor
 // below the breakpoint can act on (#160).
 const WIDEN_TO_SHOW_MANUSCRIPTS = "Widen the window to show Manuscripts";
-
-/**
- * What a file opened from the visitor's own machine can and cannot do, said
- * before they pick one — the earliest of the three moments #175 states it, and
- * the only one that comes while they can still choose otherwise.
- *
- * Never the word "upload": a Local Document is added client-side and never
- * leaves the browser (CONTEXT.md → Local Document), and calling it an upload
- * would tell visitors their private files reached a server — inverting the best
- * property the feature has. The button's `aria-label` stays the two words it is
- * known by, so this sentence does not become its accessible name.
- */
-export const ADD_TEXT_TITLE =
-  "Add Text — files you open from your machine are for reading only; they stay in your browser and are not searchable.";
 
 export default function ToolBar({
   onToggleIIIF,

@@ -906,6 +906,19 @@ describe("a Local Document says it is reading-only (#175)", () => {
         ).toBe(true);
     });
 
+    //Test: the chip is the only thing the column says about itself, and at the
+    //column's floor width its two words can clip — so it carries the whole
+    //sentence, the way the truncating title button carries its own.
+    it("explains itself in a tooltip that never calls the file an upload", () => {
+        openLocalColumn();
+        render(<DocumentArea />);
+
+        const tooltip = screen.getByText(READING_ONLY).getAttribute("title")!;
+        expect(tooltip).toMatch(/not searchable/i);
+        expect(tooltip).toMatch(/stay in your browser/i);
+        expect(tooltip).not.toMatch(/upload/i);
+    });
+
     //Test: "No search results" is a claim about the file's text; the truth is
     //that the file was never searched. The column stays silent instead.
     it("renders no result card at all, not an empty one", () => {

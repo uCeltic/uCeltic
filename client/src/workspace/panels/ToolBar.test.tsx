@@ -2,7 +2,8 @@ import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import ToolBar, { ADD_TEXT_TITLE } from "./ToolBar";
+import ToolBar from "./ToolBar";
+import { ADD_TEXT_TITLE } from "./localDocumentCopy";
 import { toolbarLabelFirstToGo, toolbarLabelLastToGo } from "./buttonStyles";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
@@ -346,9 +347,10 @@ describe("ToolBar Add Text tooltip (#175)", () => {
     it("explains the reading-only limit in the tooltip, keeping Add Text as the name", () => {
         renderToolBar();
 
-        expect(addText()).toHaveAttribute("title", ADD_TEXT_TITLE);
-        expect(ADD_TEXT_TITLE).toMatch(/reading only/i);
-        expect(ADD_TEXT_TITLE).toMatch(/not searchable/i);
+        const tooltip = addText().getAttribute("title")!;
+        expect(tooltip).toBe(ADD_TEXT_TITLE);
+        expect(tooltip).toMatch(/reading only/i);
+        expect(tooltip).toMatch(/not searchable/i);
         expect(addText()).toHaveAttribute("aria-label", "Add Text");
     });
 
@@ -358,7 +360,8 @@ describe("ToolBar Add Text tooltip (#175)", () => {
     it("never calls opening a local file an upload", () => {
         renderToolBar();
 
-        expect(addText().getAttribute("title")).not.toMatch(/upload/i);
-        expect(ADD_TEXT_TITLE).toMatch(/stay in your browser/i);
+        const tooltip = addText().getAttribute("title")!;
+        expect(tooltip).not.toMatch(/upload/i);
+        expect(tooltip).toMatch(/stay in your browser/i);
     });
 });
