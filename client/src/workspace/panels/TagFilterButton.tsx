@@ -6,7 +6,7 @@ import { useDismissableDropdown } from "./useDismissableDropdown";
 import {
   dropdownTriggerIdle,
   dropdownTriggerOpen,
-  toolbarLabelPersistent,
+  toolbarLabelLastToGo,
 } from "./buttonStyles";
 import { TagIcon } from "./icons";
 
@@ -123,7 +123,7 @@ export default function TagFilterButton() {
         {/* This label is the workspace's only on-screen statement of which entity
             it is filtered to — the tag icon says "a filter", not "Find" — so it
             outlasts the labels that merely repeat their glyph (#174). */}
-        <span className={toolbarLabelPersistent}>{label} ▾</span>
+        <span className={toolbarLabelLastToGo}>{label} ▾</span>
       </button>
       {open && (
         <div

@@ -18,7 +18,11 @@ export const toolbarBtnBase =
 export const secondaryBtn = `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-[#52524F] hover:bg-[#F0EEE6] disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white`;
 
 // The "on" state, for the Search and manuscript toggles.
-export const toggleOnBtn = `${toolbarBtnBase} border border-[#52524F] bg-[#52524F] text-white hover:bg-[#3F3F3C]`;
+// It carries `disabled:` variants for one reason: Search disables itself while a
+// search is in flight, and the spinner that says so does not spin for a reader on
+// `prefers-reduced-motion`. Dimming the button says it without moving anything —
+// otherwise a running search would be invisible to them at every width (#174).
+export const toggleOnBtn = `${toolbarBtnBase} border border-[#52524F] bg-[#52524F] text-white hover:bg-[#3F3F3C] disabled:cursor-progress disabled:border-[#8A8778] disabled:bg-[#8A8778] disabled:hover:bg-[#8A8778]`;
 
 // The two two-level toolbar dropdowns (Tag Filter, Works) share one trigger:
 // same shape closed, same darkened border while their panel is open. Kept here
@@ -40,13 +44,13 @@ export const dropdownTriggerOpen = `${toolbarBtnBase} border border-[#52524F] bg
  * Manuscripts" beside a book glyph on a button whose colour and `aria-pressed`
  * carry the toggle state; "Advanced" beside sliders.
  */
-export const toolbarLabel = "hidden xl:inline";
+export const toolbarLabelFirstToGo = "hidden xl:inline";
 
 /**
  * Stage two, hidden below `lg` (1024px): the label is the control's only statement
  * of *content*, not just of identity. The Tag Filter and Works triggers render the
  * selected entity and work, so their labels are the one place the workspace says
- * what it is currently filtered to; Search's is the bar's primary action. These go
- * last, at the same width where the Manuscript panel itself auto-hides.
+ * what it is currently filtered to; Search's is the action the whole bar exists for.
+ * These go last, at the same width where the Manuscript panel itself auto-hides.
  */
-export const toolbarLabelPersistent = "hidden lg:inline";
+export const toolbarLabelLastToGo = "hidden lg:inline";

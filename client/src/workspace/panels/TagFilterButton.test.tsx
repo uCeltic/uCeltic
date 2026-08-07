@@ -15,6 +15,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import TagFilterButton from "./TagFilterButton";
+import { toolbarLabelLastToGo } from "./buttonStyles";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { useDocumentStore } from "../../store/documentStore";
 import { useNameRegistryStore } from "../../store/nameRegistryStore";
@@ -379,7 +380,7 @@ describe("Tag Filter label survives the first collapse (#174)", () => {
         render(<TagFilterButton />);
 
         expect(screen.getByText(/All Tags/, { selector: "span" })).toHaveClass(
-            "lg:inline",
+            toolbarLabelLastToGo,
         );
     });
 
@@ -388,6 +389,6 @@ describe("Tag Filter label survives the first collapse (#174)", () => {
         render(<TagFilterButton />);
 
         const label = screen.getByText(/Find/, { selector: "span" });
-        expect(label).toHaveClass("lg:inline");
+        expect(label).toHaveClass(toolbarLabelLastToGo);
     });
 });

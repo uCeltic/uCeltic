@@ -13,8 +13,8 @@ import {
   secondaryBtn,
   toggleOnBtn,
   toolbarBtnBase,
-  toolbarLabel,
-  toolbarLabelPersistent,
+  toolbarLabelFirstToGo,
+  toolbarLabelLastToGo,
 } from "./buttonStyles";
 import { BookIcon, FilePlusIcon, SearchIcon, SpinnerIcon } from "./icons";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
@@ -115,7 +115,7 @@ export default function ToolBar({
           onClick={handleAddDocument}
         >
           <FilePlusIcon />
-          <span className={toolbarLabel}>Add Text</span>
+          <span className={toolbarLabelFirstToGo}>Add Text</span>
         </button>
       </div>
 
@@ -162,7 +162,7 @@ export default function ToolBar({
             (#174). The word stays "Search" throughout, so the button keeps its
             width while the search runs. */}
         {anySearching ? <SpinnerIcon /> : <SearchIcon />}
-        <span className={toolbarLabelPersistent}>Search</span>
+        <span className={toolbarLabelLastToGo}>Search</span>
       </button>
       </div>
       {/* Manuscript toggle stays top-level; low-frequency controls live in the menu (#123) */}
@@ -192,7 +192,7 @@ export default function ToolBar({
             data-tour="manuscripts"
           >
             <BookIcon />
-            <span className={toolbarLabel}>{manuscriptLabel}</span>
+            <span className={toolbarLabelFirstToGo}>{manuscriptLabel}</span>
           </button>
         </span>
 

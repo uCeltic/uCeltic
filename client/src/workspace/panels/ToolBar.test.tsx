@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
+import { toolbarLabelFirstToGo, toolbarLabelLastToGo } from "./buttonStyles";
 import { useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useTourStore } from "../../store/tourStore";
@@ -210,19 +211,19 @@ describe("ToolBar staged label collapse (#174)", () => {
   it("drops the manuscript toggle's label first — its state is already in the colour and aria-pressed", () => {
     renderToolBar();
 
-    expect(labelSpan("Hide Manuscripts")).toHaveClass("xl:inline");
+    expect(labelSpan("Hide Manuscripts")).toHaveClass(toolbarLabelFirstToGo);
   });
 
   it("drops Add Text at the same stage — the file-plus icon says the same thing", () => {
     renderToolBar();
 
-    expect(labelSpan("Add Text")).toHaveClass("xl:inline");
+    expect(labelSpan("Add Text")).toHaveClass(toolbarLabelFirstToGo);
   });
 
   it("keeps Search's label to the narrower stage", () => {
     renderToolBar();
 
-    expect(labelSpan("Search")).toHaveClass("lg:inline");
+    expect(labelSpan("Search")).toHaveClass(toolbarLabelLastToGo);
   });
 });
 
@@ -246,6 +247,21 @@ describe("ToolBar search busy state (#174)", () => {
     const btn = screen.getByRole("button", { name: "Search" });
     expect(btn).toHaveAttribute("aria-busy", "false");
     expect(btn.querySelector(".animate-spin")).not.toBeInTheDocument();
+  });
+
+  // A spinner is the whole busy signal now, and it does not spin under
+  // `prefers-reduced-motion` — so without a still cue, those readers would be back
+  // to a search in flight looking exactly like an idle one, at every width.
+  it("dims the button while busy, so the state survives reduced motion", () => {
+    useSearchStore.setState({ isSearchingByDocument: { "doc-a": true } });
+
+    renderToolBar();
+
+    const btn = screen.getByRole("button", { name: "Search" });
+    expect(btn.className).toMatch(/disabled:bg-/);
+    expect(btn.querySelector(".animate-spin")).toHaveClass(
+      "motion-reduce:animate-none",
+    );
   });
 
   // The label no longer flickers to "..." — a word that changes width mid-search

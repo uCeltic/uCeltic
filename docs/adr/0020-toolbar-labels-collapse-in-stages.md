@@ -13,7 +13,7 @@ every label on the bar.
 
 One class means one flip. The full-label toolbar measures roughly 1250px, so
 `xl` (1280px) was chosen as "the width where everything just fits" — and below
-it, all seven labels go together. On a 1080p screen almost any window that is
+it, all six labels go together. On a 1080p screen almost any window that is
 not maximised sits below 1280, which makes icon-only not the degraded state but
 the *normal* one. The bar a reader actually looks at all day is a row of
 unlabelled glyphs.
@@ -33,8 +33,10 @@ icon and the button's own state do not:
 | 2 | < 1280 | `Show`/`Hide Manuscripts`, `Add Text`, `Advanced` |
 | 3 | < 1024 (`lg`) | also `Tags`, `Works`, `Search` |
 
-`toolbarLabel` keeps its meaning and its value and becomes tier 2; a second
-constant, `toolbarLabelPersistent = "hidden lg:inline"`, is tier 3.
+`toolbarLabel` splits into a symmetric pair — `toolbarLabelFirstToGo =
+"hidden xl:inline"` for tier 2 and `toolbarLabelLastToGo = "hidden lg:inline"`
+for tier 3. Neither is "the default": a new toolbar control has to name a tier,
+and the name says which way it falls.
 
 The order follows from what each label carries:
 
@@ -46,8 +48,9 @@ The order follows from what each label carries:
 - `Tags` and `Works` render the **selected** entity and work. The tag icon says
   "a filter"; only the label says *Find*. Losing them costs the reader the one
   statement of what they are looking at, so they survive longest.
-- `Search` is the bar's primary action and sits at the tier-3 boundary with
-  them.
+- `Search` carries less than those two, but it is the action the whole bar
+  exists for, and it is the only control whose *own* state the reader waits on.
+  It goes with them rather than a stage earlier.
 
 Tier 3 lands on `lg`, the width at which the Manuscript panel already
 auto-hides — the point where the window has stopped being a workspace and is
@@ -74,14 +77,25 @@ width mid-search.
 - Two label constants instead of one. A new toolbar control has to pick a tier —
   which is the point: the choice is now explicit, and its reasoning is in the
   doc comment beside each constant.
-- Between 1024 and 1280 the bar is mixed: four glyphs and three labelled
-  controls. That is deliberate, not an unfinished state.
+- Between 1024 and 1280 the bar is mixed: `Tags`, `Works` and `Search` keep
+  their words, everything else is a bare glyph. That is deliberate, not an
+  unfinished state.
+- The Tag Filter and Works labels are unbounded — a long headword beside a long
+  work title squeezes the search input harder than before, since those labels
+  now show 256px lower than they used to. Not fixed here: truncating them would
+  cost the very thing tier 3 exists to protect. If the input gets too tight in
+  practice, the answer is a `max-w` on the labels with the full text in the
+  existing `title`, not an earlier collapse.
 - Below 1024 the bar is icon-only, as before — the tooltips and `aria-label`s
   that made that acceptable under ADR-0011 are unchanged, and nothing in the
   client-requirement wording moves (the manuscript control's accessible name is
   still "Manuscripts", never "Books").
-- `motion-reduce:animate-none` on the spinner leaves a reader who asked for less
-  motion with `aria-busy` and the disabled button as the busy signal.
+- `motion-reduce:animate-none` stops the spin for a reader who asked for less
+  motion — which would leave them nothing, since `aria-busy` is assistive-tech
+  only and `toggleOnBtn` styled a disabled Search button identically to an idle
+  one. `toggleOnBtn` therefore gains `disabled:` variants that mute it, so the
+  busy state is a still cue first and a moving one second. `SelectionSearchButton`
+  shares that class but is never disabled, so nothing else changes.
 
 ## Rejected alternatives
 

@@ -26,7 +26,7 @@
 > **Update (2026-08-07).** "A two-breakpoint toolbar" below is the part that
 > changes. Built as one class on every label, it made icon-only the *normal*
 > state of the bar: the full-label toolbar measures ~1250px, so a 1080p window
-> that is not maximised already sits under the 1280px flip, and all seven labels
+> that is not maximised already sits under the 1280px flip, and all six labels
 > went together.
 > [ADR-0020](0020-toolbar-labels-collapse-in-stages.md) keeps the scheme and
 > splits the flip in two — labels collapse at `xl` or at `lg` depending on how
