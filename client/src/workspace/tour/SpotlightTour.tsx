@@ -122,6 +122,19 @@ export default function SpotlightTour() {
   const [box, setBox] = useState<Rect | null>(null);
   const [panel, setPanel] = useState<Rect | null>(null);
 
+  // Forget what was probed when the tour closes: nothing probes while it is
+  // shut, so a stale "a passage is selected" would otherwise be the state the
+  // tour resumes from when Help re-opens it — for the one render before the
+  // next frame corrects it, which is the render that folds signals into the
+  // latches. Adjusted during render rather than in an effect, the way
+  // DocumentArea tracks its column count: this bails out before the DOM
+  // commits instead of scheduling a second, effect-driven render.
+  const [probingWhileOpen, setProbingWhileOpen] = useState(isOpen);
+  if (probingWhileOpen !== isOpen) {
+    setProbingWhileOpen(isOpen);
+    if (!isOpen) setDomSignals(NO_DOM_SIGNALS);
+  }
+
   // First-run auto-show: open once, unless a previous finish/skip was recorded.
   useEffect(() => {
     if (!tourDismissedBefore()) start();
@@ -173,12 +186,6 @@ export default function SpotlightTour() {
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [isOpen, step]);
-
-  // Stop probing the moment the tour closes: a stale "a passage is selected"
-  // would otherwise be the state the tour resumes from when Help re-opens it.
-  useEffect(() => {
-    if (!isOpen) setDomSignals(NO_DOM_SIGNALS);
-  }, [isOpen]);
 
   // The tour teaches drag-reordering itself, so once that step is behind the
   // reader the one-time hint has nothing left to say. Marking it acknowledged
