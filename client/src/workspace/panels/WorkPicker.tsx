@@ -165,7 +165,14 @@ export default function WorkPicker() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-96 w-80 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-md">
+        <div
+          // The tour's card keeps clear of an open panel, not just of the
+          // button it rings (tourCardPlacement.ts), and its first step waits
+          // for this panel to exist (#178).
+          data-tour-panel=""
+          data-tour="works-panel"
+          className="absolute left-0 top-full z-50 mt-1 max-h-96 w-80 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-md"
+        >
           {loading ? (
             <p className="px-3 py-1.5 text-sm text-gray-400">Loading…</p>
           ) : groups.length === 0 ? (
@@ -223,6 +230,9 @@ function WorkBranch({
         type="button"
         aria-expanded={expanded}
         onClick={onExpand}
+        // The tour rings the rows and waits for any one of them to expand —
+        // which work is the reader's business, and the corpus's (#178).
+        data-tour="work-branch"
         className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-sm font-medium text-[#52524F] cursor-pointer hover:bg-[#F0EEE6]"
       >
         <span aria-hidden="true">{expanded ? "▾" : "▸"}</span>
@@ -233,7 +243,9 @@ function WorkBranch({
       </button>
 
       {expanded && (
-        <>
+        // The tour's "tick two versions" step counts the ticks inside here, so
+        // the list is one element rather than a run of siblings (#178).
+        <div data-tour="version-list">
           {group.documents.map((entry) => (
             <label
               key={entry.id}
@@ -265,6 +277,7 @@ function WorkBranch({
               className={actionBtn}
               disabled={ticked.length === 0}
               onClick={onOpenSelected}
+              data-tour="open-selected"
             >
               Open selected
             </button>
@@ -272,7 +285,7 @@ function WorkBranch({
               Open all
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
