@@ -3,7 +3,6 @@ import StatusBar from "../panels/StatusBar";
 import DocumentArea from "../panels/DocumentArea";
 import IIIFPanel from "../panels/IIIFPanel";
 import ToolBar from "../panels/ToolBar";
-import QuestionnaireModal from "../panels/QuestionnaireModal";
 import FeedbackButton from "../panels/FeedbackButton";
 import SpotlightTour from "../tour/SpotlightTour";
 import { useWorkspaceStore } from "../../store/workspaceStore";
@@ -25,9 +24,10 @@ export default function WorkspaceLayout() {
 
   return (
     <div className="flex h-screen flex-col bg-[#f5f6ee]">
-      {/* Overlays the whole layout, once per session, for a signed-in visitor who hasn't
-          answered or skipped yet (#67). Renders nothing for anonymous visitors. */}
-      <QuestionnaireModal />
+      {/* The pre-use questionnaire is deliberately not rendered here: it has no question
+          set worth asking, so the workspace asks nothing (#183, ADR-0023). The component,
+          its store state and its endpoints all still stand — restoring it is adding
+          `<QuestionnaireModal />` back on this line. */}
 
       {/* First-run spotlight tour of the select-to-search flow; re-openable via the
           toolbar Help button. Non-blocking, so it never traps the workspace (#125). */}
@@ -59,7 +59,7 @@ className="h-full">
 
       {/* Floating, always available at every width — unlike the tool bar, which folds
           its controls away below `xl` (ADR-0011). Sits just above the StatusBar and
-          below both one-shot overlays above (#137, ADR-0014). */}
+          below the one-shot overlay layer above (#137, ADR-0014). */}
       <FeedbackButton />
 
       <StatusBar />
