@@ -613,8 +613,9 @@
   Carries an optional `contact` (so an anonymous submitter can be replied to) and
   a `context` snapshot (open documents, scope, viewport, URL) that makes a bug
   report reproducible. _Avoid_: bug report (only one of its categories), review,
-  survey, questionnaire (the questionnaire is a prompted purpose question, ADR-0007;
-  Feedback is visitor-initiated).
+  survey, questionnaire (the questionnaire is a prompted purpose question, ADR-0007,
+  and is currently paused, ADR-0023; Feedback is visitor-initiated and unaffected —
+  it is not a stand-in for the paused prompt).
 
   ### Tour
 
