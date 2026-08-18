@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import WorkspaceLayout from "./WorkspaceLayout";
 import { useWorkspaceStore } from "../../store/workspaceStore";
+import { useAuthStore } from "../../store/authStore";
 
 // The layout's own job is the one line this file is about: fold the stored preference
 // together with the viewport override, and hand the answer to the panel and the tool
@@ -13,7 +14,6 @@ vi.mock("../panels/IIIFPanel", () => ({
   default: () => <div data-testid="iiif-panel" />,
 }));
 vi.mock("../panels/StatusBar", () => ({ default: () => <div /> }));
-vi.mock("../panels/QuestionnaireModal", () => ({ default: () => null }));
 vi.mock("../panels/FeedbackButton", () => ({ default: () => null }));
 vi.mock("../tour/SpotlightTour", () => ({ default: () => null }));
 
@@ -98,4 +98,28 @@ describe("WorkspaceLayout manuscript panel at narrow widths", () => {
     expect(screen.queryByTestId("iiif-panel")).not.toBeInTheDocument();
     expect(manuscriptButton()).toHaveAccessibleName("Show Manuscripts");
   });
+});
+
+// ADR-0023: the questionnaire is paused until it has a real question set, so entering the
+// workspace asks nothing of anyone. `QuestionnaireModal` is deliberately left unmocked
+// here — the store state below is exactly what makes the real component render, so the
+// test is only meaningful, and only fails on a re-added render site, without a stand-in.
+describe("WorkspaceLayout pre-use questionnaire", () => {
+  it.each(["anonymous", "authenticated"] as const)(
+    "never overlays the questionnaire for a %s visitor",
+    (status) => {
+      useAuthStore.setState({
+        status,
+        user: status === "authenticated" ? { id: 1, email: "visitor@example.com" } : null,
+        questionnaireResolved: false,
+      });
+      installMatchMedia(false);
+
+      renderLayout();
+
+      expect(useAuthStore.getState().shouldShowQuestionnaire()).toBe(true);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.queryByText(/before you start/i)).not.toBeInTheDocument();
+    },
+  );
 });

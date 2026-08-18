@@ -92,8 +92,8 @@
   to one person. **Optional by design**: the workspace is fully usable anonymously;
   signing in adds a profile (display name, password change) and attribution of the
   holder's Sessions, Behavior Events, and Questionnaire Responses — the pre-use
-  prompt itself is shown to every visitor regardless of account status (see
-  Questionnaire Response, below). August study participants sign in because the
+  prompt is not account-gated either, though it is currently paused for everyone
+  (see Questionnaire Response, below). August study participants sign in because the
   protocol asks them to, not because
   a wall forces them. Data linked to a User is researcher-only and pseudonymized in
   published analysis. _Avoid_: account, member (same concept as User); calling
@@ -116,13 +116,22 @@
 
   A visitor's self-stated purpose for **one Session** ("what are you trying to do
   this time?"), captured by a short skippable prompt before entering the workspace;
-  a skip is recorded too. Shown to every visitor, guest or signed-in — like Session
-  and Behavior Event, a Questionnaire Response **may belong to a User** or be
-  anonymous (see [ADR-0007](docs/adr/0007-questionnaire-for-guests-and-idle-session-expiry.md)).
+  a skip is recorded too. When shown it goes to every visitor, guest or signed-in —
+  like Session and Behavior Event, a Questionnaire Response **may belong to a User**
+  or be anonymous (see [ADR-0007](docs/adr/0007-questionnaire-for-guests-and-idle-session-expiry.md)).
   The "said" side of the study's core comparison, cross-checked against the same
   Session's Behavior Events (the "did" side). The question set is versioned and
   owned by the research team. Distinct from a Diary Entry (free-text, after the
   fact) and from Behavior Events (observed actions, not self-report).
+
+  **The workspace does not currently ask.** The prompt is paused until the research
+  team supplies a real question set — the placeholder single question could not
+  deliver the "said" side it exists for
+  ([ADR-0023](docs/adr/0023-pause-the-questionnaire-until-it-has-a-question-set.md)).
+  The modal, the client session state, and the model and endpoints behind it are all
+  still in place and untouched, so no Questionnaire Responses are being collected
+  meanwhile — skips included, so the denominator pauses too. Feedback is **not** a
+  stand-in for it: see the _Avoid_ line under Feedback.
 
   ### Diary Entry
 

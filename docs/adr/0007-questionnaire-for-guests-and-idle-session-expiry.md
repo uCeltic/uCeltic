@@ -1,6 +1,10 @@
 # 7. Questionnaire for guests, and idle-based session expiry
 
-- Status: Accepted
+- Status: Accepted; the questionnaire it opens to guests is currently **paused**
+  by [ADR-0023](0023-pause-the-questionnaire-until-it-has-a-question-set.md) —
+  the workspace renders no prompt until a real question set exists. The
+  guests-too decision below is dormant, not reversed; the idle-session rule is
+  unaffected and still live
 - Date: 2026-07-16
 - Deciders: Zhou Dejian
 - Amends: [ADR-0004](0004-public-tool-with-optional-accounts.md) — the pre-use
