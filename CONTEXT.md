@@ -5,6 +5,20 @@
 
   ## Glossary
 
+  ### uCeltic
+
+  A digital scholarly workspace for comparing Versions of medieval Irish Works
+  and searching for related passages across the open Documents. It is the
+  search-focused software produced for *The Disappearing Text* research project.
+  _Avoid_: annotator, annotation tool, Celtic Finder, universal app — annotation
+  is not part of the agreed product, and the other names obscure its search focus.
+
+  ### Fuzzy Passage Search
+
+  A search for related wording across Versions that tolerates spelling variation
+  and words inserted into or omitted from a passage. _Avoid_: semantic search,
+  keyword search, full-text search, text reuse detection.
+
   ### `window_size_ratio`
 
   The size of the moving search window, expressed as a multiple of the query's
@@ -62,6 +76,74 @@
   [ADR-0012](docs/adr/0012-retry-replays-the-recorded-search-attempt.md)).
   _Avoid_: request, query — a Search Attempt is neither the HTTP call nor the
   text searched for.
+
+  ### Search History
+
+  A signed-in **User**'s own log of the searches they have run — the one place a
+  visitor can look back at *what they searched for and what came back*, and the
+  only search-recording concept that faces the user. It sits apart from the two
+  that do not:
+
+  - a **Search Attempt** is one *column's* search, held client-side only so a
+    failed column's **Retry** can replay it (ADR-0012) — it never persists and
+    never reaches a profile;
+  - a **Behavior Event** (`search_performed`) records only *that a search
+    happened*, for the requirements study — researcher-only and pseudonymized
+    (ADR-0004), never shown back to the person who searched.
+
+  A Search History **entry** is **one whole search as the user experienced it** —
+  the query they searched, fanned across however many columns were open —
+  captured **once, at the moment it settled, as an immutable snapshot**. It is
+  *not* a saved query to be re-run: it stores the results that came back then,
+  and re-reading or exporting it months later shows *that* search, untouched by
+  any later re-cut of the corpus or change to the matcher
+  ([ADR-0024](docs/adr/0024-search-history-is-a-user-owned-snapshot.md)).
+
+  **Signed-in only.** History belongs to a **User** and lives across Sessions and
+  devices; anonymous visitors keep none (the workspace stays fully usable without
+  it, ADR-0004), and the profile page it is read from is signed-in only (#66).
+  Searches run *before* signing in are not back-filled — they stay anonymous
+  Session traffic, and whether the same person made them is the question ADR-0004
+  leaves unanswerable by design.
+
+  **Self-contained text.** An entry holds **no foreign key to any TEI Document**:
+  the query, the timestamp, the four parameters (Match Length, precision,
+  dissimilarity, top-k), each open **Version**'s title, and each column's hits
+  (the matched snippet and its score) are all frozen as text at capture time. A
+  Document later renamed or deleted leaves the entry whole — there is nothing to
+  jump back to and nothing that can break.
+
+  **What counts as one entry.** One user-initiated search — a typed search or a
+  selection search (ADR-0008). A **Retry** never creates or edits an entry: it
+  repairs the live column, not the record. A column that *errored* is left out of
+  the snapshot entirely — its failure is an **Error Report** (ADR-0013), not a
+  second home in a user-facing log; a column that returned **zero hits** is kept
+  (a search that found nothing is still a search). A search where *every* column
+  errored is not stored.
+
+  **Auto-captured, capped at the most recent 50.** Every qualifying search is
+  saved without the user asking; the 51st drops the oldest. A User can delete a
+  single entry or clear the whole history, each behind a confirm. Because the log
+  rolls, **Export** is the only way to keep a search for good.
+
+  **Match shown as a percentage.** The stored per-hit score is a *dissimilarity*
+  (0 = identical); wherever a Search History entry is read or exported it is
+  turned into a similarity — `(1 − score) × 100 %` — so a higher number reads as
+  a closer match.
+
+  **Export.** A single entry exports as a **Word (`.docx`) document**, one search
+  per file, laid out to be read, printed and cited: the query, when it was
+  searched, the parameters, the Versions it covered, and under each Version its
+  hits as a ranked list of matched passages each with its match percentage. **No
+  line number and no folio locator is shown** — a search hit carries no usable
+  line reference for prose and no **Manuscript Locator**; adding folio provenance
+  is future work. The file is generated from the stored snapshot, so it
+  reproduces exactly what the entry holds.
+
+  _Avoid_: Saved Search, bookmark (both imply a re-runnable query — a Search
+  History entry is a snapshot, never re-run); calling it a Behavior Event or an
+  Error Report (different audiences, different stores); "upload" (nothing leaves
+  the snapshot's own frozen text).
 
   ### Behavior Event
 
@@ -500,11 +582,13 @@
 
   ### Built-in Corpus
 
-  The Irish TEI Documents that **ship inside the app** (`backend/tei/`), available
-  with zero setup — the app is usable with no file of your own. This is the
-  default experience and the research team's own material. Contrast **Local
-  Document** (below). _Avoid_: "sample data", "demo files" — the built-in corpus
-  is the primary content, not a placeholder.
+  The Irish TEI Documents that **ship in the repository** (`backend/tei/`) for an
+  administrator to upload into a deployment. They are the first researcher-tagged
+  set of excerpts from the project's real source material; the research team is
+  still preparing the complete corpus. A fresh database is empty until these
+  Documents are uploaded through Django Admin. Contrast **Local Document**
+  (below). _Avoid_: "sample data", "demo files" — these are authentic research
+  texts, not synthetic or disposable placeholders.
 
   ### Local Document
 
