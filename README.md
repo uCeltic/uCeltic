@@ -17,7 +17,7 @@ editorial markup can vary between manuscript witnesses.
 
 The platform is developed as part of University College Cork's
 [*The Disappearing Text*](https://www.ucc.ie/en/disappearing-text/) project,
-funded by Research Ireland through an Advanced Laureate Award. The project is
+funded by Research Ireland. The project is
 producing new editions of *Acallam na Senórach* (*The Colloquy of the
 Ancients*) and developing software for working with its complex textual
 tradition.
@@ -37,11 +37,6 @@ tradition.
   per-document occurrence counts and navigation.
 - Displays manuscript page images from external IIIF services beside the
   transcribed texts.
-- Supports anonymous use and optional accounts, session-based research activity
-  logging, visitor feedback and privacy-scrubbed error reports.
-- Includes questionnaire infrastructure for the research study; collection is
-  currently paused while the research team prepares the question set.
-- Provides an interactive first-run tour of the comparison and search workflow.
 
 ## How search works
 
