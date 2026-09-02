@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "apps.tei",
     "apps.search",
     "apps.analytics",
+    "apps.history",
     "drf_spectacular",
 ]
 

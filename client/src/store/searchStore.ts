@@ -3,6 +3,8 @@ import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
 import { logEvent } from "../api/log";
 import { searchDocument } from "../api/search";
+import { captureSearchRun } from "../history/captureSearchRun";
+import { toWireParams, type SearchParams } from "../api/searchParams";
 
 function logParamChange(param: string, from: number, to: number): void {
   if (to === from) return;
@@ -36,13 +38,9 @@ export type QueryOrigin = "selection" | "typed";
 
 // The four tuning knobs a search runs with. Normally read off the store, but
 // carried explicitly by a retry, which replays the values its failed attempt
-// used rather than whatever the sliders say now.
-export interface SearchParams {
-  matchLength: number;
-  precision: number;
-  dissimilarityScore: number;
-  topK: number;
-}
+// used rather than whatever the sliders say now. Defined next to the renaming
+// that puts them on the wire, so the two cannot drift.
+export type { SearchParams };
 
 // A selection-originated search carries its own query rather than reading the
 // search bar's `query` state — the two paths never share mutable state, so
@@ -238,7 +236,16 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       params,
       columns,
     };
-    if (get().searchRunCount === runCount) set({ lastSearchRun: run });
+    // A run that a later one has already superseded is neither the search the user
+    // is on nor the one whose results are still in the columns, so it is neither
+    // recorded here nor captured to history.
+    if (get().searchRunCount === runCount) {
+      set({ lastSearchRun: run });
+      // The one place a Search History entry is captured from (#187, ADR-0024): a whole
+      // user-initiated search, at the moment it settled, with the results as they stand
+      // right now. Signed-out visitors and all-errored searches are declined inside.
+      captureSearchRun(run, get().resultsByDocument);
+    }
     return run;
   },
 
@@ -276,16 +283,18 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       const generation = get().searchGenerationByDocument[clientDocId] ?? 0;
       const superseded = () =>
         (get().searchGenerationByDocument[clientDocId] ?? 0) !== generation;
-      const windowSizeRatio = matchLength / 100;
+      const wireParams = toWireParams({
+        matchLength,
+        precision,
+        dissimilarityScore,
+        topK,
+      });
       const startedAt = performance.now();
       const searchPerformedBase = {
         query,
         query_origin: queryOrigin,
         excluded_doc_id: excludedDocId,
-        window_size_ratio: windowSizeRatio,
-        step_size: precision,
-        dissimilarity_threshold: dissimilarityScore,
-        top_k: topK,
+        ...wireParams,
       };
       try {
         const results = await searchDocument({
@@ -293,7 +302,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           query,
           topK,
           dissimilarityThreshold: dissimilarityScore,
-          windowSizeRatio,
+          windowSizeRatio: wireParams.window_size_ratio,
           stepSize: precision,
         });
         logEvent("search_performed", {

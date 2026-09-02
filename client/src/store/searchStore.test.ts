@@ -3,6 +3,7 @@ import { useSearchStore } from "./searchStore";
 import { searchDocument } from "../api/search";
 import { logEvent } from "../api/log";
 import type { SearchResult } from "../types/search";
+import { captureSearchRun } from "../history/captureSearchRun";
 
 // runSearch calls searchDocument internally.
 // Mock it here so tests avoid real network requests and can inspect the call history.
@@ -13,6 +14,12 @@ const mockedSearch = vi.mocked(searchDocument);
 // mock it so we can assert the emitted events without a real network call.
 vi.mock("../api/log", () => ({ logEvent: vi.fn() }));
 const mockedLogEvent = vi.mocked(logEvent);
+
+// Capturing a settled run to Search History is a side effect of the run boundary, and
+// has its own tests (history/captureSearchRun.test.ts). Here we only assert *when* the
+// store reaches for it — which searches are captured, and which are not.
+vi.mock("../history/captureSearchRun", () => ({ captureSearchRun: vi.fn() }));
+const mockedCapture = vi.mocked(captureSearchRun);
 
 // sample result for testing
 const sampleResult: SearchResult = {
@@ -29,6 +36,7 @@ const sampleResult: SearchResult = {
 beforeEach(() => {
   mockedSearch.mockReset();
   mockedLogEvent.mockReset();
+  mockedCapture.mockReset();
   useSearchStore.setState({
     query: "",
     resultsByDocument: {},
@@ -792,5 +800,69 @@ describe("searchStore.startSearchRun", () => {
     expect(useSearchStore.getState().resultsByDocument["doc-tei-1"]).toEqual([
       sampleResult,
     ]);
+  });
+});
+
+describe("searchStore Search History capture", () => {
+  it("captures one settled search run, with the results as they stand", async () => {
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("hound");
+
+    const run = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+
+    expect(mockedCapture).toHaveBeenCalledOnce();
+    expect(mockedCapture).toHaveBeenCalledWith(run, {
+      "doc-tei-1": [sampleResult],
+    });
+  });
+
+  it("captures nothing for a Retry: it repairs a search that is already over", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("boom"));
+    useSearchStore.getState().setQuery("hound");
+    await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+    mockedCapture.mockReset();
+    mockedSearch.mockResolvedValue([sampleResult]);
+
+    await useSearchStore.getState().retrySearch("doc-tei-1");
+
+    expect(mockedCapture).not.toHaveBeenCalled();
+  });
+
+  it("captures nothing for a blank query", async () => {
+    useSearchStore.getState().setQuery("   ");
+
+    await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+
+    expect(mockedCapture).not.toHaveBeenCalled();
+  });
+
+  it("captures only the run the user started last", async () => {
+    // The slow first run settles after the second one started, so it is no longer the
+    // search the user is on — and the columns no longer hold its results.
+    let releaseFirst: (results: SearchResult[]) => void = () => {};
+    mockedSearch.mockImplementationOnce(
+      () => new Promise((resolve) => (releaseFirst = resolve)),
+    );
+    useSearchStore.getState().setQuery("first");
+    const first = useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("second");
+    await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+    releaseFirst([]);
+    await first;
+
+    expect(mockedCapture).toHaveBeenCalledOnce();
+    expect(mockedCapture.mock.calls[0][0]?.query).toBe("second");
   });
 });
