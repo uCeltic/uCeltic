@@ -5,11 +5,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import SearchHistoryEntry
-from .serializers import SearchHistoryEntryRequestSerializer
+from .serializers import (
+    SearchHistoryEntryRequestSerializer,
+    SearchHistoryEntryResponseSerializer,
+)
 
 
 class SearchHistoryView(APIView):
-    """Capture one settled search onto the signed-in user's own log (#187, ADR-0024).
+    """The signed-in user's own Search History: capture one search (#187), read
+    them all (#188).
 
     `IsAuthenticated`, unlike every other ingest endpoint in this codebase: Search History
     belongs to a User and an anonymous visitor keeps none. The client already declines to
@@ -39,3 +43,19 @@ class SearchHistoryView(APIView):
             user=request.user, **serializer.validated_data
         )
         return Response(status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        responses={200: SearchHistoryEntryResponseSerializer(many=True)},
+        description=(
+            "The signed-in user's own search history, newest first, as the immutable "
+            "snapshots they were captured as. At most 50 entries — the store rolls."
+        ),
+    )
+    def get(self, request):
+        # Filtered by the session's user, never by anything the caller passes: an entry is
+        # readable by the person who searched and by nobody else (ADR-0024). Unpaginated on
+        # purpose — the store caps a user at 50, so the whole log is one page by
+        # construction, and `-created_at, -pk` (the model's Meta) is the newest-first order
+        # the profile reads them in.
+        entries = SearchHistoryEntry.objects.filter(user=request.user)
+        return Response(SearchHistoryEntryResponseSerializer(entries, many=True).data)

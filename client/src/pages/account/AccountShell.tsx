@@ -6,16 +6,21 @@ export default function AccountShell({
   title,
   subtitle,
   hideAccountLink,
+  wide,
   children,
 }: {
   title: string;
   subtitle?: ReactNode;
   hideAccountLink?: boolean;
+  /** A roomier card, for a page that shows content rather than a sign-in form. The two
+   *  widths are the only choice on offer: a free-form className here would let every new
+   *  /account page pick its own, and the shell exists so they cannot. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F0EEE6] px-4 py-10">
-      <main className="w-full max-w-sm rounded-lg border border-[#D8D4C3] bg-white p-6 shadow-sm">
+      <main className={`w-full ${wide ? "max-w-2xl" : "max-w-sm"} rounded-lg border border-[#D8D4C3] bg-white p-6 shadow-sm`}>
         <h1 className="text-lg font-semibold text-[#52524F]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-[#6B6B67]">{subtitle}</p>}
         <div className="mt-5">{children}</div>

@@ -4,6 +4,7 @@ import { useAuthStore } from "../../store/authStore";
 import { AuthError, changePassword } from "../../api/auth";
 import { fetchProfile, updateDisplayName, ProfileError } from "../../api/profile";
 import AccountShell, { Field, FormError, labelClass, primaryBtn } from "./AccountShell";
+import SearchHistorySection from "./SearchHistorySection";
 
 function localPart(email: string): string {
   return email.split("@")[0];
@@ -74,7 +75,9 @@ export default function ProfilePage() {
 
   return (
     // The visitor is already signed in here, so "Continue as a Visitor" is meaningless.
-    <AccountShell title="Your profile" hideAccountLink>
+    // `wide`: the search history below carries matched passages, which the /account
+    // forms' narrow card cannot hold at a readable line length.
+    <AccountShell title="Your profile" hideAccountLink wide>
       <section className="mb-6">
         <span className={labelClass}>Email</span>
         <p className="mt-1 text-sm text-[#52524F]">{authUser?.email}</p>
@@ -141,6 +144,10 @@ export default function ProfilePage() {
           )}
         </form>
       </section>
+
+      <hr className="my-6 border-[#E8E4D8]" />
+
+      <SearchHistorySection />
     </AccountShell>
   );
 }
