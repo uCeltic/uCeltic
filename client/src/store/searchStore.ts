@@ -3,6 +3,7 @@ import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
 import { logEvent } from "../api/log";
 import { searchDocument } from "../api/search";
+import { captureSearchRun } from "../history/captureSearchRun";
 
 function logParamChange(param: string, from: number, to: number): void {
   if (to === from) return;
@@ -238,7 +239,16 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       params,
       columns,
     };
-    if (get().searchRunCount === runCount) set({ lastSearchRun: run });
+    // A run that a later one has already superseded is neither the search the user
+    // is on nor the one whose results are still in the columns, so it is neither
+    // recorded here nor captured to history.
+    if (get().searchRunCount === runCount) {
+      set({ lastSearchRun: run });
+      // The one place a Search History entry is captured from (#187, ADR-0024): a whole
+      // user-initiated search, at the moment it settled, with the results as they stand
+      // right now. Signed-out visitors and all-errored searches are declined inside.
+      captureSearchRun(run, get().resultsByDocument);
+    }
     return run;
   },
 
