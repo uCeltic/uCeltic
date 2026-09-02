@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchSearchHistory,
   saveSearchHistoryEntry,
-  SearchHistoryError,
+  SearchHistoryReadError,
   type SearchHistoryEntry,
 } from "./searchHistory";
 
@@ -88,6 +88,6 @@ describe("fetchSearchHistory", () => {
   it("raises when the history cannot be read, so the page can say so", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
-    await expect(fetchSearchHistory()).rejects.toBeInstanceOf(SearchHistoryError);
+    await expect(fetchSearchHistory()).rejects.toBeInstanceOf(SearchHistoryReadError);
   });
 });

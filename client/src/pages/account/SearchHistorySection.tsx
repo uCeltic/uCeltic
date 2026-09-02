@@ -5,6 +5,7 @@ import {
   type SearchHistoryVersion,
 } from "../../api/searchHistory";
 import { matchPercentage } from "../../history/matchPercentage";
+import { FormError } from "./AccountShell";
 
 /** How the moment a search was made is put in front of a reader. The machine-readable
  *  form stays on the `<time>` element's `dateTime`, so the display can be as loose as it
@@ -102,13 +103,11 @@ export default function SearchHistorySection() {
       <h2 className="text-sm font-semibold text-[#52524F]">Search history</h2>
       {failed ? (
         // Unlike a failed capture, this one is the visitor's business: they opened the
-        // page to look at it, and an empty list would be a lie.
-        <p
-          role="alert"
-          className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
-          Could not load your search history. Please try again.
-        </p>
+        // page to look at it, and an empty list would be a lie. Said through the shell's
+        // own `FormError` so every /account failure reads the same, forms included.
+        <div className="mt-2">
+          <FormError message="Could not load your search history. Please try again." />
+        </div>
       ) : entries === null ? null : entries.length === 0 ? (
         <p className="mt-2 text-sm text-[#6B6B67]">
           Searches you run while signed in will appear here — your most recent 50.

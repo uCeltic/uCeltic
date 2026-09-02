@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import SearchHistoryEntry
+from .models import MAX_ENTRIES_PER_USER, SearchHistoryEntry
 from .serializers import (
     SearchHistoryEntryRequestSerializer,
     SearchHistoryEntryResponseSerializer,
@@ -54,8 +54,13 @@ class SearchHistoryView(APIView):
     def get(self, request):
         # Filtered by the session's user, never by anything the caller passes: an entry is
         # readable by the person who searched and by nobody else (ADR-0024). Unpaginated on
-        # purpose — the store caps a user at 50, so the whole log is one page by
-        # construction, and `-created_at, -pk` (the model's Meta) is the newest-first order
-        # the profile reads them in.
-        entries = SearchHistoryEntry.objects.filter(user=request.user)
+        # purpose — the cap is what bounds the response, and `-created_at, -pk` (the model's
+        # Meta) is the newest-first order the profile reads them in.
+        #
+        # The slice repeats a bound `capture()` already keeps, so that what a user reads is
+        # the most recent 50 whatever put the rows there: an admin, an import, or a data
+        # migration never went through the manager that trims.
+        entries = SearchHistoryEntry.objects.filter(user=request.user)[
+            :MAX_ENTRIES_PER_USER
+        ]
         return Response(SearchHistoryEntryResponseSerializer(entries, many=True).data)

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import SearchHistorySection from "./SearchHistorySection";
 import * as searchHistoryApi from "../../api/searchHistory";
-import { SearchHistoryError, type StoredSearchHistoryEntry } from "../../api/searchHistory";
+import { SearchHistoryReadError, type StoredSearchHistoryEntry } from "../../api/searchHistory";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -105,7 +105,7 @@ describe("SearchHistorySection", () => {
 
   it("tells the visitor when the history could not be read — they came here to see it", async () => {
     vi.spyOn(searchHistoryApi, "fetchSearchHistory").mockRejectedValue(
-      new SearchHistoryError("search history not read: 500"),
+      new SearchHistoryReadError("search history not read: 500"),
     );
 
     render(<SearchHistorySection />);

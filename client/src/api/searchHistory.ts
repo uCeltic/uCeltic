@@ -72,9 +72,10 @@ export interface StoredSearchHistoryEntry extends SearchHistoryEntry {
   created_at: string;
 }
 
-/** The history could not be read. Unlike a failed *save*, this one is the visitor's
- *  business: they opened their profile to look at it. */
-export class SearchHistoryError extends Error {}
+/** The history could not be *read*. Named for the read path alone: a failed save never
+ *  throws — nobody asked for it — where a failed read is the visitor's business, because
+ *  they opened their profile to look at it. */
+export class SearchHistoryReadError extends Error {}
 
 /**
  * Read the signed-in user's own Search History, newest first (#188).
@@ -88,7 +89,7 @@ export class SearchHistoryError extends Error {}
 export async function fetchSearchHistory(): Promise<StoredSearchHistoryEntry[]> {
   const response = await fetch(SEARCH_HISTORY_URL, { credentials: "same-origin" });
   if (!response.ok) {
-    throw new SearchHistoryError(`search history not read: ${response.status}`);
+    throw new SearchHistoryReadError(`search history not read: ${response.status}`);
   }
   return response.json();
 }

@@ -2,7 +2,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from apps.history.models import SearchHistoryEntry
+from apps.history.models import MAX_ENTRIES_PER_USER, SearchHistoryEntry
 
 SEARCH_HISTORY = "/api/search-history/"
 
@@ -103,3 +103,27 @@ class ReadTests(TestCase):
         self.client.logout()
 
         self.assertEqual(self.client.get(SEARCH_HISTORY).status_code, 403)
+
+    def test_at_most_the_most_recent_fifty_come_back(self):
+        """The cap is what a user reads, whatever route put the rows there.
+
+        `capture()` already trims, so this only bites for rows inserted around it — an
+        admin, an import, a data migration. The read path bounds itself rather than
+        trusting that every writer went through the manager.
+        """
+        for index in range(MAX_ENTRIES_PER_USER + 3):
+            SearchHistoryEntry.objects.create(
+                user=self.user,
+                query=f"search {index}",
+                query_origin="typed",
+                window_size_ratio=1.3,
+                step_size=1,
+                dissimilarity_threshold=0.5,
+                top_k=10,
+                versions=[{"title": "A", "hits": []}],
+            )
+
+        body = self.client.get(SEARCH_HISTORY).json()
+
+        self.assertEqual(len(body), MAX_ENTRIES_PER_USER)
+        self.assertEqual(body[0]["query"], f"search {MAX_ENTRIES_PER_USER + 2}")
