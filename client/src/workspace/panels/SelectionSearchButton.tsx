@@ -14,7 +14,7 @@ const OFFSET_PX = 6;
  * TEI document for that text.
  *
  * Per ADR-0008 this never reads or writes the search bar's `query` — it passes
- * the selected text straight to `runSearch`. The pending selection is tracked
+ * the selected text straight to the search run. The pending selection is tracked
  * once globally (not per column), so selecting elsewhere simply replaces it,
  * and a selection the browser collapses (any click off the button) takes the
  * button down with it — no dismiss handling of our own.
@@ -25,8 +25,8 @@ const OFFSET_PX = 6;
  */
 export default function SelectionSearchButton() {
   const [pending, setPending] = useState<TEISelection | null>(null);
-  const runSearch = useSearchStore((s) => s.runSearch);
-  const clearDocumentResults = useSearchStore((s) => s.clearDocumentResults);
+  // One selection search is one search run across every column it covers (#186).
+  const startSearchRun = useSearchStore((s) => s.startSearchRun);
   const openDocuments = useDocumentStore((s) => s.openDocuments);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const [, reposition] = useReducer((n: number) => n + 1, 0);
@@ -83,15 +83,16 @@ export default function SelectionSearchButton() {
 
   function handleSearch() {
     if (!pending) return;
-    for (const doc of targets) {
-      runSearch(doc.content.id, doc.id, {
+    startSearchRun(
+      targets.map((doc) => ({ docId: doc.content.id, clientDocId: doc.id })),
+      {
         query: pending.text,
         origin: "selection",
+        // Skipped, not searched — the run empties it rather than leaving it as
+        // it was.
         excludedDocId: pending.docId,
-      });
-    }
-    // Skipped, not searched — so it is emptied rather than left as it was.
-    clearDocumentResults(pending.docId);
+      },
+    );
     // Hand the text over from the native selection to a mark of our own, so the
     // results stay traceable to what produced them. The native highlight is
     // dropped rather than left to expire on the user's next click: this button

@@ -64,6 +64,27 @@
   (`0.5` / `1.0` / `1.2` / `1.3`), and the backend `1.3` was dead code because
   the client always sent a value. Canonicalised to `1.3` everywhere.
 
+  ### Search Run
+
+  One user-initiated search as the user made it: a typed search or a selection
+  search (ADR-0008), fanned across every column it covers. It knows the query,
+  its Query Origin, the four parameters, the column it deliberately left out (a
+  selection search's source), and — once every targeted column has settled —
+  what each one came back with: results, zero hits, or errored.
+
+  It is the only concept that can say *this search is over and here is how it
+  went*: a **Search Attempt** below sees one column, and a **Behavior Event**
+  sees one request. So it is the seam a **Search History** entry is captured
+  from — one entry is one Search Run (ADR-0024). A **Retry** re-runs one
+  column's Attempt inside a run that is already over; it is never a run of its
+  own (ADR-0012).
+
+  Started through `searchStore.startSearchRun`; the columns are still searched
+  concurrently and fill in as they land, so a run is a vantage point, not a
+  barrier.
+  _Avoid_: calling it a Search Attempt (that is one column), or a search
+  *session* (a Session is the visitor's whole visit).
+
   ### Search Attempt
 
   One column's search, recorded in full at the moment it is fired: the query,

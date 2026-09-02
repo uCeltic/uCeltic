@@ -41,7 +41,9 @@ export default function ToolBar({
   const addDocument = useDocumentStore((state) => state.addDocument);
   const openDocuments = useDocumentStore((state) => state.openDocuments);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const runSearch = useSearchStore((s) => s.runSearch);
+  // One typed search is one search run across every column it covers, not a
+  // loop of unrelated per-column searches (#186).
+  const startSearchRun = useSearchStore((s) => s.startSearchRun);
   // disable Search while ANY column is still in flight (replaces the old global flag)
   const anySearching = useSearchStore(selectAnySearching);
   const setQuery = useSearchStore((s) => s.setQuery);
@@ -140,8 +142,8 @@ export default function ToolBar({
         disabled={anySearching}
         aria-busy={anySearching}
         onClick={() => {
-          // Nothing typed, nothing searched: runSearch bails on a blank query
-          // per document, so returning here changes no search behaviour — it
+          // Nothing typed, nothing searched: a blank query is no search run at
+          // all, so returning here changes no search behaviour — it
           // just stops a click that searches nothing from clearing the mark
           // below, which would strip the on-screen results of their provenance.
           if (!query.trim()) return;
@@ -149,12 +151,11 @@ export default function ToolBar({
           // any mark an earlier selection search left behind now points at text
           // that has nothing to do with these results.
           setQuerySourceHighlight(null);
-          for (const doc of getSearchableDocuments({
-            openDocuments,
-            visibleDocumentIds,
-          })) {
-            runSearch(doc.content.id, doc.id);
-          }
+          startSearchRun(
+            getSearchableDocuments({ openDocuments, visibleDocumentIds }).map(
+              (doc) => ({ docId: doc.content.id, clientDocId: doc.id }),
+            ),
+          );
         }}
       >
         {/* The busy state lives in the icon, not the label: below `lg` the label

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { DocumentId } from "../types/document";
 import type { SearchResult } from "../types/search";
 import { logEvent } from "../api/log";
+import { searchDocument } from "../api/search";
 
 function logParamChange(param: string, from: number, to: number): void {
   if (to === from) return;
@@ -71,6 +72,46 @@ export interface SearchAttempt {
   params: SearchParams;
 }
 
+// What one column came back with, once its search has settled. The three cases
+// are told apart because they are treated differently downstream: a Search
+// History snapshot keeps a zero-hit column and leaves an errored one out
+// (ADR-0024), and an errored column is the one that offers a Retry (ADR-0012).
+export type SearchColumnOutcome = "results" | "zero-hits" | "errored";
+
+// One column a search run targeted: the column on screen, and the server-side
+// document behind it.
+export interface SearchRunTarget {
+  docId: number;
+  clientDocId: DocumentId;
+}
+
+export type SearchRunColumn = SearchRunTarget & {
+  outcome: SearchColumnOutcome;
+};
+
+/**
+ * One whole search as the user experienced it: the query they searched, its
+ * origin, and what every column it fanned across came back with.
+ *
+ * A run exists only once it has settled — `startSearchRun` resolves with it —
+ * so it is the one place that can answer "this search is over, and here is how
+ * it went", which no per-column Search Attempt can. A single column's Retry
+ * repairs a column inside a run that is already over; it is never a run of its
+ * own (ADR-0012).
+ */
+export interface SearchRun {
+  query: string;
+  origin: QueryOrigin;
+  // The column left unsearched because the query was selected in it, if any.
+  excludedDocId: DocumentId | null;
+  params: SearchParams;
+  // The targeted columns with their settled outcomes, in the order they were
+  // searched (which is the order they sit on screen). A column whose state was
+  // thrown away mid-flight — closed, or skipped by a later search — drops out:
+  // it has no outcome anybody is still waiting for.
+  columns: SearchRunColumn[];
+}
+
 //this store is used to store the search results/handle search operations for a given document
 //the store holds the live search parameters, so `runSearch` can fall back to
 //the store itself where a retry hands it a recorded set
@@ -98,11 +139,17 @@ interface SearchStore extends SearchParams {
   searchGenerationByDocument: Record<DocumentId, number>;
   //what each column last tried to search for, so its failure can be re-run
   lastAttemptByDocument: Record<DocumentId, SearchAttempt>;
+  //the last user-initiated search, once its whole fan-out settled
+  lastSearchRun: SearchRun | null;
+  startSearchRun: (
+    targets: SearchRunTarget[],
+    options?: RunSearchOptions,
+  ) => Promise<SearchRun | null>;
   runSearch: (
     docId: number,
     clientDocId: string,
     options?: RunSearchOptions,
-  ) => Promise<void>;
+  ) => Promise<SearchColumnOutcome | null>;
   retrySearch: (clientDocId: DocumentId) => Promise<void>;
 
   nextResult: (documentId: DocumentId) => void;
@@ -123,6 +170,61 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   searchErrorByDocument: {},
   searchGenerationByDocument: {},
   lastAttemptByDocument: {},
+  lastSearchRun: null,
+
+  /**
+   * Run one user-initiated search across the given columns, and resolve with it
+   * once every one of them has settled.
+   *
+   * This is the boundary a search has as the *user* made it: the toolbar's
+   * Search button and the select-to-search button each start exactly one run,
+   * where both used to fire a bare loop of independent per-column calls that
+   * nothing could see the end of. The columns are still searched concurrently
+   * and write their results in as they land, so nothing on screen waits for the
+   * slowest column — the run only adds a vantage point from which the whole
+   * search has an end and an outcome.
+   *
+   * A blank query is not a search: no column is touched and there is no run.
+   */
+  startSearchRun: async (targets, options = {}) => {
+    const state = get();
+    const { dissimilarityScore, topK, matchLength, precision } =
+      options.params ?? state;
+    const query = options.query ?? state.query;
+    if (!query.trim()) return null;
+    const origin = options.origin ?? "typed";
+    const excludedDocId = options.excludedDocId ?? null;
+
+    const settled = targets.map((target) =>
+      state
+        .runSearch(target.docId, target.clientDocId, {
+          query,
+          origin,
+          excludedDocId,
+          params: { matchLength, precision, dissimilarityScore, topK },
+        })
+        .then((outcome) => (outcome ? { ...target, outcome } : null)),
+    );
+    // The source column of a selection search was skipped, not searched, so it
+    // is emptied rather than left showing an earlier search's hits. Done here
+    // with the rest of the fan-out: which column this search left out is part
+    // of what the run is.
+    if (excludedDocId) state.clearDocumentResults(excludedDocId);
+
+    const columns = (await Promise.all(settled)).filter(
+      (column) => column !== null,
+    );
+    const run: SearchRun = {
+      query,
+      origin,
+      excludedDocId,
+      params: { matchLength, precision, dissimilarityScore, topK },
+      columns,
+    };
+    set({ lastSearchRun: run });
+    return run;
+  },
+
   //run the search
     runSearch: async (docId, clientDocId, options = {}) => {
       const state = get();
@@ -131,7 +233,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       const query = options.query ?? state.query;
       const queryOrigin = options.origin ?? "typed";
       const excludedDocId = options.excludedDocId ?? null;
-      if (!query.trim()) return;
+      if (!query.trim()) return null;
       set((s) => ({
         // Recorded before the request goes out, so a failure always has an
         // attempt to replay — including the one a retry itself made.
@@ -169,7 +271,6 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         top_k: topK,
       };
       try {
-        const { searchDocument } = await import("../api/search");
         const results = await searchDocument({
           docId,
           query,
@@ -184,7 +285,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           latency_ms: performance.now() - startedAt,
           error: false,
         });
-        if (superseded()) return;
+        if (superseded()) return null;
         set((s) => ({
           resultsByDocument: { ...s.resultsByDocument, [clientDocId]: results },
           // on the documents we've opened, which result should be highlighted and displayed?
@@ -192,6 +293,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: false },
           searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: false },
         }));
+        return results.length > 0 ? "results" : "zero-hits";
       } catch (e) {
         console.error(e);
         logEvent("search_performed", {
@@ -200,11 +302,12 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           latency_ms: performance.now() - startedAt,
           error: true,
         });
-        if (superseded()) return;
+        if (superseded()) return null;
         set((s) => ({
           isSearchingByDocument: { ...s.isSearchingByDocument, [clientDocId]: false },
           searchErrorByDocument: { ...s.searchErrorByDocument, [clientDocId]: true },
         }));
+        return "errored";
       }
     },
 
@@ -226,6 +329,9 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     const attempt = state.lastAttemptByDocument[clientDocId];
     if (!attempt) return;
     if (state.isSearchingByDocument[clientDocId]) return;
+    // Straight to `runSearch`, deliberately: a Retry repairs one column of a
+    // search that is already over, so it is not a search run of its own and
+    // leaves `lastSearchRun` alone (ADR-0012).
     await state.runSearch(attempt.docId, clientDocId, {
       query: attempt.query,
       origin: attempt.origin,
