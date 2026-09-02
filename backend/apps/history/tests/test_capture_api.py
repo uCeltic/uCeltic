@@ -146,7 +146,7 @@ class CaptureTests(TestCase):
         """The length guards are the whole abuse defense on this endpoint, so they have
         to actually bite — a real workspace never comes near them."""
         too_many_columns = _payload(
-            versions=[{"title": f"Version {i}", "hits": []} for i in range(9)]
+            versions=[{"title": f"Version {i}", "hits": []} for i in range(17)]
         )
         too_many_hits = _payload(
             versions=[
@@ -164,6 +164,25 @@ class CaptureTests(TestCase):
             )
             self.assertEqual(resp.status_code, 400)
         self.assertEqual(SearchHistoryEntry.objects.count(), 0)
+
+
+    def test_a_score_above_the_threshold_slider_is_still_stored(self):
+        """The dissimilarity scale has no documented ceiling: a matcher that returned a
+        score above 1 must not make the entry vanish."""
+        resp = self.client.post(
+            SEARCH_HISTORY,
+            _payload(
+                versions=[
+                    {"title": "Lebor na hUidre", "hits": [{"snippet": "ro gab", "score": 1.4}]}
+                ]
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(
+            SearchHistoryEntry.objects.get().versions[0]["hits"][0]["score"], 1.4
+        )
 
 
 class AnonymousTests(TestCase):

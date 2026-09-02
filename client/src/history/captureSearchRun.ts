@@ -3,6 +3,7 @@ import {
   type SearchHistoryEntry,
   type SearchHistoryVersion,
 } from "../api/searchHistory";
+import { toWireParams } from "../api/searchParams";
 import { useAuthStore } from "../store/authStore";
 import { useDocumentStore } from "../store/documentStore";
 import type { SearchRun } from "../store/searchStore";
@@ -59,13 +60,9 @@ export function captureSearchRun(
   const entry: SearchHistoryEntry = {
     query: run.query,
     query_origin: run.origin,
-    // The stored parameters are the search API's, so an entry and the search that made
-    // it describe the same knobs: Match Length is a percentage on screen and a ratio
-    // everywhere else (CONTEXT.md → Match Length).
-    window_size_ratio: run.params.matchLength / 100,
-    step_size: run.params.precision,
-    dissimilarity_threshold: run.params.dissimilarityScore,
-    top_k: run.params.topK,
+    // Named as the search API names them, through the same renaming the search itself
+    // goes through, so an entry and the search that made it describe the same knobs.
+    ...toWireParams(run.params),
     versions,
   };
   void saveSearchHistoryEntry(entry);

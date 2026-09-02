@@ -1,4 +1,5 @@
 import { csrfHeaders, ensureCsrfToken } from "./csrf";
+import type { SearchWireParams } from "./searchParams";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 const SEARCH_HISTORY_URL = `${API_BASE}/search-history/`;
@@ -17,15 +18,14 @@ export interface SearchHistoryVersion {
   hits: SearchHistoryHit[];
 }
 
-/** The snapshot of one settled search, in the wire shape the endpoint takes. Parameter
- *  names are the search API's, not the UI's — "Match Length" is window_size_ratio. */
-export interface SearchHistoryEntry {
+/** The snapshot of one settled search, in the wire shape the endpoint takes. The four
+ *  parameters ride along under the search API's names, not the UI's — "Match Length" is
+ *  window_size_ratio. */
+export interface SearchHistoryEntry extends SearchWireParams {
   query: string;
+  // Mirrors the server-side allow-set QUERY_ORIGINS in apps/history/models.py; anything
+  // else is a 400. A Retry is neither of these — it never reaches this endpoint.
   query_origin: "selection" | "typed";
-  window_size_ratio: number;
-  step_size: number;
-  dissimilarity_threshold: number;
-  top_k: number;
   versions: SearchHistoryVersion[];
 }
 
@@ -46,12 +46,18 @@ export async function saveSearchHistoryEntry(
 ): Promise<void> {
   try {
     await ensureCsrfToken();
-    await fetch(SEARCH_HISTORY_URL, {
+    const response = await fetch(SEARCH_HISTORY_URL, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json", ...csrfHeaders() },
       body: JSON.stringify(entry),
     });
+    // Nothing for the visitor here either, but a *refused* snapshot is a different thing
+    // from a dropped one: it means what we sent does not fit what the endpoint accepts,
+    // and silence would let every search stop being recorded with no sign anywhere.
+    if (!response.ok) {
+      console.error(`search history not saved: ${response.status}`);
+    }
   } catch {
     // Offline, or the server never answered. Either way there is nothing to tell the
     // visitor: they did not ask for this save.

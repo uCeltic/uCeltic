@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 # One entry is one user-initiated search, typed into the search bar or made from text
 # selected in a viewer (ADR-0008). A Retry is neither: it repairs one column of a search
@@ -20,7 +20,10 @@ MAX_ENTRIES_PER_USER = 50
 QUERY_MAX_LENGTH = 4000
 TITLE_MAX_LENGTH = 500
 SNIPPET_MAX_LENGTH = 2000
-MAX_VERSIONS_PER_ENTRY = 8
+# Deliberately above the 8 columns the workspace can open (MAX_OPEN_DOCUMENTS): this is
+# an upper bound on abuse, not a mirror of the column limit, and raising that limit one
+# day must not turn every search into a silent 400 here.
+MAX_VERSIONS_PER_ENTRY = 16
 MAX_HITS_PER_VERSION = 100
 
 
@@ -31,9 +34,14 @@ class SearchHistoryEntryManager(models.Manager):
         The only way an entry is created. Trimming lives here rather than in the view
         because the cap is a property of the store, not of the HTTP path that happened
         to fill it — a future importer or admin action gets it for free.
+
+        Save and trim are one transaction: two searches settling together would
+        otherwise both insert before either trimmed, and the log would sit above the cap
+        until the next capture happened to notice.
         """
-        entry = self.create(**fields)
-        self._trim(entry.user_id)
+        with transaction.atomic():
+            entry = self.create(**fields)
+            self._trim(entry.user_id)
         return entry
 
     def _trim(self, user_id):
@@ -81,6 +89,10 @@ class SearchHistoryEntry(models.Model):
     # errored one is absent — its failure is an ErrorReport, not a second home in a
     # user-facing log (ADR-0013).
     versions = models.JSONField()
+    # When the search was searched. Stamped server-side, and deliberately not sent by the
+    # client as BehaviorEvent.client_ts is: the capture POST follows the settling by well
+    # under a second, so a client clock — which can be wrong by hours — would buy drift,
+    # not accuracy, in the one field the user reads back as "when I searched this".
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = SearchHistoryEntryManager()

@@ -45,4 +45,17 @@ describe("saveSearchHistoryEntry", () => {
 
     await expect(saveSearchHistoryEntry(entry)).resolves.toBeUndefined();
   });
+
+  it("reports a refused snapshot, which means the client and the endpoint disagree", async () => {
+    Object.defineProperty(document, "cookie", {
+      value: "csrftoken=tok",
+      writable: true,
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 400 }));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await saveSearchHistoryEntry(entry);
+
+    expect(error).toHaveBeenCalledWith("search history not saved: 400");
+  });
 });

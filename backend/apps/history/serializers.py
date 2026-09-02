@@ -16,7 +16,10 @@ class SearchHitSerializer(serializers.Serializer):
     reader's job, not the store's (ADR-0024)."""
 
     snippet = serializers.CharField(max_length=SNIPPET_MAX_LENGTH, allow_blank=True)
-    score = serializers.FloatField(min_value=0.0, max_value=1.0)
+    # No upper bound: today every score is <= the dissimilarity threshold, whose slider
+    # tops out at 1, but the search API documents none (apps/search/serializers.py) and a
+    # matcher change that returned a larger one must not make entries vanish.
+    score = serializers.FloatField(min_value=0.0)
 
 
 class VersionSnapshotSerializer(serializers.Serializer):
