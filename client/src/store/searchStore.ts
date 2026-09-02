@@ -141,6 +141,9 @@ interface SearchStore extends SearchParams {
   lastAttemptByDocument: Record<DocumentId, SearchAttempt>;
   //the last user-initiated search, once its whole fan-out settled
   lastSearchRun: SearchRun | null;
+  //how many search runs have been started, so a run that settles after a later
+  //one started can tell that it is no longer the search the user is on
+  searchRunCount: number;
   startSearchRun: (
     targets: SearchRunTarget[],
     options?: RunSearchOptions,
@@ -171,6 +174,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   searchGenerationByDocument: {},
   lastAttemptByDocument: {},
   lastSearchRun: null,
+  searchRunCount: 0,
 
   /**
    * Run one user-initiated search across the given columns, and resolve with it
@@ -192,8 +196,21 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       options.params ?? state;
     const query = options.query ?? state.query;
     if (!query.trim()) return null;
+    // Which search this is. Runs barely overlap — every control that starts one
+    // stands down while a column is searching — but where they do, the record
+    // is of the search the user started last, not of whichever settled last.
+    const runCount = state.searchRunCount + 1;
+    set({ searchRunCount: runCount });
     const origin = options.origin ?? "typed";
     const excludedDocId = options.excludedDocId ?? null;
+    // Fixed for the whole run: every column searches the same query with the
+    // same parameters, whatever the sliders do while it is in flight.
+    const params: SearchParams = {
+      matchLength,
+      precision,
+      dissimilarityScore,
+      topK,
+    };
 
     const settled = targets.map((target) =>
       state
@@ -201,7 +218,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
           query,
           origin,
           excludedDocId,
-          params: { matchLength, precision, dissimilarityScore, topK },
+          params,
         })
         .then((outcome) => (outcome ? { ...target, outcome } : null)),
     );
@@ -218,10 +235,10 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
       query,
       origin,
       excludedDocId,
-      params: { matchLength, precision, dissimilarityScore, topK },
+      params,
       columns,
     };
-    set({ lastSearchRun: run });
+    if (get().searchRunCount === runCount) set({ lastSearchRun: run });
     return run;
   },
 

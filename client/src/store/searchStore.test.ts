@@ -37,6 +37,7 @@ beforeEach(() => {
     searchErrorByDocument: {},
     lastAttemptByDocument: {},
     lastSearchRun: null,
+    searchRunCount: 0,
   });
 });
 
@@ -714,6 +715,60 @@ describe("searchStore.startSearchRun", () => {
       .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
 
     expect(useSearchStore.getState().lastSearchRun).toBe(run);
+  });
+
+  // A column whose state is thrown away mid-flight — closed, or skipped by a
+  // later search — has no outcome anybody is still waiting for, so it is not
+  // one of the columns this run covered.
+  it("drops a column whose state was thrown away while it was in flight", async () => {
+    let resolveSlow!: (results: SearchResult[]) => void;
+    mockedSearch.mockImplementation(({ docId }) =>
+      docId === 2
+        ? new Promise((resolve) => {
+            resolveSlow = resolve;
+          })
+        : Promise.resolve([sampleResult]),
+    );
+    useSearchStore.getState().setQuery("hound");
+
+    const pending = useSearchStore.getState().startSearchRun([
+      { docId: 1, clientDocId: "doc-tei-1" },
+      { docId: 2, clientDocId: "doc-tei-2" },
+    ]);
+    useSearchStore.getState().clearDocumentResults("doc-tei-2");
+    resolveSlow([sampleResult]);
+    const run = await pending;
+
+    expect(run?.columns).toEqual([
+      { docId: 1, clientDocId: "doc-tei-1", outcome: "results" },
+    ]);
+    expect(useSearchStore.getState().resultsByDocument["doc-tei-2"]).toBeUndefined();
+  });
+
+  // Two runs can overlap only narrowly — the controls that start one stand
+  // down while any column is searching — but if they do, the record is of the
+  // search the user started last, not of whichever happened to finish last.
+  it("keeps the later-started run as the last one, whichever settles first", async () => {
+    let resolveFirst!: (results: SearchResult[]) => void;
+    mockedSearch.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("hound");
+
+    const first = useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+    const second = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 2, clientDocId: "doc-tei-2" }]);
+    resolveFirst([sampleResult]);
+    await first;
+
+    expect(useSearchStore.getState().lastSearchRun).toBe(second);
   });
 
   // ADR-0012: a Retry repairs one live column, it does not re-run the search
