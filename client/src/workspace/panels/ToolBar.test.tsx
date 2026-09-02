@@ -79,8 +79,8 @@ function renderToolBar(
 
 describe("ToolBar re-entrancy guard", () => {
     it("does not trigger a search when Enter is pressed in the search box", () => {
-        const runSearch = vi.fn();
-        useSearchStore.setState({ runSearch });
+        const startSearchRun = vi.fn();
+        useSearchStore.setState({ startSearchRun });
 
         renderToolBar();
         fireEvent.keyDown(screen.getByPlaceholderText("Search documents..."), {
@@ -88,7 +88,7 @@ describe("ToolBar re-entrancy guard", () => {
         });
 
         // search is only triggerable from the Search button now
-        expect(runSearch).not.toHaveBeenCalled();
+        expect(startSearchRun).not.toHaveBeenCalled();
     });
 
     it("disables the Search button while any column is searching", () => {
@@ -292,8 +292,8 @@ describe("ToolBar Help button (#125)", () => {
 
 describe("ToolBar search button", () => {
     it("searches every visible TEI document and skips uploaded text columns", () => {
-        const runSearch = vi.fn();
-        useSearchStore.setState({ runSearch });
+        const startSearchRun = vi.fn();
+        useSearchStore.setState({ startSearchRun });
         const txtDoc: Document = {
             id: "doc-b",
             title: "B",
@@ -308,14 +308,17 @@ describe("ToolBar search button", () => {
         renderToolBar();
         fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
-        expect(runSearch).toHaveBeenCalledOnce();
-        expect(runSearch).toHaveBeenCalledWith(1, "doc-a");
+        // one search run over the columns it covers, not a call per column (#186)
+        expect(startSearchRun).toHaveBeenCalledOnce();
+        expect(startSearchRun).toHaveBeenCalledWith([
+            { docId: 1, clientDocId: "doc-a" },
+        ]);
     });
 
     //Test: the query-source mark points at text an EARLIER selection search ran
     //on — a typed search did not come from it, so it must not stay lit (#95)
     it("clears the query-source highlight left by an earlier selection search", () => {
-        useSearchStore.setState({ runSearch: vi.fn() });
+        useSearchStore.setState({ startSearchRun: vi.fn() });
         markQuerySource("the hound of culann");
 
         renderToolBar();
@@ -327,7 +330,7 @@ describe("ToolBar search button", () => {
     //Test: a blank bar searches nothing, so it must not strip the on-screen
     //results of the mark showing where they came from
     it("keeps the query-source highlight when the search bar is empty", () => {
-        useSearchStore.setState({ runSearch: vi.fn(), query: "   " });
+        useSearchStore.setState({ startSearchRun: vi.fn(), query: "   " });
         markQuerySource("the hound of culann");
 
         renderToolBar();

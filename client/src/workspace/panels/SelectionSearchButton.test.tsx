@@ -99,10 +99,10 @@ function clearSelection() {
   fireEvent(document, new Event("selectionchange"));
 }
 
-const runSearch = vi.fn();
+const startSearchRun = vi.fn();
 
 beforeEach(() => {
-  runSearch.mockReset();
+  startSearchRun.mockReset();
   selectionRect = { top: 10, left: 20, bottom: 30, right: 60 } as DOMRect;
   document.body.innerHTML = "";
   CSS.highlights.get("query-source")?.clear();
@@ -113,7 +113,7 @@ beforeEach(() => {
   });
   useSearchStore.setState({
     query: "typed in the bar",
-    runSearch,
+    startSearchRun,
     resultsByDocument: {},
     activeResultIndexByDocument: {},
     isSearchingByDocument: {},
@@ -175,17 +175,20 @@ describe("SelectionSearchButton", () => {
 
     fireEvent.click(searchButton()!);
 
-    expect(runSearch).toHaveBeenCalledOnce();
-    expect(runSearch).toHaveBeenCalledWith(2, "doc-tei-2", {
+    // one search run over every column it covers, not a call per column (#186)
+    expect(startSearchRun).toHaveBeenCalledOnce();
+    expect(startSearchRun).toHaveBeenCalledWith([{ docId: 2, clientDocId: "doc-tei-2" }], {
       query: "the hound of culann",
       origin: "selection",
       excludedDocId: "doc-tei-1",
     });
   });
 
-  //Test: the source column is skipped, not searched — so whatever it was showing
-  //from an earlier search has to go, or it reads as a result of THIS search
-  it("clears the source document's stale results instead of leaving them", () => {
+  //Test: the source column is skipped, not searched — so the run has to be told
+  //which column that is, or whatever it was showing from an earlier search
+  //stays up and reads as a result of THIS search. Emptying it is the run's job
+  //(searchStore.startSearchRun); naming it is this button's.
+  it("tells the run which column it skipped", () => {
     useSearchStore.setState({
       resultsByDocument: { "doc-tei-1": [staleResult], "doc-tei-2": [staleResult] },
       activeResultIndexByDocument: { "doc-tei-1": 1 },
@@ -196,10 +199,7 @@ describe("SelectionSearchButton", () => {
 
     fireEvent.click(searchButton()!);
 
-    const state = useSearchStore.getState();
-    expect(state.resultsByDocument["doc-tei-1"]).toBeUndefined();
-    expect(state.activeResultIndexByDocument["doc-tei-1"]).toBeUndefined();
-    expect(state.searchErrorByDocument["doc-tei-1"]).toBeUndefined();
+    expect(startSearchRun.mock.calls[0][1].excludedDocId).toBe("doc-tei-1");
   });
 
   //Test: with the source document excluded there is nothing left to search, so

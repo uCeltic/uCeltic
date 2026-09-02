@@ -36,6 +36,8 @@ beforeEach(() => {
     isSearchingByDocument: {},
     searchErrorByDocument: {},
     lastAttemptByDocument: {},
+    lastSearchRun: null,
+    searchRunCount: 0,
   });
 });
 
@@ -407,8 +409,6 @@ describe("searchStore.retrySearch", () => {
     mockedSearch.mockReturnValue(new Promise<SearchResult[]>(() => {}));
     useSearchStore.getState().retrySearch("doc-tei-42"); // stays pending
     await useSearchStore.getState().retrySearch("doc-tei-42");
-    // runSearch reaches searchDocument through a dynamic import, so let the
-    // pending retry's own call land before counting.
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     // the failed original plus one retry — the second retry declined
@@ -635,5 +635,162 @@ describe("searchStore result navigation", () => {
     useSearchStore.setState({ activeResultIndexByDocument: { "doc-1": 0 } });
     prevResult("doc-1");
     expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
+});
+
+// One user-initiated search fans across every open column. These tests are
+// about the whole fan-out — that it covers the columns it was given, and that
+// once every one of them has settled the run says what each column came back
+// with. Per-column behaviour is `runSearch`'s business, tested above.
+describe("searchStore.startSearchRun", () => {
+  it("searches every targeted column and reports each column's outcome once they all settle", async () => {
+    mockedSearch.mockImplementation(({ docId }) => {
+      if (docId === 1) return Promise.resolve([sampleResult]);
+      if (docId === 2) return Promise.resolve([]);
+      return Promise.reject(new Error("boom"));
+    });
+    useSearchStore.getState().setQuery("hound");
+
+    const run = await useSearchStore.getState().startSearchRun([
+      { docId: 1, clientDocId: "doc-tei-1" },
+      { docId: 2, clientDocId: "doc-tei-2" },
+      { docId: 3, clientDocId: "doc-tei-3" },
+    ]);
+
+    expect(run?.query).toBe("hound");
+    expect(run?.origin).toBe("typed");
+    expect(run?.columns).toEqual([
+      { docId: 1, clientDocId: "doc-tei-1", outcome: "results" },
+      { docId: 2, clientDocId: "doc-tei-2", outcome: "zero-hits" },
+      { docId: 3, clientDocId: "doc-tei-3", outcome: "errored" },
+    ]);
+    // settled means settled: nothing is still in flight when the run resolves
+    expect(
+      Object.values(useSearchStore.getState().isSearchingByDocument).some(Boolean),
+    ).toBe(false);
+  });
+
+  it("carries a selection's own query and origin, and empties the column it skipped", async () => {
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("typed in the bar");
+    useSearchStore.setState({
+      resultsByDocument: { "doc-tei-9": [sampleResult] },
+    });
+
+    const run = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }], {
+        query: "selected text",
+        origin: "selection",
+        excludedDocId: "doc-tei-9",
+      });
+
+    expect(run?.query).toBe("selected text");
+    expect(run?.origin).toBe("selection");
+    expect(run?.excludedDocId).toBe("doc-tei-9");
+    expect(mockedSearch.mock.calls[0][0].query).toBe("selected text");
+    // skipped, not searched — so it shows "not searched this time", not the
+    // hits an earlier search left there
+    expect(useSearchStore.getState().resultsByDocument["doc-tei-9"]).toBeUndefined();
+  });
+
+  it("is no search at all when the query is blank", async () => {
+    useSearchStore.getState().setQuery("   ");
+
+    const run = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+
+    expect(run).toBeNull();
+    expect(mockedSearch).not.toHaveBeenCalled();
+    expect(useSearchStore.getState().lastSearchRun).toBeNull();
+  });
+
+  it("records the settled run as the last one", async () => {
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("hound");
+
+    const run = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+
+    expect(useSearchStore.getState().lastSearchRun).toBe(run);
+  });
+
+  // A column whose state is thrown away mid-flight — closed, or skipped by a
+  // later search — has no outcome anybody is still waiting for, so it is not
+  // one of the columns this run covered.
+  it("drops a column whose state was thrown away while it was in flight", async () => {
+    let resolveSlow!: (results: SearchResult[]) => void;
+    mockedSearch.mockImplementation(({ docId }) =>
+      docId === 2
+        ? new Promise((resolve) => {
+            resolveSlow = resolve;
+          })
+        : Promise.resolve([sampleResult]),
+    );
+    useSearchStore.getState().setQuery("hound");
+
+    const pending = useSearchStore.getState().startSearchRun([
+      { docId: 1, clientDocId: "doc-tei-1" },
+      { docId: 2, clientDocId: "doc-tei-2" },
+    ]);
+    useSearchStore.getState().clearDocumentResults("doc-tei-2");
+    resolveSlow([sampleResult]);
+    const run = await pending;
+
+    expect(run?.columns).toEqual([
+      { docId: 1, clientDocId: "doc-tei-1", outcome: "results" },
+    ]);
+    expect(useSearchStore.getState().resultsByDocument["doc-tei-2"]).toBeUndefined();
+  });
+
+  // Two runs can overlap only narrowly — the controls that start one stand
+  // down while any column is searching — but if they do, the record is of the
+  // search the user started last, not of whichever happened to finish last.
+  it("keeps the later-started run as the last one, whichever settles first", async () => {
+    let resolveFirst!: (results: SearchResult[]) => void;
+    mockedSearch.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    mockedSearch.mockResolvedValue([sampleResult]);
+    useSearchStore.getState().setQuery("hound");
+
+    const first = useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+    const second = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 2, clientDocId: "doc-tei-2" }]);
+    resolveFirst([sampleResult]);
+    await first;
+
+    expect(useSearchStore.getState().lastSearchRun).toBe(second);
+  });
+
+  // ADR-0012: a Retry repairs one live column, it does not re-run the search
+  // the user made — so it is not a run of its own, and the last run stays the
+  // search the user actually started.
+  it("is not started by a single column's Retry", async () => {
+    mockedSearch.mockRejectedValueOnce(new Error("boom"));
+    useSearchStore.getState().setQuery("hound");
+    const run = await useSearchStore
+      .getState()
+      .startSearchRun([{ docId: 1, clientDocId: "doc-tei-1" }]);
+    mockedSearch.mockResolvedValue([sampleResult]);
+
+    await useSearchStore.getState().retrySearch("doc-tei-1");
+
+    expect(useSearchStore.getState().lastSearchRun).toBe(run);
+    expect(run?.columns).toEqual([
+      { docId: 1, clientDocId: "doc-tei-1", outcome: "errored" },
+    ]);
+    // the column itself is repaired, as before
+    expect(useSearchStore.getState().resultsByDocument["doc-tei-1"]).toEqual([
+      sampleResult,
+    ]);
   });
 });
