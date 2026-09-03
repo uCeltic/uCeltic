@@ -4,7 +4,9 @@ import {
   deleteSearchHistoryEntry,
   fetchSearchHistory,
   saveSearchHistoryEntry,
+  exportSearchHistoryEntry,
   SearchHistoryDeleteError,
+  SearchHistoryExportError,
   SearchHistoryReadError,
   type SearchHistoryEntry,
 } from "./searchHistory";
@@ -152,5 +154,65 @@ describe("clearSearchHistory", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
     await expect(clearSearchHistory()).rejects.toBeInstanceOf(SearchHistoryDeleteError);
+  });
+});
+
+describe("exportSearchHistoryEntry", () => {
+  /** The bits of the browser a download touches, stubbed so the test can watch it. */
+  function stubDownload() {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn().mockReturnValue("blob:the-file"),
+      revokeObjectURL: vi.fn(),
+    });
+    return click;
+  }
+
+  function docxResponse(disposition: string | null) {
+    return {
+      ok: true,
+      blob: vi.fn().mockResolvedValue(new Blob(["docx"])),
+      headers: { get: () => disposition },
+    };
+  }
+
+  it("asks the backend for the one entry's document and saves it under the name it came with", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(docxResponse('attachment; filename="search-2026-09-01-1000.docx"'));
+    vi.stubGlobal("fetch", fetchMock);
+    const click = stubDownload();
+
+    await exportSearchHistoryEntry(7);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/search-history/7/export/");
+    // The session cookie is what says whose entry this is; nothing about the user
+    // travels in the request.
+    expect(init.credentials).toBe("same-origin");
+    expect(click).toHaveBeenCalledOnce();
+    const link = click.mock.instances[0] as HTMLAnchorElement;
+    expect(link.download).toBe("search-2026-09-01-1000.docx");
+    expect(link.href).toContain("blob:the-file");
+  });
+
+  it("still names the file when the response carries no filename", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(docxResponse(null)));
+    const click = stubDownload();
+
+    await exportSearchHistoryEntry(7);
+
+    expect((click.mock.instances[0] as HTMLAnchorElement).download).toMatch(/\.docx$/);
+  });
+
+  it("raises when the document could not be exported — the user asked for this one", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+
+    await expect(exportSearchHistoryEntry(7)).rejects.toBeInstanceOf(
+      SearchHistoryExportError,
+    );
   });
 });

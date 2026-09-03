@@ -139,3 +139,44 @@ export async function deleteSearchHistoryEntry(id: number): Promise<void> {
 export async function clearSearchHistory(): Promise<void> {
   await deleteAt(SEARCH_HISTORY_URL, "search history not cleared");
 }
+
+/** The export of a single entry failed. Its own error, not `SearchHistoryReadError`:
+ *  reading the list happens because the page opened, where an export happens because the
+ *  user clicked asking for a file, and only one of those can be reported as such. */
+export class SearchHistoryExportError extends Error {}
+
+/** What the file is called if the response says nothing. Only a fallback — the backend
+ *  names the file after the moment searched, which is what sorts a folder of exports. */
+const FALLBACK_EXPORT_FILENAME = "search.docx";
+
+function filenameFrom(disposition: string | null): string {
+  return disposition?.match(/filename="([^"]+)"/)?.[1] ?? FALLBACK_EXPORT_FILENAME;
+}
+
+/**
+ * Export one entry as the Word document the user keeps (#190, ADR-0024).
+ *
+ * Fetched and handed to the browser as a blob rather than pointed at with a plain link:
+ * a link that came back 403 or 404 would replace the profile page with an error body,
+ * and this way a failure stays a message beside the entry that failed.
+ *
+ * The document itself is built on the backend from the stored snapshot, not from the
+ * entry this page happens to be holding, so the file reproduces exactly what the store
+ * holds.
+ */
+export async function exportSearchHistoryEntry(id: number): Promise<void> {
+  const response = await fetch(`${SEARCH_HISTORY_URL}${id}/export/`, {
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    throw new SearchHistoryExportError(`entry ${id} not exported: ${response.status}`);
+  }
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filenameFrom(response.headers.get("Content-Disposition"));
+  link.click();
+  // Released on the next tick, not straight after the click: the download reads the blob
+  // out of the object URL, and revoking it in the same turn can beat it to it.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}

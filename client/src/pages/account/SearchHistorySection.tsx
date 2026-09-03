@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   clearSearchHistory,
   deleteSearchHistoryEntry,
+  exportSearchHistoryEntry,
   fetchSearchHistory,
   type StoredSearchHistoryEntry,
   type SearchHistoryVersion,
@@ -9,9 +10,9 @@ import {
 import { matchPercentage } from "../../history/matchPercentage";
 import { FormError } from "./AccountShell";
 
-/** The quiet control both removals wear: a history entry is the user's to throw away,
- *  but nothing on this page should shout about deleting it. */
-const REMOVE_BUTTON =
+/** The quiet control every per-entry action wears: a history entry is the user's to keep
+ *  or throw away, but nothing on this page should shout about either. */
+const ROW_BUTTON =
   "cursor-pointer rounded px-2 py-1 text-xs text-[#6B6B67] hover:bg-[#F0EEE6] hover:text-[#3F3F3C]";
 
 /** How the moment a search was made is put in front of a reader. The machine-readable
@@ -59,9 +60,11 @@ function VersionHits({ version }: { version: SearchHistoryVersion }) {
  *  came back. Closed by default because the log holds up to 50 of these. */
 function HistoryEntry({
   entry,
+  onExport,
   onDelete,
 }: {
   entry: StoredSearchHistoryEntry;
+  onExport: () => void;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -84,13 +87,26 @@ function HistoryEntry({
             {entry.versions.map((version) => version.title).join(", ")}
           </span>
         </button>
+        {/* Export sits before Delete: the log rolls at 50, so keeping a search is the
+            act that has to be reachable, and the destructive one is the last thing the
+            hand lands on. */}
+        <button
+          type="button"
+          onClick={onExport}
+          // Named after the search for the same reason Delete is: "Export" repeated down
+          // a list of 50 names nothing to a screen reader.
+          aria-label={`Export search “${entry.query}” as a Word document`}
+          className={`mt-3 shrink-0 ${ROW_BUTTON}`}
+        >
+          Export
+        </button>
         <button
           type="button"
           onClick={onDelete}
           // The query is in the accessible name because "Delete" repeated 50 times down a
           // list names nothing: a screen reader hears which search it removes.
           aria-label={`Delete search “${entry.query}”`}
-          className={`mt-3 shrink-0 ${REMOVE_BUTTON}`}
+          className={`mt-3 shrink-0 ${ROW_BUTTON}`}
         >
           Delete
         </button>
@@ -108,7 +124,8 @@ function HistoryEntry({
 
 /**
  * The signed-in user's own Search History, read back on their profile (#188, ADR-0024),
- * and removed from it entry by entry or all at once (#189).
+ * removed from it entry by entry or all at once (#189), and exported one entry at a time
+ * as a Word document (#190).
  *
  * Every entry here is an immutable snapshot, never a re-runnable query: what it shows is
  * what that search returned at the time, and nothing in it points at a TEI Document, so
@@ -125,7 +142,9 @@ function HistoryEntry({
 export default function SearchHistorySection() {
   const [entries, setEntries] = useState<StoredSearchHistoryEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [removalError, setRemovalError] = useState<string | null>(null);
+  // One slot for whichever act last failed: only one runs at a time, and two
+  // messages stacked above a list would leave the user guessing which is current.
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSearchHistory().then(setEntries, () => setFailed(true));
@@ -151,12 +170,12 @@ export default function SearchHistorySection() {
   ) {
     if (removing.current || !window.confirm(question)) return;
     removing.current = true;
-    setRemovalError(null);
+    setActionError(null);
     try {
       await remove();
       setEntries((current) => survivors(current ?? []));
     } catch {
-      setRemovalError(failure);
+      setActionError(failure);
     } finally {
       removing.current = false;
     }
@@ -182,6 +201,26 @@ export default function SearchHistorySection() {
     );
   }
 
+  // A second click while the file is still being built would fetch and save the same
+  // document twice. Separate from `removing` because the two acts do not exclude each
+  // other: exporting an entry is a fine thing to do while a delete is in flight.
+  const exporting = useRef(false);
+
+  async function exportEntry(entry: StoredSearchHistoryEntry) {
+    // No confirm, unlike either removal: an export takes nothing away, so there is
+    // nothing to agree to.
+    if (exporting.current) return;
+    exporting.current = true;
+    setActionError(null);
+    try {
+      await exportSearchHistoryEntry(entry.id);
+    } catch {
+      setActionError("Could not export that search. Please try again.");
+    } finally {
+      exporting.current = false;
+    }
+  }
+
   return (
     <section>
       <div className="flex items-baseline justify-between gap-3">
@@ -192,15 +231,15 @@ export default function SearchHistorySection() {
           <button
             type="button"
             onClick={() => void removeEverything()}
-            className={REMOVE_BUTTON}
+            className={ROW_BUTTON}
           >
             Clear all
           </button>
         )}
       </div>
-      {removalError && (
+      {actionError && (
         <div className="mt-2">
-          <FormError message={removalError} />
+          <FormError message={actionError} />
         </div>
       )}
       {failed ? (
@@ -220,6 +259,7 @@ export default function SearchHistorySection() {
             <HistoryEntry
               key={entry.id}
               entry={entry}
+              onExport={() => void exportEntry(entry)}
               onDelete={() => void removeEntry(entry)}
             />
           ))}
