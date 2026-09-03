@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { saveSearchHistoryEntry, type SearchHistoryEntry } from "./searchHistory";
+import {
+  fetchSearchHistory,
+  saveSearchHistoryEntry,
+  SearchHistoryReadError,
+  type SearchHistoryEntry,
+} from "./searchHistory";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -57,5 +62,32 @@ describe("saveSearchHistoryEntry", () => {
     await saveSearchHistoryEntry(entry);
 
     expect(error).toHaveBeenCalledWith("search history not saved: 400");
+  });
+});
+
+describe("fetchSearchHistory", () => {
+  it("reads the signed-in user's own entries from the search-history endpoint", async () => {
+    const stored = [
+      {
+        id: 7,
+        ...entry,
+        created_at: "2026-09-01T10:00:00Z",
+      },
+    ];
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => stored });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchSearchHistory()).resolves.toEqual(stored);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/search-history/");
+    // Whose history it is comes from the session cookie, never from a parameter.
+    expect(init.credentials).toBe("same-origin");
+  });
+
+  it("raises when the history cannot be read, so the page can say so", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+
+    await expect(fetchSearchHistory()).rejects.toBeInstanceOf(SearchHistoryReadError);
   });
 });

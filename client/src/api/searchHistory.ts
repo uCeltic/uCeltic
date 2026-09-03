@@ -63,3 +63,33 @@ export async function saveSearchHistoryEntry(
     // visitor: they did not ask for this save.
   }
 }
+
+/** One entry as it comes back from the store: the snapshot the user sent, plus the two
+ *  fields only the server knows — the `id` a later delete (#189) or export (#190)
+ *  addresses it by, and the moment it was searched. */
+export interface StoredSearchHistoryEntry extends SearchHistoryEntry {
+  id: number;
+  created_at: string;
+}
+
+/** The history could not be *read*. Named for the read path alone: a failed save never
+ *  throws — nobody asked for it — where a failed read is the visitor's business, because
+ *  they opened their profile to look at it. */
+export class SearchHistoryReadError extends Error {}
+
+/**
+ * Read the signed-in user's own Search History, newest first (#188).
+ *
+ * Whose history this is never travels in the request — the session cookie decides, and
+ * the endpoint filters by it. No CSRF dance: this is a GET, which Django does not check.
+ *
+ * The entries come back as they were stored, `score` still the raw dissimilarity; the
+ * component that shows a hit is what turns it into a match percentage (ADR-0024).
+ */
+export async function fetchSearchHistory(): Promise<StoredSearchHistoryEntry[]> {
+  const response = await fetch(SEARCH_HISTORY_URL, { credentials: "same-origin" });
+  if (!response.ok) {
+    throw new SearchHistoryReadError(`search history not read: ${response.status}`);
+  }
+  return response.json();
+}

@@ -6,6 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import * as auth from "../../api/auth";
 import { AuthError } from "../../api/auth";
 import * as profileApi from "../../api/profile";
+import * as searchHistoryApi from "../../api/searchHistory";
 import { ProfileError } from "../../api/profile";
 
 const USER = { id: 1, email: "visitor@example.com" };
@@ -23,6 +24,9 @@ function renderProfile() {
 
 beforeEach(() => {
   useAuthStore.setState({ status: "authenticated", user: USER });
+  // The page reads the history alongside the profile; every test below needs it to
+  // answer, and only the one that is about it cares what it answers with.
+  vi.spyOn(searchHistoryApi, "fetchSearchHistory").mockResolvedValue([]);
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -144,5 +148,40 @@ describe("ProfilePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /change password/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Incorrect password.");
+  });
+});
+
+describe("ProfilePage search history", () => {
+  it("shows the signed-in user their own Search History (#188)", async () => {
+    vi.spyOn(profileApi, "fetchProfile").mockResolvedValue({
+      email: USER.email,
+      display_name: "Ada",
+    });
+    vi.spyOn(searchHistoryApi, "fetchSearchHistory").mockResolvedValue([
+      {
+        id: 1,
+        query: "ro gab in ri",
+        query_origin: "typed",
+        window_size_ratio: 1.3,
+        step_size: 1,
+        dissimilarity_threshold: 0.5,
+        top_k: 10,
+        created_at: "2026-09-01T10:00:00Z",
+        versions: [{ title: "Lebor na hUidre", hits: [{ snippet: "ro gab", score: 0.12 }] }],
+      },
+    ]);
+
+    renderProfile();
+
+    await screen.findByRole("button", { name: /ro gab in ri/ });
+  });
+
+  it("does not read the history for a visitor who is being sent to sign in", async () => {
+    useAuthStore.setState({ status: "anonymous", user: null });
+
+    renderProfile();
+
+    await screen.findByRole("heading", { name: /sign in/i });
+    expect(searchHistoryApi.fetchSearchHistory).not.toHaveBeenCalled();
   });
 });
