@@ -1,5 +1,3 @@
-import io
-
 from django.http import FileResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -13,11 +11,7 @@ from .serializers import (
     SearchHistoryEntryRequestSerializer,
     SearchHistoryEntryResponseSerializer,
 )
-from .services.docx_export import entry_docx_bytes, entry_filename
-
-DOCX_CONTENT_TYPE = (
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
+from .services.docx_export import DOCX_CONTENT_TYPE, entry_docx_stream, entry_filename
 
 
 class SearchHistoryView(APIView):
@@ -147,7 +141,7 @@ class SearchHistoryEntryExportView(APIView):
         if entry is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return FileResponse(
-            io.BytesIO(entry_docx_bytes(entry)),
+            entry_docx_stream(entry),
             as_attachment=True,
             filename=entry_filename(entry),
             content_type=DOCX_CONTENT_TYPE,

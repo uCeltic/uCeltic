@@ -6,18 +6,17 @@ alone, so it reproduces exactly what the entry holds and nothing that has happen
 the corpus since.
 """
 import io
+import math
 
 from django.utils import timezone
 from docx import Document
 from docx.shared import Pt
 
-# The names the user tuned these by on the Advanced Search popover, not the wire names
-# the model stores them under: someone reading the file months later recognises "Match
-# Length", never `window_size_ratio`.
-MATCH_LENGTH_LABEL = "Match Length"
-PRECISION_LABEL = "Precision"
-DISSIMILARITY_LABEL = "Dissimilarity Score"
-TOP_K_LABEL = "Top K Results"
+# Kept here beside the builder rather than in the view: what this file is written as is
+# the exporter's business, and the view only passes it on.
+DOCX_CONTENT_TYPE = (
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
 
 
 def match_percentage(score):
@@ -26,29 +25,40 @@ def match_percentage(score):
     Mirrors `client/src/history/matchPercentage.ts`, clamp included: the score has no
     upper bound in the store, and a matcher that one day returned more than 1 must not
     put a negative percentage in an exported document.
+
+    Rounded half *up* rather than with `round()`, which rounds a half to even: the file
+    has to agree with the entry as it was displayed, and JavaScript's `Math.round` — what
+    the profile page rounds with — takes 88.5 to 89 where `round()` would take it to 88.
     """
-    return f"{round(max(0.0, 1 - score) * 100)}%"
+    return f"{math.floor(max(0.0, 1 - score) * 100 + 0.5)}%"
 
 
 def _parameters(entry):
     """The four knobs on one line each, in the order the popover stacks them.
 
-    `window_size_ratio` is converted back to the percentage the slider showed — 1.3 was
-    130 on screen — and rounded, because the float that survives a round trip through
-    JSON is 130.00000000000003.
+    Under the names the user tuned them by on the Advanced Search popover, never the wire
+    names the model stores them under: someone reading the file months later recognises
+    "Match Length", not `window_size_ratio`. That one is also converted back to the
+    percentage the slider showed — 1.3 was 130 on screen — and rounded, because the float
+    that survives a round trip through JSON is 130.00000000000003.
     """
     return [
-        f"{MATCH_LENGTH_LABEL}: {round(entry.window_size_ratio * 100)}%",
-        f"{PRECISION_LABEL}: {entry.step_size}",
-        f"{DISSIMILARITY_LABEL}: {entry.dissimilarity_threshold:.2f}",
-        f"{TOP_K_LABEL}: {entry.top_k}",
+        f"Match Length: {round(entry.window_size_ratio * 100)}%",
+        f"Precision: {entry.step_size}",
+        f"Dissimilarity Score: {entry.dissimilarity_threshold:.2f}",
+        f"Top K Results: {entry.top_k}",
     ]
 
 
 def _when_searched(entry):
     """Written out in full rather than abbreviated: this is a citable date on a page that
-    carries no other context about when it was made."""
-    return timezone.localtime(entry.created_at).strftime("%d %B %Y at %H:%M")
+    carries no other context about when it was made.
+
+    The zone is named because it has to be. The profile page shows this instant in the
+    reader's *browser* zone; a file is read anywhere, months later, so it states the zone
+    it is written in rather than letting the two disagree silently.
+    """
+    return timezone.localtime(entry.created_at).strftime("%d %B %Y at %H:%M %Z")
 
 
 def build_entry_document(entry):
@@ -62,12 +72,12 @@ def build_entry_document(entry):
     for parameter in _parameters(entry):
         document.add_paragraph(parameter)
 
-    covered = ", ".join(version.get("title", "") for version in entry.versions)
+    covered = ", ".join(version["title"] for version in entry.versions)
     document.add_paragraph(f"Versions searched: {covered}")
 
     for version in entry.versions:
-        document.add_heading(version.get("title", ""), level=1)
-        hits = version.get("hits", [])
+        document.add_heading(version["title"], level=1)
+        hits = version["hits"]
         if not hits:
             # Kept, never dropped: a column that found nothing is part of what this
             # search was. A column that *errored* never reached the snapshot at all.
@@ -78,9 +88,9 @@ def build_entry_document(entry):
             # reference for prose and no Manuscript Locator, so the passage and its
             # match percentage are the whole of what one hit can honestly say (#190).
             paragraph = document.add_paragraph(style="List Number")
-            percentage = paragraph.add_run(f"{match_percentage(hit.get('score', 0))} match")
+            percentage = paragraph.add_run(f"{match_percentage(hit['score'])} match")
             percentage.bold = True
-            paragraph.add_run(f" — {hit.get('snippet', '')}")
+            paragraph.add_run(f" — {hit['snippet']}")
 
     for section in document.sections:
         section.left_margin = section.right_margin = Pt(72)
@@ -88,11 +98,12 @@ def build_entry_document(entry):
     return document
 
 
-def entry_docx_bytes(entry):
-    """The document as the bytes a response streams."""
+def entry_docx_stream(entry):
+    """The document as the stream a response hands to the browser, rewound to the start."""
     buffer = io.BytesIO()
     build_entry_document(entry).save(buffer)
-    return buffer.getvalue()
+    buffer.seek(0)
+    return buffer
 
 
 def entry_filename(entry):

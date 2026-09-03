@@ -74,7 +74,12 @@ class ExportOneEntryTests(TestCase):
         text = "\n".join(_paragraphs(_export(self.client, entry)))
 
         self.assertIn("ro gab in ri", text)
-        self.assertIn(timezone.localtime(entry.created_at).strftime("%d %B %Y"), text)
+        when = timezone.localtime(entry.created_at)
+        self.assertIn(when.strftime("%d %B %Y"), text)
+        # The zone is named: the profile page shows this instant in the reader's browser
+        # zone, and a file read anywhere months later must not be ambiguous about which
+        # clock it was written against.
+        self.assertIn(when.strftime("%Z"), text)
         # The parameters under the names the user tuned them by, not the wire's:
         # window_size_ratio 1.3 is "130%" on the Match Length slider.
         self.assertIn("Match Length: 130%", text)
@@ -118,6 +123,16 @@ class ExportOneEntryTests(TestCase):
         )
 
         self.assertIn("0% match — x", _paragraphs(_export(self.client, entry)))
+
+    def test_a_half_percent_rounds_the_way_the_profile_page_rounds_it(self):
+        # 88.5%, which Python's own round() would take *down* to 88 while the page's
+        # Math.round takes it up to 89. The file has to agree with what was on screen.
+        entry = _entry(
+            self.user,
+            versions=[{"title": "Lebor na hUidre", "hits": [{"snippet": "x", "score": 0.115}]}],
+        )
+
+        self.assertIn("89% match — x", _paragraphs(_export(self.client, entry)))
 
     def test_a_version_that_found_nothing_says_so(self):
         entry = _entry(self.user, versions=[{"title": "Lebor na hUidre", "hits": []}])
