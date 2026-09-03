@@ -1,3 +1,5 @@
+from django.http import FileResponse
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +11,7 @@ from .serializers import (
     SearchHistoryEntryRequestSerializer,
     SearchHistoryEntryResponseSerializer,
 )
+from .services.docx_export import DOCX_CONTENT_TYPE, entry_docx_stream, entry_filename
 
 
 class SearchHistoryView(APIView):
@@ -107,3 +110,39 @@ class SearchHistoryEntryView(APIView):
         if not deleted:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SearchHistoryEntryExportView(APIView):
+    """One entry of the signed-in user's own Search History as a Word document (#190).
+
+    Generated here rather than in the browser for the reason ADR-0024 makes export
+    matter at all: the log rolls at 50, so this file is the durable copy of a search,
+    and it is built from the stored snapshot — not from whatever the profile page
+    happens to be holding — so what lands in the reader's downloads is the entry.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={(200, DOCX_CONTENT_TYPE): OpenApiTypes.BINARY, 404: None},
+        description=(
+            "Export one entry of the signed-in user's own search history as a Word "
+            "(.docx) document: the query, when it was searched, the four parameters, "
+            "and each Version's hits ranked with a match percentage."
+        ),
+    )
+    def get(self, request, entry_id):
+        # Ownership is part of the lookup, exactly as the delete path does it: someone
+        # else's id is indistinguishable from one that never existed, because whether a
+        # given entry exists is not this user's business.
+        entry = SearchHistoryEntry.objects.filter(
+            pk=entry_id, user=request.user
+        ).first()
+        if entry is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return FileResponse(
+            entry_docx_stream(entry),
+            as_attachment=True,
+            filename=entry_filename(entry),
+            content_type=DOCX_CONTENT_TYPE,
+        )

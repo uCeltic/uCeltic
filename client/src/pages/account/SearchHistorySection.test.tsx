@@ -4,6 +4,7 @@ import SearchHistorySection from "./SearchHistorySection";
 import * as searchHistoryApi from "../../api/searchHistory";
 import {
   SearchHistoryDeleteError,
+  SearchHistoryExportError,
   SearchHistoryReadError,
   type StoredSearchHistoryEntry,
 } from "../../api/searchHistory";
@@ -235,5 +236,45 @@ describe("removing entries", () => {
     await waitFor(() => expect(screen.queryByText("drop me")).not.toBeInTheDocument());
     expect(deleteEntry).toHaveBeenCalledOnce();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("exporting an entry", () => {
+  it("exports the one entry the user asked for — no confirm, nothing is lost by it", async () => {
+    const exportEntry = vi
+      .spyOn(searchHistoryApi, "exportSearchHistoryEntry")
+      .mockResolvedValue();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderHistory([anEntry({ id: 3, query: "keep me" }), anEntry({ id: 7, query: "take me" })]);
+
+    fireEvent.click(await screen.findByRole("button", { name: /export .*take me/i }));
+
+    await waitFor(() => expect(exportEntry).toHaveBeenCalledWith(7));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(screen.getByText("take me")).toBeInTheDocument();
+  });
+
+  it("tells the visitor when the export failed — they asked for the file", async () => {
+    vi.spyOn(searchHistoryApi, "exportSearchHistoryEntry").mockRejectedValue(
+      new SearchHistoryExportError("entry 7 not exported: 500"),
+    );
+    renderHistory([anEntry({ id: 7, query: "take me" })]);
+
+    fireEvent.click(await screen.findByRole("button", { name: /export .*take me/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/could not export/i);
+  });
+
+  it("sends one request however fast the button is clicked twice", async () => {
+    const exportEntry = vi
+      .spyOn(searchHistoryApi, "exportSearchHistoryEntry")
+      .mockResolvedValue();
+    renderHistory([anEntry({ id: 7, query: "take me" })]);
+
+    const button = await screen.findByRole("button", { name: /export .*take me/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await waitFor(() => expect(exportEntry).toHaveBeenCalledOnce());
   });
 });
