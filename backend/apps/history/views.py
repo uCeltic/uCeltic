@@ -13,7 +13,7 @@ from .serializers import (
 
 class SearchHistoryView(APIView):
     """The signed-in user's own Search History: capture one search (#187), read
-    them all (#188).
+    them all (#188), clear one or all of them (#189).
 
     `IsAuthenticated`, unlike every other ingest endpoint in this codebase: Search History
     belongs to a User and an anonymous visitor keeps none. The client already declines to
@@ -64,3 +64,47 @@ class SearchHistoryView(APIView):
             :MAX_ENTRIES_PER_USER
         ]
         return Response(SearchHistoryEntryResponseSerializer(entries, many=True).data)
+
+
+    @extend_schema(
+        responses={204: None},
+        description=(
+            "Clear the signed-in user's entire search history. Removing nothing is "
+            "still a success — the user asked for an empty history."
+        ),
+    )
+    def delete(self, request):
+        # Scoped to the session's user for the same reason the read is: an entry belongs
+        # to the person who searched, so "all of them" can only ever mean all of theirs.
+        SearchHistoryEntry.objects.filter(user=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SearchHistoryEntryView(APIView):
+    """One entry of the signed-in user's own Search History, addressed by its id (#189).
+
+    Only DELETE lives here. An entry is an immutable snapshot (ADR-0024), so there is
+    nothing to PATCH, and reading one back is the collection's job — the whole log is
+    one page by construction.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={204: None, 404: None},
+        description=(
+            "Delete one entry from the signed-in user's own search history. An entry "
+            "belonging to anyone else is a 404, as is an id that never existed."
+        ),
+    )
+    def delete(self, request, entry_id):
+        # The ownership filter is part of the lookup rather than a check after it, so
+        # there is no path where a missing `user=` deletes a stranger's entry. That also
+        # makes someone else's id indistinguishable from a nonexistent one: 404 either
+        # way, because whether a given entry exists is not this user's business.
+        deleted, _ = SearchHistoryEntry.objects.filter(
+            pk=entry_id, user=request.user
+        ).delete()
+        if not deleted:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  clearSearchHistory,
+  deleteSearchHistoryEntry,
   fetchSearchHistory,
   saveSearchHistoryEntry,
+  SearchHistoryDeleteError,
   SearchHistoryReadError,
   type SearchHistoryEntry,
 } from "./searchHistory";
@@ -89,5 +92,65 @@ describe("fetchSearchHistory", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
     await expect(fetchSearchHistory()).rejects.toBeInstanceOf(SearchHistoryReadError);
+  });
+});
+
+describe("deleteSearchHistoryEntry", () => {
+  it("deletes the one entry by its id, with the CSRF token", async () => {
+    Object.defineProperty(document, "cookie", {
+      value: "csrftoken=tok",
+      writable: true,
+    });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await deleteSearchHistoryEntry(7);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/search-history/7/");
+    expect(init.method).toBe("DELETE");
+    expect(init.headers["X-CSRFToken"]).toBe("tok");
+    expect(init.credentials).toBe("same-origin");
+  });
+
+  it("raises when the entry could not be deleted, so nothing is removed on screen", async () => {
+    Object.defineProperty(document, "cookie", {
+      value: "csrftoken=tok",
+      writable: true,
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+
+    await expect(deleteSearchHistoryEntry(7)).rejects.toBeInstanceOf(
+      SearchHistoryDeleteError,
+    );
+  });
+});
+
+describe("clearSearchHistory", () => {
+  it("deletes the whole collection, with the CSRF token", async () => {
+    Object.defineProperty(document, "cookie", {
+      value: "csrftoken=tok",
+      writable: true,
+    });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await clearSearchHistory();
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/search-history/");
+    expect(init.method).toBe("DELETE");
+    expect(init.headers["X-CSRFToken"]).toBe("tok");
+    expect(init.credentials).toBe("same-origin");
+  });
+
+  it("raises when the history could not be cleared", async () => {
+    Object.defineProperty(document, "cookie", {
+      value: "csrftoken=tok",
+      writable: true,
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+
+    await expect(clearSearchHistory()).rejects.toBeInstanceOf(SearchHistoryDeleteError);
   });
 });

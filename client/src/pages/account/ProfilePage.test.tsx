@@ -173,7 +173,9 @@ describe("ProfilePage search history", () => {
 
     renderProfile();
 
-    await screen.findByRole("button", { name: /ro gab in ri/ });
+    // Two buttons carry the query — the row's toggle and its Delete (#189); this only
+    // asserts the section is mounted and reading, so either one settles it.
+    await screen.findAllByRole("button", { name: /ro gab in ri/ });
   });
 
   it("does not read the history for a visitor who is being sent to sign in", async () => {
