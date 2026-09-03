@@ -218,4 +218,22 @@ describe("removing entries", () => {
     fireEvent.click(screen.getByRole("button", { name: /clear all/i }));
     expect(confirm).toHaveBeenLastCalledWith(expect.stringMatching(/all|whole|entire/i));
   });
+
+  it("sends one DELETE however fast the button is clicked twice", async () => {
+    // The second call would 404 on a row already gone, and the user would be told the
+    // delete failed when it had in fact succeeded.
+    const deleteEntry = vi
+      .spyOn(searchHistoryApi, "deleteSearchHistoryEntry")
+      .mockResolvedValue();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderHistory([anEntry({ id: 7, query: "drop me" })]);
+
+    const remove = await screen.findByRole("button", { name: /delete .*drop me/i });
+    fireEvent.click(remove);
+    fireEvent.click(remove);
+
+    await waitFor(() => expect(screen.queryByText("drop me")).not.toBeInTheDocument());
+    expect(deleteEntry).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });

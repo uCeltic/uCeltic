@@ -100,44 +100,42 @@ export async function fetchSearchHistory(): Promise<StoredSearchHistoryEntry[]> 
  *  the user believes they just got rid of. */
 export class SearchHistoryDeleteError extends Error {}
 
+/** The one DELETE both removals are: same method, same credentials, same CSRF dance —
+ *  only the address and what to say when it fails differ. Whose entries go is never in
+ *  the request; the endpoint scopes every removal to the session's user. */
+async function deleteAt(url: string, failure: string): Promise<void> {
+  await ensureCsrfToken();
+  const response = await fetch(url, {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: csrfHeaders(),
+  });
+  if (!response.ok) {
+    throw new SearchHistoryDeleteError(`${failure}: ${response.status}`);
+  }
+}
+
 /**
  * Delete one entry from the signed-in user's own history (#189).
  *
- * Whose entry it is never travels in the request: the endpoint scopes the lookup to the
- * session's user, so an id belonging to somebody else is a 404 like any other unknown id.
+ * An id belonging to somebody else is a 404 like any other unknown id — whether a given
+ * entry exists is not this user's business.
  *
  * Unlike the capture this one throws. Nobody asked to be saved, but the user *did* ask to
  * delete, and a silent failure would leave an entry on screen after the confirm as if the
  * list had simply not updated.
  */
 export async function deleteSearchHistoryEntry(id: number): Promise<void> {
-  await ensureCsrfToken();
-  const response = await fetch(`${SEARCH_HISTORY_URL}${id}/`, {
-    method: "DELETE",
-    credentials: "same-origin",
-    headers: csrfHeaders(),
-  });
-  if (!response.ok) {
-    throw new SearchHistoryDeleteError(`entry ${id} not deleted: ${response.status}`);
-  }
+  await deleteAt(`${SEARCH_HISTORY_URL}${id}/`, `entry ${id} not deleted`);
 }
 
 /**
  * Clear the signed-in user's entire history (#189).
  *
- * "Everything" is decided by the session, not by a list of ids the client assembles: the
- * endpoint removes the acting user's entries and nobody else's, so a stale page cannot
- * ask for someone else's rows, and a search captured between the read and this call goes
- * too — which is what the user asked for.
+ * "Everything" is decided by the session, not by a list of ids the client assembles: so a
+ * stale page cannot ask for someone else's rows, and a search captured between the read
+ * and this call goes too — which is what the user asked for.
  */
 export async function clearSearchHistory(): Promise<void> {
-  await ensureCsrfToken();
-  const response = await fetch(SEARCH_HISTORY_URL, {
-    method: "DELETE",
-    credentials: "same-origin",
-    headers: csrfHeaders(),
-  });
-  if (!response.ok) {
-    throw new SearchHistoryDeleteError(`search history not cleared: ${response.status}`);
-  }
+  await deleteAt(SEARCH_HISTORY_URL, "search history not cleared");
 }

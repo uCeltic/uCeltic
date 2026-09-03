@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   clearSearchHistory,
   deleteSearchHistoryEntry,
@@ -8,6 +8,11 @@ import {
 } from "../../api/searchHistory";
 import { matchPercentage } from "../../history/matchPercentage";
 import { FormError } from "./AccountShell";
+
+/** The quiet control both removals wear: a history entry is the user's to throw away,
+ *  but nothing on this page should shout about deleting it. */
+const REMOVE_BUTTON =
+  "cursor-pointer rounded px-2 py-1 text-xs text-[#6B6B67] hover:bg-[#F0EEE6] hover:text-[#3F3F3C]";
 
 /** How the moment a search was made is put in front of a reader. The machine-readable
  *  form stays on the `<time>` element's `dateTime`, so the display can be as loose as it
@@ -85,7 +90,7 @@ function HistoryEntry({
           // The query is in the accessible name because "Delete" repeated 50 times down a
           // list names nothing: a screen reader hears which search it removes.
           aria-label={`Delete search “${entry.query}”`}
-          className="mt-3 shrink-0 cursor-pointer rounded px-2 py-1 text-xs text-[#6B6B67] hover:bg-[#F0EEE6] hover:text-[#3F3F3C]"
+          className={`mt-3 shrink-0 ${REMOVE_BUTTON}`}
         >
           Delete
         </button>
@@ -126,34 +131,55 @@ export default function SearchHistorySection() {
     fetchSearchHistory().then(setEntries, () => setFailed(true));
   }, []);
 
-  // `window.confirm` is what this codebase already asks a destructive question with —
-  // closing a Document, resetting the parameters. A history entry is not more dangerous
-  // than either, and one confirm the whole app over is one the visitor already knows.
-  async function removeEntry(entry: StoredSearchHistoryEntry) {
-    if (!window.confirm(`Delete the search “${entry.query}” from your history?`)) return;
+  // Two clicks before the first DELETE lands would send the request twice, and the
+  // second one 404s on a row that is already gone — the user would be told the delete
+  // failed when it had in fact succeeded. A ref, not state: both clicks in one tick read
+  // the same value, and a re-render has not delivered the new one to either of them.
+  const removing = useRef(false);
+
+  /** The shape both removals share: ask, call, and let the screen follow the server.
+   *
+   * `window.confirm` is what this codebase already asks a destructive question with —
+   * closing a Document, resetting the parameters. A history entry is not more dangerous
+   * than either, and one confirm the whole app over is one the visitor already knows.
+   */
+  async function confirmAndRemove(
+    question: string,
+    remove: () => Promise<void>,
+    survivors: (current: StoredSearchHistoryEntry[]) => StoredSearchHistoryEntry[],
+    failure: string,
+  ) {
+    if (removing.current || !window.confirm(question)) return;
+    removing.current = true;
     setRemovalError(null);
     try {
-      await deleteSearchHistoryEntry(entry.id);
-      setEntries((current) =>
-        (current ?? []).filter((candidate) => candidate.id !== entry.id),
-      );
+      await remove();
+      setEntries((current) => survivors(current ?? []));
     } catch {
-      setRemovalError("Could not delete that search. Please try again.");
+      setRemovalError(failure);
+    } finally {
+      removing.current = false;
     }
   }
 
-  async function removeEverything() {
-    if (!window.confirm("Clear your entire search history? This cannot be undone."))
-      return;
-    setRemovalError(null);
-    try {
-      await clearSearchHistory();
+  function removeEntry(entry: StoredSearchHistoryEntry) {
+    return confirmAndRemove(
+      `Delete the search “${entry.query}” from your history?`,
+      () => deleteSearchHistoryEntry(entry.id),
+      (current) => current.filter((candidate) => candidate.id !== entry.id),
+      "Could not delete that search. Please try again.",
+    );
+  }
+
+  function removeEverything() {
+    return confirmAndRemove(
+      "Clear your entire search history? This cannot be undone.",
+      clearSearchHistory,
       // Empty, not re-read: the endpoint clears the acting user's entries, so what is
       // left is nothing, and a round trip would only invite a fresh failure to explain.
-      setEntries([]);
-    } catch {
-      setRemovalError("Could not clear your search history. Please try again.");
-    }
+      () => [],
+      "Could not clear your search history. Please try again.",
+    );
   }
 
   return (
@@ -165,8 +191,8 @@ export default function SearchHistorySection() {
         {entries !== null && entries.length > 0 && (
           <button
             type="button"
-            onClick={removeEverything}
-            className="cursor-pointer rounded px-2 py-1 text-xs text-[#6B6B67] hover:bg-[#F0EEE6] hover:text-[#3F3F3C]"
+            onClick={() => void removeEverything()}
+            className={REMOVE_BUTTON}
           >
             Clear all
           </button>

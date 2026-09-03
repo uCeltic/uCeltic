@@ -13,7 +13,7 @@ from .serializers import (
 
 class SearchHistoryView(APIView):
     """The signed-in user's own Search History: capture one search (#187), read
-    them all (#188), clear one or all of them (#189).
+    them all (#188), clear them all (#189).
 
     `IsAuthenticated`, unlike every other ingest endpoint in this codebase: Search History
     belongs to a User and an anonymous visitor keeps none. The client already declines to
@@ -64,7 +64,6 @@ class SearchHistoryView(APIView):
             :MAX_ENTRIES_PER_USER
         ]
         return Response(SearchHistoryEntryResponseSerializer(entries, many=True).data)
-
 
     @extend_schema(
         responses={204: None},
