@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Document, DocumentId } from "../types/document";
 import type { TEIDoc } from "../types/tei";
 import { logEvent } from "../api/log";
-import type { ManuscriptId } from "../workspace/manuscripts";
+import { findManuscript, type ManuscriptId } from "../workspace/manuscripts";
 
 // shared {doc_id, title} payload shape for open/close events
 function logDocEvent(
@@ -11,6 +11,18 @@ function logDocEvent(
   title: string,
 ): void {
   logEvent(eventType, { doc_id: id, title });
+}
+
+// Kept apart from document_opened / document_closed: a Manuscript is not a
+// Document (ADR-0025).
+function logManuscriptEvent(
+  eventType: "manuscript_opened" | "manuscript_closed",
+  id: ManuscriptId,
+): void {
+  logEvent(eventType, {
+    manuscript_id: id,
+    label: findManuscript(id)?.label ?? id,
+  });
 }
 
 // One cap for every Column, whatever it holds: it protects the strip's width,
@@ -334,6 +346,7 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
       if (freeColumnSlots(state) <= 0) {
         return state;
       }
+      logManuscriptEvent("manuscript_opened", manuscriptId);
       return {
         openManuscripts: [...state.openManuscripts, manuscriptId],
         visibleDocumentIds: [...state.visibleDocumentIds, id],
@@ -344,6 +357,9 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
   closeManuscript: (manuscriptId) =>
     set((state) => {
       const id = manuscriptColumnId(manuscriptId);
+      if (state.openManuscripts.includes(manuscriptId)) {
+        logManuscriptEvent("manuscript_closed", manuscriptId);
+      }
       return {
         openManuscripts: state.openManuscripts.filter((m) => m !== manuscriptId),
         visibleDocumentIds: state.visibleDocumentIds.filter((v) => v !== id),

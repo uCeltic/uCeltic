@@ -11,10 +11,14 @@ EVENT_TYPES = [
     "result_navigated",
     "scope_changed",
     "mode_changed",
+    # retired by ADR-0025 — the client no longer sends it, but rows already
+    # recorded stay valid study data, so it stays legal here
     "iiif_toggled",
     "font_size_changed",
     "tag_entity_selected",
     "feedback_submitted",
+    "manuscript_opened",
+    "manuscript_closed",
 ]
 
 
