@@ -425,3 +425,57 @@ describe("documentStore manuscript columns", () => {
     });
   });
 });
+
+// A Manuscript has its own open/close events, apart from document_opened /
+// document_closed (ADR-0025).
+describe("documentStore manuscript behavior events", () => {
+  it("logs one manuscript_opened per Manuscript opened", () => {
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+    useDocumentStore.getState().openManuscript("ucd-ms-a-4");
+
+    expect(mockedLogEvent.mock.calls).toEqual([
+      [
+        "manuscript_opened",
+        { manuscript_id: "book-of-lismore", label: "Book of Lismore (UCC)" },
+      ],
+      ["manuscript_opened", { manuscript_id: "ucd-ms-a-4", label: "UCD MS A 4" }],
+    ]);
+  });
+
+  it("logs nothing when re-opening an already-open Manuscript", () => {
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+    mockedLogEvent.mockClear();
+
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+
+    expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
+
+  it("logs nothing when the cap refuses the Manuscript", () => {
+    fillWith(MAX_OPEN_COLUMNS);
+    mockedLogEvent.mockClear();
+
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+
+    expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
+
+  it("logs one manuscript_closed when a Manuscript is closed", () => {
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+    mockedLogEvent.mockClear();
+
+    useDocumentStore.getState().closeManuscript("book-of-lismore");
+
+    expect(mockedLogEvent).toHaveBeenCalledOnce();
+    expect(mockedLogEvent).toHaveBeenCalledWith("manuscript_closed", {
+      manuscript_id: "book-of-lismore",
+      label: "Book of Lismore (UCC)",
+    });
+  });
+
+  it("logs nothing when closing a Manuscript that isn't open", () => {
+    useDocumentStore.getState().closeManuscript("book-of-lismore");
+
+    expect(mockedLogEvent).not.toHaveBeenCalled();
+  });
+});

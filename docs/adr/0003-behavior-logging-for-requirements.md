@@ -65,6 +65,12 @@ cast, and it is not recoverable from any other event. The taxonomy is closed, no
 frozen — adding a type is a deliberate, documented act, and this is the first
 since the original set.
 
+`manuscript_opened` / `manuscript_closed` (added 2026-10-08, #203) carry
+`{manuscript_id, label}`, one per Manuscript Column opened or closed. They replace
+`iiif_toggled` on the client when Manuscripts became Columns
+([ADR-0025](0025-manuscripts-open-as-columns.md)); `iiif_toggled` stays a legal
+`event_type` on the server so the rows already recorded remain valid study data.
+
 **Architecture — self-built, reusing the existing Django + Postgres.** A client-side
 emitter POSTs to a new `POST /api/events/` endpoint in a new `apps/analytics` Django
 app, which validates the event type against the allowed set and writes one row to a

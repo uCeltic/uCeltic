@@ -38,6 +38,25 @@ class BehaviorEventEndpointTests(APITestCase):
         self.assertIn("error", resp.data)
         self.assertEqual(BehaviorEvent.objects.count(), 0)
 
+    def test_manuscript_events_are_accepted(self):
+        for event_type in ("manuscript_opened", "manuscript_closed"):
+            resp = self.client.post(
+                "/api/events/",
+                self._payload(
+                    event_type=event_type,
+                    payload={"manuscript_id": "book-of-lismore", "label": "Book of Lismore (UCC)"},
+                ),
+                format="json",
+            )
+            self.assertEqual(resp.status_code, 201)
+        self.assertEqual(BehaviorEvent.objects.count(), 2)
+
+    def test_retired_iiif_toggled_is_still_accepted(self):
+        resp = self.client.post(
+            "/api/events/", self._payload(event_type="iiif_toggled"), format="json"
+        )
+        self.assertEqual(resp.status_code, 201)
+
     def test_missing_session_id_returns_4xx_not_500(self):
         payload = self._payload()
         del payload["session_id"]

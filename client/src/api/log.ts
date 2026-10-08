@@ -14,10 +14,11 @@ export const EVENT_TYPES = [
   "result_navigated",
   "scope_changed",
   "mode_changed",
-  "iiif_toggled",
   "font_size_changed",
   "tag_entity_selected",
   "feedback_submitted",
+  "manuscript_opened",
+  "manuscript_closed",
 ] as const;
 
 export type BehaviorEventType = (typeof EVENT_TYPES)[number];
