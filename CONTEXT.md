@@ -274,10 +274,18 @@
   ### Manuscript
 
   A **physical, non-digitized original source** — the handwritten book a Work
-  survives in — surfaced in the app only as **page images** through the IIIF
-  panel (`client/src/workspace/panels/IIIFPanel.tsx`, e.g. *Book of Lismore*).
-  Deliberately distinct from a Document: a Manuscript is the original artifact,
-  a Document is a digitized/transcribed text. The UI label stays the word
+  survives in — surfaced in the app only as **page images** (IIIF, e.g. *Book of
+  Lismore*). Deliberately distinct from a Document: a Manuscript is the original
+  artifact, a Document is a digitized/transcribed text.
+
+  A Manuscript is **opened**, not toggled: the toolbar's `Manuscripts` control
+  lists the Manuscripts and the reader ticks which to open, the way the `Works`
+  control opens Versions. Several can be open at once; a Manuscript is open **at
+  most once** (opening it again brings it forward), and **none is open** when the
+  workspace loads. The list is the project's fixed three for now; letting an
+  administrator declare Manuscripts is planned separately. Opening a Manuscript
+  says nothing about which Version transcribes it — no link between the two is
+  held yet. The UI label stays the word
   **"Manuscripts"** — it is a client-requirement term and must **not** be
   renamed to "Books"; disambiguation from Documents is done with an **icon**
   next to the label, never by changing the word (see
@@ -285,9 +293,17 @@
   responsive treatment, staged by
   [ADR-0020](docs/adr/0020-toolbar-labels-collapse-in-stages.md)). The book icon
   is what carries the term below 1280px: this is the *first* label the toolbar
-  drops, because the toggle's colour and `aria-pressed` already say what it says.
-  The word survives in the button's `aria-label` and tooltip at every width. _Avoid_: Book (a physical Manuscript is book-like but
-  "Book" is a forbidden UI rename); calling a digitized text a "manuscript".
+  drops, because a book next to the Works opener's ▾ already says what it says.
+  The word survives in the button's `aria-label` and tooltip at every width.
+
+  An open Manuscript is a **Column** (below), one book per Column — changing
+  book is closing one and opening another. It is never searched, never followed
+  by the Tag Filter and never in a Search History entry, and its header carries
+  no `Reading only` chip: page images are self-evidently not searchable text
+  ([ADR-0025](docs/adr/0025-manuscripts-open-as-columns.md)).
+  _Avoid_: Book (a physical Manuscript is book-like but "Book" is a forbidden UI
+  rename); calling a digitized text a "manuscript"; "the IIIF panel" (there is
+  no panel — a Manuscript is a Column).
 
   ### Tag Filter
 
@@ -640,6 +656,24 @@
   and calling it an upload would tell visitors the opposite of the best property
   this feature has. For the same reason the onboarding tour offers a visitor's own
   file "to read alongside" the versions, and never as something to search.
+
+  ### Column
+
+  **One slot in the workspace's side-by-side strip**, holding either one open
+  **Document** (a Version or a Local Document) or one open **Manuscript**. Every
+  Column is opened from the toolbar, closed with its ✕, and dragged to sit
+  beside any other — so a Version can be read against the page images of the
+  Manuscript it transcribes. At most **eight** Columns are open at once, whatever
+  they hold: the cap protects the strip's width, which a Manuscript uses as much
+  as a text does.
+
+  What a Column holds decides what it takes part in. Search, the Tag Filter and
+  Search History only ever concern Columns holding a searchable Document; a
+  Manuscript Column, like a Local Document's, is left out of all three. A Page
+  Jump passes a Manuscript Column by silently — it has no Stokes page, so a
+  "this page is missing" notice would be false of it.
+  _Avoid_: Text View, text viewer (a Manuscript Column shows no text); panel (the
+  Manuscript is no longer a side panel); tab.
 
   ### Well-formed vs Valid
 
