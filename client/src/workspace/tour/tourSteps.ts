@@ -171,8 +171,13 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "manuscripts",
     anchors: ["manuscripts"],
-    title: "Show or hide manuscripts",
-    body: "Toggle the manuscript images panel on or off with this button. That's the tour — happy searching!",
+    // A Manuscript opens as a Column, like a Version (ADR-0025) — there is no
+    // panel to show or hide. Which Version transcribes which Manuscript is not
+    // held anywhere, so the copy leaves the pairing to the reader.
+    title: "Open a Manuscript",
+    body: "“Manuscripts” opens the original manuscripts themselves, as page images. Tick one and click “Open selected”: it opens as a column of its own, which you can drag beside the version you are reading it against. That's the tour — happy searching!",
     // No gate: the last card has nothing left to wait for, and "Done" ends it.
+    // Waiting for a Manuscript to open would change nothing on screen — the
+    // tour derives to its last step either way (ADR-0022).
   },
 ];
