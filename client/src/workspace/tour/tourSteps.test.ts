@@ -55,6 +55,19 @@ describe("the eleven-step script", () => {
     expect(withoutGate.map((s) => s.id)).toEqual([TOUR_STEPS.at(-1)!.id]);
   });
 
+  it("closes on the Manuscripts opener, which opens a Manuscript rather than toggling a panel", () => {
+    // #201 retired the side panel and its Show / Hide toggle: a Manuscript now
+    // opens as a Column from `Manuscripts ▾` (ADR-0025).
+    const last = TOUR_STEPS.at(-1)!;
+    expect(last.anchors).toEqual(["manuscripts"]);
+
+    const copy = `${last.title}\n${last.body}`;
+    // The client-requirement word, never renamed (CONTEXT.md → Manuscript).
+    expect(copy).toContain("Manuscripts");
+    expect(copy).toMatch(/\bopen/i);
+    expect(copy).not.toMatch(/toggle|\bshow\b|\bhide\b|panel|\bbooks?\b/i);
+  });
+
   it("walks all eleven steps with no press of Next", () => {
     const walker = reader();
     expect(walker.at()).toBe(0);
