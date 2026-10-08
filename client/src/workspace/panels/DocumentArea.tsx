@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type ReactNode,
+} from "react";
 import {
   isSearchableDocument,
+  manuscriptColumnId,
   useDocumentStore,
 } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
@@ -9,6 +16,7 @@ import { useWorkspaceStore } from "../../store/workspaceStore";
 import TEIRenderer from "../../tei/TEIRenderer";
 import TEIErrorBoundary from "../../tei/ErrorBoundary";
 import type { TEIDoc } from "../../types/tei";
+import type { Document } from "../../types/document";
 import type { SearchResult } from "../../types/search";
 import { rangesForWordSpan } from "../../tei/wordRange";
 import {
@@ -18,9 +26,11 @@ import {
 } from "../../tei/highlight";
 import { useEntityMenu } from "../../tei/useEntityMenu";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
-// Drag to arrange the text viewers from @dnd-kit。
+import { MANUSCRIPTS, type ManuscriptConfig } from "../manuscripts";
+import ManuscriptViewer from "./ManuscriptViewer";
+// Drag to arrange the Columns, from @dnd-kit.
 import {
-  DndContext, //   All text viewers are managed here
+  DndContext, //   All Columns are managed here
   closestCenter, //  Calculate the position, When dragging, the position of this coloumn will be the closest to the center of the target coloumn
   PointerSensor, //  When cursor is on the file title, the cursor will be changed
   useSensor,
@@ -29,7 +39,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  horizontalListSortingStrategy, //  The text viewers are arranged horizontally
+  horizontalListSortingStrategy, //  The Columns are arranged horizontally
   useSortable, //  Make the column draggable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities"; // dnd-kit transform object to CSS string
@@ -41,7 +51,7 @@ import {
   markDragReorderHintDismissed,
 } from "./dragReorderHint";
 
-// props for each text viewer column
+// props for each Document Column
 interface SortableDocumentColumnProps {
   doc: ReturnType<
     typeof useDocumentStore.getState
@@ -176,7 +186,7 @@ function DragReorderHint({ onDismiss }: { onDismiss: () => void }) {
 // the rebuildHighlights effect, so this only scrolls — it never touches the CSS
 // Highlight registry (doing so would wipe every other column's highlights).
 function scrollToResult(docId: string, result: SearchResult, teiDoc: TEIDoc) {
-  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`); // get the text viewer column element
+  const columnEl = document.querySelector(`[data-doc-column-id="${docId}"]`); // get the Document Column element
   if (!columnEl) return;
 
   // jump to the rendered anchor element
@@ -205,7 +215,127 @@ function scrollToResult(docId: string, result: SearchResult, teiDoc: TEIDoc) {
   }
 }
 
-// Render a single text viewer column: top title bar, main content, and bottom search result panel.
+// What one Column in the strip holds (CONTEXT.md → Column).
+type ColumnContent =
+  | { kind: "document"; doc: Document }
+  | { kind: "manuscript"; id: string; manuscript: ManuscriptConfig };
+
+// What every Column wears while it sits in the sortable strip, whatever it holds.
+function sortableColumnStyle({
+  transform,
+  transition,
+  isDragging,
+}: Pick<ReturnType<typeof useSortable>, "transform" | "transition" | "isDragging">) {
+  return {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    // The floor that keeps this column readable: `flex-1` still splits the area
+    // evenly while every column fits, and stops shrinking here when they don't
+    // — at which point the strip around them scrolls (ADR-0019).
+    minWidth: COLUMN_MIN_WIDTH_PX,
+  };
+}
+
+// The header every Column carries — a Document's or a Manuscript's: the title
+// that is also the drag grip, an optional chip, and the ✕ (CONTEXT.md → Column).
+function ColumnHeader({
+  title,
+  dragHandle,
+  showDragHint,
+  onDismissDragHint,
+  chip,
+  onClose,
+}: {
+  title: string;
+  /** useSortable's attributes and listeners, spread onto the grip. */
+  dragHandle: ButtonHTMLAttributes<HTMLButtonElement>;
+  showDragHint: boolean;
+  onDismissDragHint: () => void;
+  chip?: ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <header className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-1">
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            title={title}
+            // What the tour's reorder step rings: the grip *is* the title
+            // button, which is why the hint beside it exists at all (#178).
+            data-tour="column-grip"
+            {...dragHandle}
+            className="flex w-[160px] cursor-grab items-center gap-1.5 truncate rounded-md border border-gray-200
+bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
+          >
+            <span aria-hidden="true" className="shrink-0 text-gray-400">⋮⋮</span>
+            <span className="truncate">{title}</span>
+          </button>
+          {showDragHint && <DragReorderHint onDismiss={onDismissDragHint} />}
+        </div>
+        {chip}
+      </div>
+      {/* shrink-0: the column has a floor of its own now, but the ✕ is what
+          the header sacrifices first without one — it must keep its full hit
+          area rather than sliding under the neighbouring column (#159). */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="shrink-0 rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F]
+        cursor-pointer transition-colors hover:bg-[#F0EEE6]"
+      >
+        ✕
+      </button>
+    </header>
+  );
+}
+
+// A Manuscript's Column: the same header as a Document's, and its page images
+// below. No result card, no entity card and no `Reading only` chip — page images
+// are self-evidently not searchable text, and search, the Tag Filter and Search
+// History never reach it (ADR-0025).
+//
+// The viewer stays mounted for as long as the Column is open: a drag only moves
+// it by transform, and `key` keeps it the same element when the strip reorders,
+// so its zoom and page survive both.
+function SortableManuscriptColumn({
+  columnId,
+  manuscript,
+  isLast,
+  showDragHint,
+  onDismissDragHint,
+  onClose,
+}: {
+  columnId: string;
+  manuscript: ManuscriptConfig;
+  isLast: boolean;
+  showDragHint: boolean;
+  onDismissDragHint: () => void;
+  onClose: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: columnId });
+  return (
+    <article
+      data-manuscript-column-id={columnId}
+      ref={setNodeRef}
+      style={sortableColumnStyle({ transform, transition, isDragging })}
+      className={`flex flex-1 flex-col bg-[#f5f6ee] ${isLast ? "" : "border-r border-gray-200"}`}
+    >
+      <ColumnHeader
+        title={manuscript.label}
+        dragHandle={{ ...attributes, ...listeners }}
+        showDragHint={showDragHint}
+        onDismissDragHint={onDismissDragHint}
+        onClose={onClose}
+      />
+      <ManuscriptViewer manuscript={manuscript} />
+    </article>
+  );
+}
+
+// Render a single Document Column: top title bar, main content, and bottom search result panel.
 function SortableDocumentColumn({
   doc,
   index,
@@ -234,15 +364,7 @@ function SortableDocumentColumn({
     isDragging,
   } = useSortable({ id: doc.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    // The floor that keeps this column readable: `flex-1` still splits the area
-    // evenly while every column fits, and stops shrinking here when they don't
-    // — at which point the strip around them scrolls (ADR-0019).
-    minWidth: COLUMN_MIN_WIDTH_PX,
-  };
+  const style = sortableColumnStyle({ transform, transition, isDragging });
   const fontSize = useWorkspaceStore((state) => state.fontSize);
   // The same rule the search itself is built from, so this column can only ever
   // report on a search that was actually run against it (#175).
@@ -255,39 +377,14 @@ function SortableDocumentColumn({
       className={`flex flex-1 flex-col bg-[#f5f6ee] ${index < totalCount - 1 ? "border-r border-gray-200" : ""
         }`}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              title={doc.title}
-              // What the tour's reorder step rings: the grip *is* the title
-              // button, which is why the hint beside it exists at all (#178).
-              data-tour="column-grip"
-              {...attributes}
-              {...listeners}
-              className="flex w-[160px] cursor-grab items-center gap-1.5 truncate rounded-md border border-gray-200
-bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:cursor-grabbing"
-            >
-              <span aria-hidden="true" className="shrink-0 text-gray-400">⋮⋮</span>
-              <span className="truncate">{doc.title}</span>
-            </button>
-            {showDragHint && <DragReorderHint onDismiss={onDismissDragHint} />}
-          </div>
-          {!searchable && <ReadingOnlyChip />}
-        </div>
-        {/* shrink-0: the column has a floor of its own now, but the ✕ is what
-            the header sacrifices first without one — it must keep its full hit
-            area rather than sliding under the neighbouring column (#159). */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 rounded-md bg-[#FAF9F3] px-2.5 py-1.5 text-sm font-medium text-[#52524F]
-          cursor-pointer transition-colors hover:bg-[#F0EEE6]"
-        >
-          ✕
-        </button>
-      </header>
+      <ColumnHeader
+        title={doc.title}
+        dragHandle={{ ...attributes, ...listeners }}
+        showDragHint={showDragHint}
+        onDismissDragHint={onDismissDragHint}
+        chip={!searchable && <ReadingOnlyChip />}
+        onClose={onClose}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Result card — fixed below the header, and only for a column a search
@@ -468,9 +565,24 @@ export default function DocumentArea() {
     (state) => state.prevEntityOccurrence,
   );
 
-  const visibleDocuments = visibleDocumentIds
-    .map((id) => openDocuments.find((d) => d.id === id))
-    .filter((d): d is NonNullable<typeof d> => d !== undefined);
+  const openManuscripts = useDocumentStore((state) => state.openManuscripts);
+  const closeManuscript = useDocumentStore((state) => state.closeManuscript);
+
+  // Every Column in strip order, each resolved to what it holds. A Manuscript
+  // Column's id is not a document id, and it is marked
+  // `data-manuscript-column-id` rather than `data-doc-column-id`, so the
+  // document-only work below (highlights, entity cards, result scrolling)
+  // finds nothing in it.
+  const columns = visibleDocumentIds.flatMap(
+    (id): ColumnContent[] => {
+      const doc = openDocuments.find((d) => d.id === id);
+      if (doc) return [{ kind: "document", doc }];
+      const manuscript = MANUSCRIPTS.find(
+        (m) => openManuscripts.includes(m.id) && manuscriptColumnId(m.id) === id,
+      );
+      return manuscript ? [{ kind: "manuscript", id, manuscript }] : [];
+    },
+  );
 
   // The very menu the toolbar offers, read here for its counts — so a column's
   // "1 / 12" and the menu's "12" can never disagree.
@@ -661,7 +773,26 @@ export default function DocumentArea() {
           data-column-strip
           className="flex h-full min-h-0 overflow-x-auto overflow-y-hidden bg-[#f5f6ee]"
         >
-          {visibleDocuments.map((doc, index) => {
+          {columns.map((column, index) => {
+            if (column.kind === "manuscript") {
+              const { id, manuscript } = column;
+              return (
+                <SortableManuscriptColumn
+                  key={id}
+                  columnId={id}
+                  manuscript={manuscript}
+                  isLast={index === columns.length - 1}
+                  showDragHint={id === showDragHintFor}
+                  onDismissDragHint={dismissDragHint}
+                  onClose={() => {
+                    if (window.confirm(`Close "${manuscript.label}"?`)) {
+                      closeManuscript(manuscript.id);
+                    }
+                  }}
+                />
+              );
+            }
+            const { doc } = column;
             const docResults = resultsByDocument[doc.id] ?? [];
             const isSearching = isSearchingByDocument[doc.id] ?? false;
             const activeIndex =
@@ -673,7 +804,7 @@ export default function DocumentArea() {
                 key={doc.id}
                 doc={doc}
                 index={index}
-                totalCount={visibleDocuments.length}
+                totalCount={columns.length}
                 docResults={docResults}
                 isSearching={isSearching}
                 hasError={searchErrorByDocument[doc.id] ?? false}

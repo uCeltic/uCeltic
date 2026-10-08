@@ -10,7 +10,6 @@ beforeEach(() => {
     mockedLogEvent.mockReset();
     useWorkspaceStore.setState({
         fontSize: 14,
-        showIIIF: true,
         selectedWorkId: null,
         selectedEntityId: null,
         entityIndexByDocument: {},
@@ -29,15 +28,6 @@ describe("workspaceStore", () => {
         useWorkspaceStore.setState({ fontSize: 24 });
         increaseFontSize();
         expect(useWorkspaceStore.getState().fontSize).toBe(24);
-    });
-
-    //Test: toggleIIIF flips the manuscript panel visibility
-    it("toggleIIIF flips the manuscript panel visibility", () => {
-        useWorkspaceStore.getState().toggleIIIF();
-        expect(useWorkspaceStore.getState().showIIIF).toBe(false);
-
-        useWorkspaceStore.getState().toggleIIIF();
-        expect(useWorkspaceStore.getState().showIIIF).toBe(true);
     });
 
     //Test: the Tag Filter starts with nothing selected — every entity reads normally
@@ -127,17 +117,6 @@ describe("workspaceStore analytics", () => {
 
         useWorkspaceStore.getState().setSelectedEntityId("fionn");
         expect(mockedLogEvent).not.toHaveBeenCalled();
-    });
-
-    //Test: toggling IIIF logs one iiif_toggled event with the new state
-    it("logs iiif_toggled with the new visibility state", () => {
-        useWorkspaceStore.getState().toggleIIIF();
-        expect(mockedLogEvent).toHaveBeenCalledOnce();
-        expect(mockedLogEvent).toHaveBeenCalledWith("iiif_toggled", { on: false });
-
-        mockedLogEvent.mockClear();
-        useWorkspaceStore.getState().toggleIIIF();
-        expect(mockedLogEvent).toHaveBeenCalledWith("iiif_toggled", { on: true });
     });
 
     //Test: increasing font size logs one font_size_changed event with from/to

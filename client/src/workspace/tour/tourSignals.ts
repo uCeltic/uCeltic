@@ -61,17 +61,24 @@ export function openVersionCount(
  * column back where it came from has genuinely undone the reorder — which is why
  * the step latches instead (tourProgress.ts).
  *
- * It reads the two lists as one order because `MAX_OPEN_DOCUMENTS` and
+ * It reads the two lists as one order because `MAX_OPEN_COLUMNS` and
  * `MAX_VISIBLE_DOCUMENTS` are equal: no document is ever open without a column,
  * so re-focusing one can never append it to the visible list out of open order.
+ *
+ * Only the Documents' order is compared. A Manuscript Column sits in the same
+ * strip but has no place in `openDocuments`, so there is no open order to hold
+ * it against (#201).
  */
 export function columnsReordered(
   documents: Pick<DocumentState, "openDocuments" | "visibleDocumentIds">,
 ): boolean {
-  const openOrder = documents.openDocuments
-    .map((doc) => doc.id)
-    .filter((id) => documents.visibleDocumentIds.includes(id));
-  return documents.visibleDocumentIds.some((id, i) => openOrder[i] !== id);
+  const openIds = documents.openDocuments.map((doc) => doc.id);
+  const openOrder = openIds.filter((id) =>
+    documents.visibleDocumentIds.includes(id),
+  );
+  return documents.visibleDocumentIds
+    .filter((id) => openIds.includes(id))
+    .some((id, i) => openOrder[i] !== id);
 }
 
 /**

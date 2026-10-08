@@ -2,12 +2,14 @@ import React, { useRef } from "react";
 import mammoth from "mammoth";
 import {
   useDocumentStore,
-  MAX_OPEN_DOCUMENTS,
+  MAX_OPEN_COLUMNS,
+  freeColumnSlots,
   getSearchableDocuments,
 } from "../../store/documentStore";
 import AdvancedSearchPopover from "./AdvancedSearchPopover";
 import TagFilterButton from "./TagFilterButton";
 import WorkPicker from "./WorkPicker";
+import ManuscriptPicker from "./ManuscriptPicker";
 import HamburgerMenu from "./HamburgerMenu";
 import {
   secondaryBtn,
@@ -16,30 +18,18 @@ import {
   toolbarLabelFirstToGo,
   toolbarLabelLastToGo,
 } from "./buttonStyles";
-import { BookIcon, FilePlusIcon, SearchIcon, SpinnerIcon } from "./icons";
+import { FilePlusIcon, SearchIcon, SpinnerIcon } from "./icons";
 import { ADD_TEXT_TITLE } from "./localDocumentCopy";
 import { selectAnySearching, useSearchStore } from "../../store/searchStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
 import { useTourStore } from "../../store/tourStore";
 
-// Why the manuscript control is unavailable at this width — the one thing a visitor
-// below the breakpoint can act on (#160).
-const WIDEN_TO_SHOW_MANUSCRIPTS = "Widen the window to show Manuscripts";
-
-export default function ToolBar({
-  onToggleIIIF,
-  iiifVisible,
-  iiifTooNarrow,
-}: {
-  onToggleIIIF: () => void;
-  /** Whether the Manuscript panel is on screen right now — the stored preference
-   *  and the viewport override already folded together by the layout (#160). */
-  iiifVisible: boolean;
-  /** The viewport is below the breakpoint the panel needs, so no toggle can show it. */
-  iiifTooNarrow: boolean;
-}) {
+export default function ToolBar() {
   const addDocument = useDocumentStore((state) => state.addDocument);
   const openDocuments = useDocumentStore((state) => state.openDocuments);
+  const openManuscripts = useDocumentStore((state) => state.openManuscripts);
+  // Documents and Manuscripts share the one cap of eight Columns (ADR-0025).
+  const columnsFull = freeColumnSlots({ openDocuments, openManuscripts }) <= 0;
   const fileInputRef = useRef<HTMLInputElement>(null);
   // One typed search is one search run across every column it covers, not a
   // loop of unrelated per-column searches (#186).
@@ -50,9 +40,6 @@ export default function ToolBar({
   const query = useSearchStore((s) => s.query);
   const visibleDocumentIds = useDocumentStore((s) => s.visibleDocumentIds);
   const startTour = useTourStore((s) => s.start);
-  // One label for the button's accessible name, tooltip and visible text, so the
-  // "Manuscripts" wording cannot drift between them.
-  const manuscriptLabel = iiifVisible ? "Hide Manuscripts" : "Show Manuscripts";
 
   //handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,8 +71,8 @@ export default function ToolBar({
 
   //check if the maximum number of documents is reached, if so, alert the user.
   const handleAddDocument = () => {
-    if (openDocuments.length >= MAX_OPEN_DOCUMENTS) {
-      alert("Maximum 8 documents allowed.");
+    if (columnsFull) {
+      alert(`Maximum ${MAX_OPEN_COLUMNS} columns allowed.`);
       return;
     }
     fileInputRef.current?.click();
@@ -110,7 +97,7 @@ export default function ToolBar({
           aria-label="Add Text"
           title={ADD_TEXT_TITLE}
           className={
-            openDocuments.length >= MAX_OPEN_DOCUMENTS
+            columnsFull
               ? `${toolbarBtnBase} border border-[#E5E2D6] bg-white text-gray-300 !cursor-not-allowed`
               : secondaryBtn
           }
@@ -166,36 +153,9 @@ export default function ToolBar({
         <span className={toolbarLabelLastToGo}>Search</span>
       </button>
       </div>
-      {/* Manuscript toggle stays top-level; low-frequency controls live in the menu (#123) */}
+      {/* Manuscripts opener stays top-level; low-frequency controls live in the menu (#123) */}
       <div className="flex items-center gap-2">
-        {/* Below the breakpoint the panel auto-hides (ADR-0011) and no click can bring
-            it back, so the control says so instead of flipping into a state it cannot
-            deliver (#160). The reason is a tooltip on this wrapper: Chrome drops hover
-            on a disabled button, so a `title` there would never surface — and the
-            button's own title is cleared while disabled, because Firefox *does* show it
-            and it would otherwise shadow the explanation. */}
-        <span
-          className="inline-flex"
-          title={iiifTooNarrow ? WIDEN_TO_SHOW_MANUSCRIPTS : undefined}
-        >
-          <button
-            type="button"
-            onClick={onToggleIIIF}
-            disabled={iiifTooNarrow}
-            className={iiifVisible ? toggleOnBtn : secondaryBtn}
-            // Pressed state and label follow the panel that is actually on screen,
-            // not the stored preference — force-hidden always reads "Show".
-            aria-pressed={iiifVisible}
-            // Client-requirement term: the label/tooltip stays "Manuscripts" and is
-            // distinguished by the book icon — never renamed "Books" (CONTEXT.md).
-            aria-label={manuscriptLabel}
-            title={iiifTooNarrow ? undefined : manuscriptLabel}
-            data-tour="manuscripts"
-          >
-            <BookIcon />
-            <span className={toolbarLabelFirstToGo}>{manuscriptLabel}</span>
-          </button>
-        </span>
+        <ManuscriptPicker />
 
         {/* Re-opens the onboarding tour on demand; icon-only, so it stays compact
             at every breakpoint (#125). */}
