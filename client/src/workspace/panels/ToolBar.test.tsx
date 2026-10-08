@@ -1,11 +1,10 @@
-import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ToolBar from "./ToolBar";
 import { ADD_TEXT_TITLE } from "./localDocumentCopy";
 import { toolbarLabelFirstToGo, toolbarLabelLastToGo } from "./buttonStyles";
-import { useDocumentStore } from "../../store/documentStore";
+import { MAX_OPEN_COLUMNS, useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useTourStore } from "../../store/tourStore";
 import { setQuerySourceHighlight } from "../../tei/highlight";
@@ -29,6 +28,7 @@ const teiDoc: Document = { id: "doc-a", title: "A", format: "tei", content: teiC
 beforeEach(() => {
     useDocumentStore.setState({
         openDocuments: [teiDoc],
+        openManuscripts: [],
         visibleDocumentIds: ["doc-a"],
         activeDocumentId: "doc-a",
     });
@@ -61,18 +61,10 @@ afterEach(() => {
 });
 
 // The ToolBar holds the AccountMenu, which links to /account/login — so it now needs a router.
-// The manuscript props default to the wide case: panel shown, viewport roomy enough for it.
-function renderToolBar(
-    props: Partial<React.ComponentProps<typeof ToolBar>> = {},
-) {
+function renderToolBar() {
     return render(
         <MemoryRouter>
-            <ToolBar
-                onToggleIIIF={() => {}}
-                iiifVisible
-                iiifTooNarrow={false}
-                {...props}
-            />
+            <ToolBar />
         </MemoryRouter>,
     );
 }
@@ -141,64 +133,44 @@ describe("ToolBar manuscript control label (#124)", () => {
   it("keeps an accessible name and tooltip of 'Manuscripts', never 'Books'", () => {
     renderToolBar();
 
-    // The panel is on screen here, so the control reads "Hide Manuscripts".
-    const btn = screen.getByRole("button", { name: /Manuscripts/ });
-    expect(btn).toHaveAttribute("title", expect.stringMatching(/Manuscripts/));
-    expect(btn.getAttribute("title")).not.toMatch(/Book/i);
+    const btn = screen.getByRole("button", { name: "Manuscripts" });
+    expect(btn).toHaveAttribute("title", "Manuscripts");
     expect(
       screen.queryByRole("button", { name: /Books?/i }),
     ).not.toBeInTheDocument();
   });
 });
 
-// Below the narrow breakpoint the panel auto-hides (ADR-0011), so a toggle that still
-// flips claims a state it cannot deliver — it must say so instead (#160).
-describe("ToolBar manuscript control at narrow widths (#160)", () => {
-  it("disables the control and explains that the window must be widened", () => {
-    renderToolBar({ iiifVisible: false, iiifTooNarrow: true });
+// The Manuscripts control is an opener now, not a toggle for a side panel, and the
+// narrow-window auto-hide it was disabled for is gone (ADR-0025, superseding #160).
+describe("ToolBar manuscript opener (#201)", () => {
+  it("is a dropdown trigger, not a pressed toggle", () => {
+    renderToolBar();
 
-    const btn = screen.getByRole("button", { name: /Manuscripts/ });
-    expect(btn).toBeDisabled();
-    expect(btn.className).toMatch(/disabled:text-gray-300/);
-    // The tooltip lives on the wrapper: Chrome swallows hover on a disabled control,
-    // so a `title` on the button itself would never surface there.
-    expect(btn.parentElement).toHaveAttribute(
+    const btn = screen.getByRole("button", { name: "Manuscripts" });
+    expect(btn).not.toHaveAttribute("aria-pressed");
+    expect(btn).toHaveAttribute("aria-expanded", "false");
+  });
+
+  // jsdom has no viewport to narrow, and no media query is read any more: the
+  // control is simply never disabled and never explains itself away.
+  it("is enabled, with no 'widen the window' explanation", () => {
+    renderToolBar();
+
+    const btn = screen.getByRole("button", { name: "Manuscripts" });
+    expect(btn).toBeEnabled();
+    expect(btn.parentElement).not.toHaveAttribute(
       "title",
       expect.stringMatching(/widen/i),
     );
-    // ...and the button drops its own title, which Firefox *does* render on a
-    // disabled control and would show instead of the explanation.
-    expect(btn).not.toHaveAttribute("title");
   });
 
-  it("reads 'Show Manuscripts' and is unpressed while the panel is force-hidden", () => {
-    renderToolBar({ iiifVisible: false, iiifTooNarrow: true });
+  it("opens the manuscript list from the toolbar", () => {
+    renderToolBar();
 
-    const btn = screen.getByRole("button", { name: "Show Manuscripts" });
-    expect(btn).toHaveAttribute("aria-pressed", "false");
-  });
+    fireEvent.click(screen.getByRole("button", { name: "Manuscripts" }));
 
-  // Blocking the click is the whole of the disable: the stored preference is never
-  // touched, which is what lets widening the window restore it (see the layout tests).
-  it("swallows the click instead of toggling the stored preference", () => {
-    const onToggleIIIF = vi.fn();
-
-    renderToolBar({ iiifVisible: false, iiifTooNarrow: true, onToggleIIIF });
-    fireEvent.click(screen.getByRole("button", { name: /Manuscripts/ }));
-
-    expect(onToggleIIIF).not.toHaveBeenCalled();
-  });
-
-  it("stays clickable and pressed once the window is wide enough", () => {
-    const onToggleIIIF = vi.fn();
-
-    renderToolBar({ iiifVisible: true, iiifTooNarrow: false, onToggleIIIF });
-    const btn = screen.getByRole("button", { name: "Hide Manuscripts" });
-    fireEvent.click(btn);
-
-    expect(btn).toBeEnabled();
-    expect(btn).toHaveAttribute("aria-pressed", "true");
-    expect(onToggleIIIF).toHaveBeenCalledOnce();
+    expect(screen.getByLabelText("Book of Lismore (UCC)")).toBeInTheDocument();
   });
 });
 
@@ -209,10 +181,10 @@ describe("ToolBar staged label collapse (#174)", () => {
   const labelSpan = (text: string | RegExp) =>
     screen.getByText(text, { selector: "span" });
 
-  it("drops the manuscript toggle's label first — its state is already in the colour and aria-pressed", () => {
+  it("drops the Manuscripts label first — the book beside the ▾ already says it", () => {
     renderToolBar();
 
-    expect(labelSpan("Hide Manuscripts")).toHaveClass(toolbarLabelFirstToGo);
+    expect(labelSpan("Manuscripts ▾")).toHaveClass(toolbarLabelFirstToGo);
   });
 
   it("drops Add Text at the same stage — the file-plus icon says the same thing", () => {
@@ -315,6 +287,24 @@ describe("ToolBar search button", () => {
         ]);
     });
 
+    //Test: a Manuscript Column is outside search, and so outside the Search
+    //History entry built from the run (ADR-0025)
+    it("never searches a manuscript column", () => {
+        const startSearchRun = vi.fn();
+        useSearchStore.setState({ startSearchRun });
+        useDocumentStore.setState({
+            openManuscripts: ["book-of-lismore"],
+            visibleDocumentIds: ["ms-book-of-lismore", "doc-a"],
+        });
+
+        renderToolBar();
+        fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+        expect(startSearchRun).toHaveBeenCalledWith([
+            { docId: 1, clientDocId: "doc-a" },
+        ]);
+    });
+
     //Test: the query-source mark points at text an EARLIER selection search ran
     //on — a typed search did not come from it, so it must not stay lit (#95)
     it("clears the query-source highlight left by an earlier selection search", () => {
@@ -367,5 +357,26 @@ describe("ToolBar Add Text tooltip (#175)", () => {
         const tooltip = addText().getAttribute("title")!;
         expect(tooltip).not.toMatch(/upload/i);
         expect(tooltip).toMatch(/stay in your browser/i);
+    });
+});
+
+// Add Text reads the same free-slot count as both openers: Manuscript Columns use
+// the strip's width as much as a text does, so they count against the cap (ADR-0025).
+describe("ToolBar Add Text and the shared column cap (#201)", () => {
+    it("greys out Add Text when manuscripts take the last slot", () => {
+        const fillers: Document[] = Array.from(
+            { length: MAX_OPEN_COLUMNS - 1 },
+            (_, i) => ({ id: `doc-${i}`, title: `${i}`, format: "txt", content: "x" }),
+        );
+        useDocumentStore.setState({
+            openDocuments: fillers,
+            openManuscripts: ["book-of-lismore"],
+        });
+
+        renderToolBar();
+
+        expect(screen.getByRole("button", { name: "Add Text" }).className).toMatch(
+            /cursor-not-allowed/,
+        );
     });
 });

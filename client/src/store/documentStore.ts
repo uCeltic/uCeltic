@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Document, DocumentId } from "../types/document";
 import type { TEIDoc } from "../types/tei";
 import { logEvent } from "../api/log";
+import type { ManuscriptId } from "../workspace/manuscripts";
 
 // shared {doc_id, title} payload shape for open/close events
 function logDocEvent(
@@ -12,7 +13,9 @@ function logDocEvent(
   logEvent(eventType, { doc_id: id, title });
 }
 
-export const MAX_OPEN_DOCUMENTS = 8;
+// One cap for every Column, whatever it holds: it protects the strip's width,
+// which a Manuscript uses as much as a text does (CONTEXT.md → Column, ADR-0025).
+export const MAX_OPEN_COLUMNS = 8;
 export const MAX_VISIBLE_DOCUMENTS = 8;
 
 // This Zustand store is the shared "document workspace" state.
@@ -25,7 +28,15 @@ interface DocumentStore {
   // Full list of documents opened in this browser session.
   openDocuments: Document[];
 
-  // IDs of open documents that should currently be shown in the workspace UI.
+  // The Manuscripts open as Columns, in the order they were opened. Kept apart
+  // from `openDocuments` because a Manuscript is not a Document — it has no
+  // text, so search, the Tag Filter and Search History, which all read the
+  // documents, never see one (ADR-0025).
+  openManuscripts: ManuscriptId[];
+
+  // The Columns on screen, in strip order: document ids, and
+  // `manuscriptColumnId`s for the Manuscripts, interleaved however the reader
+  // dragged them.
   visibleDocumentIds: DocumentId[];
 
   // The document the user is selected.
@@ -38,6 +49,26 @@ interface DocumentStore {
   setActiveDocumentId: (id: DocumentId | null) => void;
   addDocument: (title: string, content: string) => void;
   addTEIDocument: (doc: TEIDoc) => void;
+  openManuscript: (id: ManuscriptId) => void;
+  closeManuscript: (id: ManuscriptId) => void;
+}
+
+/** The Column id a Manuscript is opened under. */
+export function manuscriptColumnId(id: ManuscriptId): DocumentId {
+  return `ms-${id}`;
+}
+
+/**
+ * How many more Columns of either kind the strip has room for. Every opener
+ * reads this one number, so a Manuscript and a Document can never each think
+ * the last slot is theirs.
+ */
+export function freeColumnSlots(
+  state: Pick<DocumentStore, "openDocuments" | "openManuscripts">,
+): number {
+  return (
+    MAX_OPEN_COLUMNS - state.openDocuments.length - state.openManuscripts.length
+  );
 }
 
 // A document search can actually run against: the TEI variant of Document, so
@@ -128,11 +159,11 @@ export interface TEIOpenPlan {
  * existing column rather than adding one.
  */
 export function planTEIOpen(
-  state: Pick<DocumentStore, "openDocuments">,
+  state: Pick<DocumentStore, "openDocuments" | "openManuscripts">,
   requestedIds: number[],
 ): TEIOpenPlan {
   const alreadyOpen = new Set(state.openDocuments.map((doc) => doc.id));
-  let free = MAX_OPEN_DOCUMENTS - state.openDocuments.length;
+  let free = freeColumnSlots(state);
 
   const plan: TEIOpenPlan = { toOpen: [], alreadyOpen: [], skipped: [] };
   // A repeated id is one document: it must not be fetched twice, nor inflate
@@ -155,6 +186,8 @@ const initialDocuments: Document[] = [];
 export const useDocumentStore = create<DocumentStore>((set) => ({
   // Initial state:
   openDocuments: initialDocuments,
+  // None is open on load (ADR-0025): the reader asks for a Manuscript.
+  openManuscripts: [],
   visibleDocumentIds: initialDocuments
     .slice(0, MAX_VISIBLE_DOCUMENTS)
     .map((doc) => doc.id),
@@ -203,7 +236,7 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
   // as a string, while TEI documents store a parsed TEIDoc object.
   addDocument: (title, content) =>
     set((state) => {
-      if (state.openDocuments.length >= MAX_OPEN_DOCUMENTS) {
+      if (freeColumnSlots(state) <= 0) {
         return state;
       }
 
@@ -253,7 +286,7 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
             : [...state.visibleDocumentIds, id],
         };
       }
-      if (state.openDocuments.length >= MAX_OPEN_DOCUMENTS) {
+      if (freeColumnSlots(state) <= 0) {
         return state;
       }
 
@@ -282,6 +315,38 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
         openDocuments: newOpen,
         visibleDocumentIds: newVisible,
         activeDocumentId: id,
+      };
+    }),
+
+  // Open a Manuscript as a Column — at most once, like a TEI document: asking
+  // for one already open brings its Column forward instead (ADR-0025).
+  openManuscript: (manuscriptId) =>
+    set((state) => {
+      const id = manuscriptColumnId(manuscriptId);
+      if (state.openManuscripts.includes(manuscriptId)) {
+        return {
+          activeDocumentId: id,
+          visibleDocumentIds: state.visibleDocumentIds.includes(id)
+            ? state.visibleDocumentIds
+            : [...state.visibleDocumentIds, id],
+        };
+      }
+      if (freeColumnSlots(state) <= 0) {
+        return state;
+      }
+      return {
+        openManuscripts: [...state.openManuscripts, manuscriptId],
+        visibleDocumentIds: [...state.visibleDocumentIds, id],
+        activeDocumentId: id,
+      };
+    }),
+
+  closeManuscript: (manuscriptId) =>
+    set((state) => {
+      const id = manuscriptColumnId(manuscriptId);
+      return {
+        openManuscripts: state.openManuscripts.filter((m) => m !== manuscriptId),
+        visibleDocumentIds: state.visibleDocumentIds.filter((v) => v !== id),
       };
     }),
 }));

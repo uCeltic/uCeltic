@@ -146,6 +146,17 @@ describe("selectionSearchFired", () => {
 describe("columnsReordered", () => {
   const opened = [column("a"), column("b"), column("c")];
 
+  // A Manuscript Column sits in the same strip but is no document: opening
+  // one appends its id to the strip and nothing to `openDocuments` (#201).
+  it("is false when a manuscript column was simply opened after the documents", () => {
+    expect(
+      columnsReordered({
+        openDocuments: opened,
+        visibleDocumentIds: ["a", "ms-book-of-lismore", "b", "c"],
+      }),
+    ).toBe(false);
+  });
+
   it("is false while the columns stand in the order they were opened", () => {
     expect(
       columnsReordered({

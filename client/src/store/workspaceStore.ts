@@ -29,10 +29,6 @@ interface WorkspaceStore {
   fontSize: number
   increaseFontSize: () => void;
   decreaseFontSize: () => void;
-  
-  // IIIF
-  showIIIF: boolean
-  toggleIIIF: () => void
 
   // The Work whose manuscripts the opener is showing (#152). Single-select:
   // the menu shows one work's manuscripts expanded at a time, and the same
@@ -63,7 +59,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   status: "ready",
   statusText: "Ready",
   fontSize: DEFAULT_FONT_SIZE,
-  showIIIF: true,
   selectedWorkId: null,
   selectedEntityId: null,
   entityIndexByDocument: {},
@@ -89,12 +84,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       const fontSize = Math.max(state.fontSize - 2, 10);
       logFontSizeChanged(state.fontSize, fontSize);
       return { fontSize };
-    }),
-  toggleIIIF: () =>
-    set((state) => {
-      const showIIIF = !state.showIIIF;
-      logEvent("iiif_toggled", { on: showIIIF });
-      return { showIIIF };
     }),
   setSelectedEntityId: (id) => {
     if (get().selectedEntityId === id) return;

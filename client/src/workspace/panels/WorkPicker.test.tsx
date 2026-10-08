@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import WorkPicker from "./WorkPicker";
 import { toolbarLabelLastToGo } from "./buttonStyles";
-import { useDocumentStore, MAX_OPEN_DOCUMENTS } from "../../store/documentStore";
+import { useDocumentStore, MAX_OPEN_COLUMNS } from "../../store/documentStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import type { TEICatalogEntry, TEIDoc, TEIWork } from "../../types/tei";
 
@@ -65,6 +65,7 @@ beforeEach(() => {
     mockedFetch.mockReset().mockImplementation(async (id: number) => doc(id, `Doc ${id}`));
     useDocumentStore.setState({
         openDocuments: [],
+        openManuscripts: [],
         visibleDocumentIds: [],
         activeDocumentId: null,
     });
@@ -147,7 +148,7 @@ describe("WorkPicker", () => {
     //saying so, never the alert() this control replaces
     it("opens what fits and says what it left out", async () => {
         const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
-        fillWith(MAX_OPEN_DOCUMENTS - 1);
+        fillWith(MAX_OPEN_COLUMNS - 1);
 
         await openMenu();
         await expandWork(/Acallam na Senórach/);
@@ -157,14 +158,14 @@ describe("WorkPicker", () => {
             expect(useWorkspaceStore.getState().statusText).toMatch(/1 of 3/),
         );
         expect(useDocumentStore.getState().openDocuments).toHaveLength(
-            MAX_OPEN_DOCUMENTS,
+            MAX_OPEN_COLUMNS,
         );
         expect(alert).not.toHaveBeenCalled();
     });
 
     //Test: a full workspace opens nothing and says why
     it("opens nothing when every column is taken", async () => {
-        fillWith(MAX_OPEN_DOCUMENTS);
+        fillWith(MAX_OPEN_COLUMNS);
 
         await openMenu();
         await expandWork(/Acallam na Senórach/);
@@ -178,7 +179,7 @@ describe("WorkPicker", () => {
 
     //Test: a manuscript that cannot fit cannot be ticked either
     it("refuses a tick there is no room for", async () => {
-        fillWith(MAX_OPEN_DOCUMENTS - 1);
+        fillWith(MAX_OPEN_COLUMNS - 1);
 
         await openMenu();
         await expandWork(/Acallam na Senórach/);
@@ -186,6 +187,19 @@ describe("WorkPicker", () => {
 
         expect(screen.getByLabelText("G 126")).toBeDisabled();
         expect(screen.getByLabelText("Laud Misc. 610")).toBeEnabled();
+    });
+
+    //Test: an open Manuscript is a Column too — it takes a slot from the same
+    //cap of eight, so the Works menu must see it (ADR-0025)
+    it("counts open manuscripts against the free slots", async () => {
+        fillWith(MAX_OPEN_COLUMNS - 2);
+        useDocumentStore.getState().openManuscript("book-of-lismore");
+
+        await openMenu();
+        await expandWork(/Acallam na Senórach/);
+        fireEvent.click(screen.getByLabelText("Laud Misc. 610"));
+
+        expect(screen.getByLabelText("G 126")).toBeDisabled();
     });
 
     //Test: shakespear.xml and the serafin samples belong to no work and would

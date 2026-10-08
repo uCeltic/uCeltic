@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fetchTEIDoc, listTEIDocs } from "../../api/tei";
 import {
-  MAX_OPEN_DOCUMENTS,
+  freeColumnSlots,
   planTEIOpen,
   teiDocumentId,
   useDocumentStore,
@@ -26,8 +26,8 @@ import { LayersIcon } from "./icons";
  * to compare (#152).
  *
  * "Version" and not "manuscript": a Manuscript here is the physical book, shown
- * as page images in the IIIF panel, and the toolbar already has a control by
- * that name (CONTEXT.md → Manuscript).
+ * as page images in a Column of its own, and the toolbar already has a control
+ * by that name (CONTEXT.md → Manuscript).
  *
  * It is an **opener**, not a search scope: search runs over the columns that end
  * up on screen (ADR-0015). The one thing the selection does beyond opening is
@@ -58,6 +58,7 @@ export default function WorkPicker() {
   const setSelectedWorkId = useWorkspaceStore((s) => s.setSelectedWorkId);
   const setStatusText = useWorkspaceStore((s) => s.setStatusText);
   const openDocuments = useDocumentStore((s) => s.openDocuments);
+  const openManuscripts = useDocumentStore((s) => s.openManuscripts);
   const addTEIDocument = useDocumentStore((s) => s.addTEIDocument);
   const setActiveDocumentId = useDocumentStore((s) => s.setActiveDocumentId);
 
@@ -67,7 +68,8 @@ export default function WorkPicker() {
 
   // Slots a tick would have to spend. A document that is already open costs
   // nothing — re-opening it re-focuses its column — so it never blocks a tick.
-  const freeSlots = MAX_OPEN_DOCUMENTS - openDocuments.length;
+  // Open Manuscripts take slots too: one cap for every Column (ADR-0025).
+  const freeSlots = freeColumnSlots({ openDocuments, openManuscripts });
   const isOpen = (id: number) =>
     openDocuments.some((doc) => doc.id === teiDocumentId(id));
   const spend = ticked.filter((id) => !isOpen(id)).length;
@@ -112,7 +114,7 @@ export default function WorkPicker() {
    * screen already is re-focused, not fetched, and never claimed as opened.
    */
   async function openDocs(ids: number[]) {
-    const plan = planTEIOpen({ openDocuments }, ids);
+    const plan = planTEIOpen({ openDocuments, openManuscripts }, ids);
     // How many of the request needed a column at all — the denominator of the
     // shortfall, so re-ticking an open document cannot inflate it.
     const needingColumn = plan.toOpen.length + plan.skipped.length;

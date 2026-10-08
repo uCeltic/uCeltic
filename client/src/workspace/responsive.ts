@@ -8,26 +8,21 @@
  *
  * Wide (≥ xl, 1280px)      → every toolbar control shows its text label.
  * Below xl                 → Manuscripts, Add Text and Advanced go icon-only: their
- *                            labels repeat their glyph and their own pressed state.
+ *                            labels repeat their glyph.
  * Narrower still (< lg)     → Tags, Works and Search follow — the Tag Filter and Works
  *                            labels name the *selected* entity and work, so they are
- *                            the last thing the bar gives up — and the IIIF Manuscript
- *                            panel auto-hides.
+ *                            the last thing the bar gives up.
  *
  * The text→icon swap is pure CSS: labels carry Tailwind's `xl:`/`lg:` variants from
- * `buttonStyles.ts`, so there is nothing to configure here for it — the query below is
- * what the layout listens on to auto-hide the IIIF panel. Keep the `lg`/`xl` values
- * here in step with the Tailwind classes used in the toolbar.
+ * `buttonStyles.ts`, so there is nothing to configure here for it.
  *
- * The document area below it answers to no breakpoint at all: the columns take a
- * floor and the strip scrolls, at every width alike.
+ * The column strip below it answers to no breakpoint at all: every Column — a
+ * Document's or a Manuscript's — takes a floor and the strip scrolls, at every width
+ * alike. Manuscripts no longer auto-hide below `lg` (ADR-0025).
  */
 
-// Tailwind's `lg` breakpoint is 1024px; the panel hides once the viewport is below it.
-export const IIIF_AUTOHIDE_QUERY = "(max-width: 1023px)";
-
 /**
- * The floor a text-viewer column is never squeezed below (ADR-0019).
+ * The floor a Column — text or Manuscript — is never squeezed below (ADR-0019).
  *
  * Columns split the document area evenly while they all fit; once the total
  * would push any of them under this width they stop shrinking and the column

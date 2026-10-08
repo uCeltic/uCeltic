@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   useDocumentStore,
-  MAX_OPEN_DOCUMENTS,
+  MAX_OPEN_COLUMNS,
   getSearchableDocuments,
   isSearchableDocument,
   planTEIOpen,
+  freeColumnSlots,
+  manuscriptColumnId,
 } from "./documentStore";
 import { logEvent } from "../api/log";
 import type { TEIDoc } from "../types/tei";
@@ -34,6 +36,7 @@ beforeEach(() => {
   mockedLogEvent.mockReset();
   useDocumentStore.setState({
     openDocuments: [],
+    openManuscripts: [],
     visibleDocumentIds: [],
     activeDocumentId: null,
   });
@@ -55,18 +58,18 @@ describe("documentStore.addDocument", () => {
     expect(s.visibleDocumentIds).toContain(s.openDocuments[0].id);
   });
 
-  //Test: refuses to open more than MAX_OPEN_DOCUMENTS
-  it("refuses to open more than MAX_OPEN_DOCUMENTS", () => {
-    for (let i = 0; i < MAX_OPEN_DOCUMENTS; i++) {
+  //Test: refuses to open more than MAX_OPEN_COLUMNS
+  it("refuses to open more than MAX_OPEN_COLUMNS", () => {
+    for (let i = 0; i < MAX_OPEN_COLUMNS; i++) {
       useDocumentStore.getState().addDocument(`doc ${i}`, "x");
     }
     expect(useDocumentStore.getState().openDocuments).toHaveLength(
-      MAX_OPEN_DOCUMENTS,
+      MAX_OPEN_COLUMNS,
     );
 
     useDocumentStore.getState().addDocument("overflow", "x");
     expect(useDocumentStore.getState().openDocuments).toHaveLength(
-      MAX_OPEN_DOCUMENTS,
+      MAX_OPEN_COLUMNS,
     );
   });
 
@@ -82,9 +85,9 @@ describe("documentStore.addDocument", () => {
     });
   });
 
-  //Test: hitting the MAX_OPEN_DOCUMENTS cap logs nothing for the rejected document
+  //Test: hitting the MAX_OPEN_COLUMNS cap logs nothing for the rejected document
   it("does not log document_opened when the cap rejects the document", () => {
-    for (let i = 0; i < MAX_OPEN_DOCUMENTS; i++) {
+    for (let i = 0; i < MAX_OPEN_COLUMNS; i++) {
       useDocumentStore.getState().addDocument(`doc ${i}`, "x");
     }
     mockedLogEvent.mockClear();
@@ -264,13 +267,15 @@ describe("getSearchableDocuments", () => {
 // Occupy n columns with text documents. Set directly rather than through
 // addDocument, whose `doc-${Date.now()}` ids collide within one millisecond.
 function fillWith(n: number) {
+  const openDocuments = Array.from({ length: n }, (_, i) => ({
+    id: `doc-filler-${i}`,
+    title: `doc ${i}`,
+    format: "txt" as const,
+    content: "x",
+  }));
   useDocumentStore.setState({
-    openDocuments: Array.from({ length: n }, (_, i) => ({
-      id: `doc-filler-${i}`,
-      title: `doc ${i}`,
-      format: "txt" as const,
-      content: "x",
-    })),
+    openDocuments,
+    visibleDocumentIds: openDocuments.map((d) => d.id),
   });
 }
 
@@ -286,7 +291,7 @@ describe("planTEIOpen", () => {
   });
 
   it("fills the remaining slots in request order and reports the rest", () => {
-    fillWith(MAX_OPEN_DOCUMENTS - 2);
+    fillWith(MAX_OPEN_COLUMNS - 2);
 
     const plan = planTEIOpen(useDocumentStore.getState(), [1, 2, 3, 4]);
 
@@ -298,7 +303,7 @@ describe("planTEIOpen", () => {
   // costs no slot — counting it as one would refuse an open that fits — and it
   // is reported apart from the documents that really were opened.
   it("does not spend a slot on a document that is already open", () => {
-    fillWith(MAX_OPEN_DOCUMENTS - 2);
+    fillWith(MAX_OPEN_COLUMNS - 2);
     useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
     // one free slot left, and doc 1 is open
 
@@ -315,11 +320,108 @@ describe("planTEIOpen", () => {
   });
 
   it("skips everything when the workspace is full", () => {
-    fillWith(MAX_OPEN_DOCUMENTS);
+    fillWith(MAX_OPEN_COLUMNS);
 
     const plan = planTEIOpen(useDocumentStore.getState(), [1, 2]);
 
     expect(plan.toOpen).toEqual([]);
     expect(plan.skipped).toEqual([1, 2]);
+  });
+});
+
+// A Manuscript is a Column like any Document: it takes a slot in the one
+// strip, is opened at most once, and closes with its own ✕ (ADR-0025).
+describe("documentStore manuscript columns", () => {
+  it("opens a manuscript as a visible, active column", () => {
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+
+    const s = useDocumentStore.getState();
+    const columnId = manuscriptColumnId("book-of-lismore");
+    expect(s.openManuscripts).toEqual(["book-of-lismore"]);
+    expect(s.visibleDocumentIds).toEqual([columnId]);
+    expect(s.activeDocumentId).toBe(columnId);
+  });
+
+  it("puts two manuscripts in the strip after the documents already there", () => {
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+    useDocumentStore.getState().openManuscript("ucd-ms-a-4");
+
+    expect(useDocumentStore.getState().visibleDocumentIds).toEqual([
+      "doc-tei-1",
+      manuscriptColumnId("book-of-lismore"),
+      manuscriptColumnId("ucd-ms-a-4"),
+    ]);
+  });
+
+  it("re-focuses an open manuscript instead of adding a second column", () => {
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
+
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+
+    const s = useDocumentStore.getState();
+    expect(s.openManuscripts).toEqual(["book-of-lismore"]);
+    expect(s.visibleDocumentIds).toHaveLength(2);
+    expect(s.activeDocumentId).toBe(manuscriptColumnId("book-of-lismore"));
+  });
+
+  it("closes a manuscript column", () => {
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+    useDocumentStore.getState().closeManuscript("book-of-lismore");
+
+    const s = useDocumentStore.getState();
+    expect(s.openManuscripts).toEqual([]);
+    expect(s.visibleDocumentIds).toEqual([]);
+  });
+
+  it("is not a document: search and the Tag Filter never see it", () => {
+    useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
+    useDocumentStore.getState().openManuscript("book-of-lismore");
+
+    const s = useDocumentStore.getState();
+    expect(s.openDocuments.map((d) => d.id)).toEqual(["doc-tei-1"]);
+    expect(getSearchableDocuments(s).map((d) => d.id)).toEqual(["doc-tei-1"]);
+  });
+
+  describe("one cap of eight, shared with documents", () => {
+    it("counts manuscripts and documents against the same free slots", () => {
+      fillWith(MAX_OPEN_COLUMNS - 2);
+      useDocumentStore.getState().openManuscript("book-of-lismore");
+
+      expect(freeColumnSlots(useDocumentStore.getState())).toBe(1);
+    });
+
+    it("refuses a manuscript when eight columns are open", () => {
+      fillWith(MAX_OPEN_COLUMNS);
+
+      useDocumentStore.getState().openManuscript("book-of-lismore");
+
+      const s = useDocumentStore.getState();
+      expect(s.openManuscripts).toEqual([]);
+      expect(s.visibleDocumentIds).toHaveLength(MAX_OPEN_COLUMNS);
+    });
+
+    it("refuses a document when manuscripts fill the last slot", () => {
+      fillWith(MAX_OPEN_COLUMNS - 1);
+      useDocumentStore.getState().openManuscript("book-of-lismore");
+
+      useDocumentStore.getState().addTEIDocument(makeTEIDoc(1));
+      useDocumentStore.getState().addDocument("Notes", "x");
+
+      expect(useDocumentStore.getState().openDocuments).toHaveLength(
+        MAX_OPEN_COLUMNS - 1,
+      );
+    });
+
+    it("plans a TEI open against the slots manuscripts leave", () => {
+      fillWith(MAX_OPEN_COLUMNS - 3);
+      useDocumentStore.getState().openManuscript("book-of-lismore");
+
+      const plan = planTEIOpen(useDocumentStore.getState(), [1, 2, 3]);
+
+      expect(plan.toOpen).toEqual([1, 2]);
+      expect(plan.skipped).toEqual([3]);
+    });
   });
 });

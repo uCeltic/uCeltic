@@ -7,7 +7,7 @@ import {
     markDragReorderHintDismissed,
 } from "./dragReorderHint";
 import { useTourStore } from "../../store/tourStore";
-import { useDocumentStore } from "../../store/documentStore";
+import { manuscriptColumnId, useDocumentStore } from "../../store/documentStore";
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
@@ -18,6 +18,14 @@ import type { TEIDoc, TEINode } from "../../types/tei";
 import type { EntityMenuEntry } from "../../tei/entityMenu";
 
 vi.mock("../../api/search", () => ({ searchDocument: vi.fn() }));
+
+// OpenSeadragon needs a real canvas; the viewer has its own tests. Here it only
+// has to say which book it was handed.
+vi.mock("./ManuscriptViewer", () => ({
+    default: ({ manuscript }: { manuscript: { id: string } }) => (
+        <div data-testid="manuscript-viewer">{manuscript.id}</div>
+    ),
+}));
 const mockedSearch = vi.mocked(searchDocument);
 
 // The Tag Filter's menu, mocked at the seam DocumentArea reads it from. The
@@ -139,6 +147,7 @@ beforeEach(() => {
     useTourStore.setState({ isOpen: false, manualIndex: 0, latched: [] });
     useDocumentStore.setState({
         openDocuments: [doc],
+        openManuscripts: [],
         visibleDocumentIds: ["doc-1"],
         activeDocumentId: "doc-1",
     });
@@ -1015,5 +1024,114 @@ describe("a Local Document says it is reading-only (#175)", () => {
         render(<DocumentArea />);
 
         expect(document.body.textContent).not.toMatch(/upload/i);
+    });
+});
+
+// A Manuscript opens as a Column in the same strip as the Documents (ADR-0025):
+// the same header, its page images inside, and none of a text's furniture.
+describe("Manuscript Columns (#201)", () => {
+    const lismore = manuscriptColumnId("book-of-lismore");
+    const ucd = manuscriptColumnId("ucd-ms-a-4");
+
+    function openWithManuscripts() {
+        useDocumentStore.setState({
+            openDocuments: [doc, localDoc],
+            openManuscripts: ["book-of-lismore", "ucd-ms-a-4"],
+            visibleDocumentIds: ["doc-1", lismore, "doc-local", ucd],
+        });
+    }
+
+    const manuscriptColumn = (id: string) =>
+        document.querySelector<HTMLElement>(`[data-manuscript-column-id="${id}"]`)!;
+
+    it("renders each open manuscript as its own column, with its viewer", () => {
+        openWithManuscripts();
+        render(<DocumentArea />);
+
+        expect(
+            screen.getAllByTestId("manuscript-viewer").map((v) => v.textContent),
+        ).toEqual(["book-of-lismore", "ucd-ms-a-4"]);
+        expect(manuscriptColumn(lismore)).toHaveTextContent("Book of Lismore (UCC)");
+    });
+
+    it("gives it a Document Column's header: grip title button and ✕", () => {
+        openWithManuscripts();
+        render(<DocumentArea />);
+
+        const header = manuscriptColumn(lismore).querySelector("header")!;
+        expect(header.querySelector('[data-tour="column-grip"]')).toHaveTextContent(
+            "Book of Lismore (UCC)",
+        );
+        expect(header).toHaveTextContent("✕");
+    });
+
+    it("sits in the strip in reading order, among the document columns", () => {
+        openWithManuscripts();
+        render(<DocumentArea />);
+
+        const strip = document.querySelector("[data-column-strip]")!;
+        expect(
+            [...strip.children].map(
+                (c) =>
+                    c.getAttribute("data-doc-column-id") ??
+                    c.getAttribute("data-manuscript-column-id"),
+            ),
+        ).toEqual(["doc-1", lismore, "doc-local", ucd]);
+    });
+
+    it("follows a drag like any other column", () => {
+        openWithManuscripts();
+        render(<DocumentArea />);
+
+        act(() => {
+            useDocumentStore
+                .getState()
+                .setVisibleDocumentIds(
+                    computeDragEndReorder(
+                        { active: { id: ucd }, over: { id: "doc-1" } } as never,
+                        useDocumentStore.getState().visibleDocumentIds,
+                    )!,
+                );
+        });
+
+        const strip = document.querySelector("[data-column-strip]")!;
+        expect(strip.firstElementChild).toBe(manuscriptColumn(ucd));
+        // the viewer moved with it rather than being swapped for another book
+        expect(manuscriptColumn(ucd)).toHaveTextContent("ucd-ms-a-4");
+    });
+
+    it("keeps the readable minimum width, like every column (ADR-0019)", () => {
+        openWithManuscripts();
+        render(<DocumentArea />);
+
+        expect(manuscriptColumn(lismore).style.minWidth).toBe(`${COLUMN_MIN_WIDTH_PX}px`);
+    });
+
+    // Page images are self-evidently not searchable text; a chip saying so
+    // would be noise, and a result card would be a claim about a search that
+    // never ran against it (CONTEXT.md → Column).
+    it("carries no Reading only chip and no result card, even mid-search", () => {
+        openWithManuscripts();
+        useSearchStore.setState({ isSearchingByDocument: { "doc-1": true } });
+        render(<DocumentArea />);
+
+        const column = manuscriptColumn(lismore);
+        expect(column).not.toHaveTextContent("Reading only");
+        expect(column.textContent).not.toMatch(/Searching|search results|Result \d/);
+    });
+
+    it("closes with its ✕ and leaves the other columns alone", () => {
+        vi.spyOn(window, "confirm").mockReturnValue(true);
+        openWithManuscripts();
+        render(<DocumentArea />);
+
+        const close = manuscriptColumn(lismore).querySelector("header")!
+            .lastElementChild as HTMLElement;
+        fireEvent.click(close);
+
+        const s = useDocumentStore.getState();
+        expect(s.openManuscripts).toEqual(["ucd-ms-a-4"]);
+        expect(s.visibleDocumentIds).toEqual(["doc-1", "doc-local", ucd]);
+        expect(document.querySelector(`[data-manuscript-column-id="${lismore}"]`)).toBeNull();
     });
 });

@@ -1,72 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import OpenSeadragon from "openseadragon";
+import type { ManuscriptConfig } from "../manuscripts";
 
 
-type ManuscriptSource =
-  | {
-    kind: "image-api";
-    pageTileUrl: (p: number) => string;
-    totalPages: number;
-    initialPage: number;
-  }
-  | {
-    kind: "manifest";
-    manifestUrl: string;
-    initialPage: number;
-  };
-
-interface ManuscriptConfig {
-  id: string;
-  label: string;
-  source: ManuscriptSource;
-}
-
-// hardcoded: only displays these three manuscripts
-const MANUSCRIPTS: ManuscriptConfig[] = [
-  {
-    id: "book-of-lismore",
-    label: "Book of Lismore (UCC)",
-    source: {
-      kind: "image-api",
-      pageTileUrl: (p) => {
-        const n = String(p).padStart(3, "0");
-        return `https://iiif.isos.dias.ie/iiif/2/UCC%2FUCC_TheBookOfLismore%2F${n}.tif`;
-      },
-      totalPages: 500,
-      initialPage: 325,
-    },
-  },
-  {
-    id: "ucd-ms-a-4",
-    label: "UCD MS A 4",
-    source: {
-      kind: "image-api",
-      pageTileUrl: (p) => {
-        const n = String(p).padStart(2, "0");
-        return `https://iiif.isos.dias.ie/iiif/2/UCD%2FUCD_MS_A_4%2F${n}.tif`;
-      },
-      totalPages: 86,
-      initialPage: 3,
-    },
-  },
-  {
-    id: "bodleian-ms",
-    label: "Bodleian MS Laud Misc. 610",
-    source: {
-      kind: "manifest",
-      manifestUrl:
-        "https://iiif.bodleian.ox.ac.uk/iiif/manifest/cb909a51-5acd-4fee-95ec-51ff09b87676.json",
-      initialPage: 249,
-    },
-  },
-];
-
-
-export default function IIIFPanel() {
-  const [selectedId, setSelectedId] = useState(MANUSCRIPTS[0].id);
-  // derived from the config, like the <select>'s onChange, so the first render
-  // lands on the default manuscript's own opening page rather than page 1
-  const [page, setPage] = useState(MANUSCRIPTS[0].source.initialPage);
+/**
+ * One Manuscript's page images, inside its Column (ADR-0025). One book per
+ * viewer: there is no switcher — changing book is closing this Column and
+ * opening another — so the book is fixed for the viewer's lifetime.
+ *
+ * The OpenSeadragon instance is created once on mount and re-fitted whenever
+ * its box changes, which is what keeps it intact through a drag, a column
+ * resize or the strip scrolling sideways.
+ */
+export default function ManuscriptViewer({
+  manuscript,
+}: {
+  manuscript: ManuscriptConfig;
+}) {
+  const source = manuscript.source;
+  // seeded from the config, so the viewer lands on the book's own opening page
+  // rather than page 1
+  const [page, setPage] = useState(source.initialPage);
   const [canvases, setCanvases] = useState<string[]>([]); // manifest mode: image service URLs
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -83,8 +37,6 @@ export default function IIIFPanel() {
     }
   }, []);
 
-  const manuscript = MANUSCRIPTS.find((m) => m.id === selectedId)!;
-  const source = manuscript.source;
   const totalPages = source.kind === "image-api" ? source.totalPages : canvases.length;
 
   // init OSD once
@@ -156,28 +108,12 @@ export default function IIIFPanel() {
     } else if (canvases.length > 0 && canvases[page - 1]) {
       osdRef.current.open({ tileSource: `${canvases[page - 1]}/info.json` });
     }
-  }, [page, canvases, selectedId, source]);
+  }, [page, canvases, source]);
 
   return (
-    <aside className="flex h-full flex-col bg-white">
-      <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
-        <select
-          value={selectedId}
-          onChange={(e) => {
-            const next = MANUSCRIPTS.find((m) => m.id === e.target.value)!;
-            setSelectedId(next.id);
-            setPage(next.source.initialPage);
-            setCanvases([]);
-          }}
-          className="min-w-0 flex-1 truncate rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-700
- cursor-pointer"
-        >
-          {MANUSCRIPTS.map((m) => (
-            <option key={m.id} value={m.id}>{m.label}</option>
-          ))}
-        </select>
-
-        <div className="ml-2 flex items-center gap-1">
+    <div className="flex min-h-0 flex-1 flex-col bg-white">
+      <div className="flex items-center justify-end border-b border-gray-200 px-3 py-2">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => osdRef.current?.viewport.zoomBy(1.5)}
@@ -208,6 +144,8 @@ cursor-pointer transition-colors"
           <div className="mx-1 h-4 w-px bg-gray-300" />
           <button
             type="button"
+            aria-label="Previous page"
+            title="Previous page"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             className="rounded border border-gray-300 px-2 py-0.5 text-sm text-gray-700 hover:bg-gray-100
 cursor-pointer transition-colors"
@@ -217,6 +155,8 @@ cursor-pointer transition-colors"
           <span className="text-sm text-gray-600">{page}{totalPages > 0 ? ` / ${totalPages}` : ""}</span>
           <button
             type="button"
+            aria-label="Next page"
+            title="Next page"
             onClick={() => setPage((p) => Math.min(totalPages || p, p + 1))}
             className="rounded border border-gray-300 px-2 py-0.5 text-sm text-gray-700 hover:bg-gray-100
 cursor-pointer transition-colors"
@@ -231,6 +171,6 @@ cursor-pointer transition-colors"
       <div className="border-t border-gray-100 px-4 py-1.5 text-xs text-gray-400">
         Scroll to zoom · Drag to pan · Pinch on touchscreen
       </div>
-    </aside>
+    </div>
   );
 }
