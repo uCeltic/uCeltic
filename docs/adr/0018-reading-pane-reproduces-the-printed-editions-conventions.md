@@ -218,3 +218,12 @@ The count that most needed checking was the G126 exception: G126 holds exactly 9
   that read them. Adjacency decides the same 9 cases without looking at a value.
 - **Show both locators and let the reader sort them out.** Rejected: `[fol.124]
   [fol.124ra]` twice on every column break, saying nothing the second does not.
+
+## Amendment — Page Jump (2026-10-08)
+
+The print-edition locator's tooltip no longer names its coordinate system. It
+reads `Stokes_p.70 — click to jump the other columns here`, because the locator
+is now the control for a **Page Jump** (CONTEXT.md), and the tooltip's job is to
+say what a click does. The two systems are still told apart: by the tinted box,
+as section 4 already relies on, and by the tooltip itself, since only a print-
+edition locator offers a jump. The manuscript locator's tooltip is unchanged.

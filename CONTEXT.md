@@ -601,6 +601,31 @@
   _Avoid_: page break (that is the tag, and it carries either coordinate system);
   edition (a Version is the app's word for one witness of a Work).
 
+  ### Page Jump
+
+  **Clicking a Print-Edition Locator in one column brings every other open
+  column of the same Work to that same page of Stokes**, so the Versions can be
+  read side by side from one shared reference point. Each column that has the
+  page lines it up at the height it sits in the clicked column; the clicked
+  column itself does not move.
+
+  **Matched verbatim.** `Stokes_p.73` matches only `Stokes_p.73`. No page number
+  is parsed out, and a column that lacks the page is never sent to the "nearest"
+  one, for the same reason the locator is shown verbatim (Print-Edition Locator,
+  above). A column that lacks the page stays where it is and says so inside
+  itself, with a notice the reader can close; the notice is cleared or replaced
+  by the next Page Jump. The clicked column speaks up only when no other column
+  of its Work is open, so a click is never answered with nothing.
+
+  **Print edition only.** A Manuscript Locator (`[fol.124]`) does not jump: each
+  manuscript numbers its own leaves, so there is no shared page to jump to.
+
+  **Only moves the columns.** A Page Jump leaves each column's current search
+  result and Tag Filter occurrence where they were, and is not a search: it
+  never reaches Search History.
+  _Avoid_: sync, scroll sync (the columns do not stay coupled: one click, one
+  jump); Stokes Jump (Stokes is the edition in the data, not the action).
+
   ### Built-in Corpus
 
   The Irish TEI Documents that **ship in the repository** (`backend/tei/`) for an
