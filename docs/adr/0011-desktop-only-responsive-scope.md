@@ -36,6 +36,12 @@
 > the desktop-only scope, the client-requirement wording, the hamburger menu —
 > is unchanged.
 
+> **Update (2026-10-07).** "Narrower still → the IIIF Manuscript panel
+> auto-hides" no longer applies, nor does the 2026-08-06 disabled-toggle update:
+> there is no panel. [ADR-0025](0025-manuscripts-open-as-columns.md) opens a
+> Manuscript as a Column, which follows ADR-0019 like every other Column. The
+> desktop-only scope and the toolbar's staged labels are unchanged.
+
 ## Context
 
 The workspace is built for **desktop browsers only**. "Responsive" here means
