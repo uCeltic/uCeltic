@@ -151,7 +151,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "navigate-results",
     anchors: ["result-nav"],
     title: "Move between the matches",
-    body: "← and → step through that column's matches, and the text scrolls to each one. Each column steps through its own — they are different manuscripts, and their matches are not the same passages.",
+    body: "← and → step through that column's matches, and the text scrolls to each one. Each column steps through its own — they are different versions, and their matches are not the same passages.",
     gate: (s) => s.resultNavigated,
   },
   {
