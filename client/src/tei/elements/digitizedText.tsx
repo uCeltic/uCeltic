@@ -16,8 +16,10 @@ const MANUSCRIPT_LOCATOR = "mx-1 font-bold select-none";
 
 // A tinted box and no brackets: a page of Stokes's printed edition, a different
 // coordinate system from the manuscript's. The box rather than the brackets is
-// what tells the two apart on the page.
-const PRINT_EDITION_LOCATOR = "mx-1 rounded bg-stone-200 px-1 select-none";
+// what tells the two apart on the page. It is also the control for a Page Jump
+// (#198), hence the pointer and the hover.
+const PRINT_EDITION_LOCATOR =
+  "mx-1 cursor-pointer rounded bg-stone-200 px-1 select-none hover:bg-stone-300";
 
 export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
   // Two coordinate systems, told apart by which attribute the break carries.
@@ -44,18 +46,28 @@ export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
   // and the column locator already says everything the page locator said. It
   // stays in the DOM under `hidden`, because ADR-0016's surviving premise is
   // that the markup must be present — `abbr` and `rdg` are hidden the same way.
-  const className = followedByCb
-    ? "hidden"
-    : xmlId
-      ? PRINT_EDITION_LOCATOR
+  //
+  // Only a manuscript page is covered that way. A page of Stokes is a different
+  // coordinate system the `cb` says nothing about, and it is the control for a
+  // Page Jump, which needs it on screen to line up and flash (#198).
+  const className = xmlId
+    ? PRINT_EDITION_LOCATOR
+    : followedByCb
+      ? "hidden"
       : MANUSCRIPT_LOCATOR;
 
-  // The tooltip names the coordinate system, not the tag. "Page break" is what
-  // `pb` is; it is not what the reader is being handed, and on the `xml:id`
-  // branch it would call a page of a modern printed book a break in the
-  // manuscript (CONTEXT.md → Print-Edition Locator, _Avoid_).
+  // The tooltip says what the reader is being handed, not the tag. "Page break"
+  // is what `pb` is; on the `xml:id` branch it would call a page of a modern
+  // printed book a break in the manuscript (CONTEXT.md → Print-Edition Locator,
+  // _Avoid_). A print-edition locator is the control for a Page Jump, so its
+  // tooltip says what a click does; the tinted box is what names its coordinate
+  // system, and only this locator offers a jump (ADR-0018 amendment).
+  //
+  // Only the look and the semantics of a control live here. The jump itself is
+  // handled by the column, which knows which Work it belongs to and which other
+  // columns are open — this element is handed its own subtree and nothing else.
   const title = xmlId
-    ? `printed edition, page ${xmlId}`
+    ? `${xmlId} — click to jump the other columns here`
     : n
       ? `manuscript page ${n}`
       : "page break";
@@ -69,6 +81,8 @@ export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
       data-tei-id={xmlId}
       data-tei-ed-ref={node.attrs?.edRef}
       title={title}
+      role={xmlId ? "button" : undefined}
+      tabIndex={xmlId ? 0 : undefined}
     >
       {/* Nested, never this anchor's own text children: highlighting counts a
           word's offsets against the text nodes whose parent IS the anchor

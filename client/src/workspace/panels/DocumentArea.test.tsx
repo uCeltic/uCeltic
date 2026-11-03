@@ -11,6 +11,7 @@ import { manuscriptColumnId, useDocumentStore } from "../../store/documentStore"
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
+import { PAGE_JUMP_FLASH_MS } from "../pageJump";
 import { searchDocument } from "../../api/search";
 import type { SearchResult } from "../../types/search";
 import type { Document } from "../../types/document";
@@ -1133,5 +1134,222 @@ describe("Manuscript Columns (#201)", () => {
         expect(s.openManuscripts).toEqual(["ucd-ms-a-4"]);
         expect(s.visibleDocumentIds).toEqual(["doc-1", "doc-local", ucd]);
         expect(document.querySelector(`[data-manuscript-column-id="${lismore}"]`)).toBeNull();
+    });
+});
+
+describe("Page Jump (#198)", () => {
+    const acallam = { id: 1, name: "Acallam na Senórach", slug: "acallam" };
+    const otherWork = { id: 2, name: "Another Work", slug: "another" };
+
+    // A page break as a test document carries one: a page of Stokes's printed
+    // edition (`pb xml:id`) or a page of the manuscript (`pb n`).
+    type PageMark = { stokes: string } | { folio: string };
+
+    // A TEI document whose one paragraph carries the given print-edition pages
+    // (`pb xml:id`) and manuscript pages (`pb n`), each between two words — the
+    // way every `pb` in the corpus sits mid-sentence.
+    function pagedTei(
+        id: number,
+        work: TEIDoc["work"],
+        pages: PageMark[],
+    ): TEIDoc {
+        const word = (text: string): TEINode => ({
+            type: "text",
+            segments: [{ kind: "word", text, idx: 0 }],
+        });
+        const children: TEINode[] = [word("prima")];
+        for (const page of pages) {
+            children.push({
+                tag: "pb",
+                attrs: "stokes" in page ? { id: page.stokes } : { edRef: "X", n: page.folio },
+            });
+            children.push(word("uerbum"));
+        }
+        return {
+            ...twoWordTei(id, "a", "b"),
+            work,
+            parsed_json: { tag: "body", children: [{ tag: "p", children }] },
+        };
+    }
+
+    const column = (
+        id: string,
+        work: TEIDoc["work"],
+        pages: PageMark[],
+        backendId: number,
+    ): Document => ({ id, title: id, format: "tei", content: pagedTei(backendId, work, pages) });
+
+    const laud = column("doc-laud", acallam, [{ stokes: "Stokes_p.69" }, { stokes: "Stokes_p.70" }], 10);
+    const lis = column("doc-lis", acallam, [{ stokes: "Stokes_p.69" }, { stokes: "Stokes_p.70" }], 11);
+    const fran = column("doc-fran", acallam, [{ stokes: "Stokes_p.70" }], 12);
+
+    function openColumns(...docs: Document[]) {
+        useDocumentStore.setState({
+            openDocuments: docs,
+            openManuscripts: [],
+            visibleDocumentIds: docs.map((d) => d.id),
+            activeDocumentId: docs[0].id,
+        });
+        render(<DocumentArea />);
+    }
+
+    const columnEl = (id: string) =>
+        document.querySelector<HTMLElement>(`[data-doc-column-id="${id}"]`)!;
+    // The pane that scrolls a column's text, inside its header and cards.
+    const pane = (id: string) =>
+        columnEl(id).querySelector<HTMLElement>("[data-column-text-pane]")!;
+    const locator = (id: string, label: string) =>
+        [...columnEl(id).querySelectorAll<HTMLElement>('[data-tei-tag="pb"]')].find(
+            (pb) => pb.textContent === label,
+        )!;
+
+    // jsdom lays nothing out, so every box is at 0. An element is "at" an
+    // on-screen height by being told so; which elements are read, and what is
+    // done with the difference, is the code under test.
+    function placeAt(el: Element, top: number) {
+        el.getBoundingClientRect = () =>
+            ({ top, bottom: top + 16, left: 0, right: 0, width: 0, height: 16, x: 0, y: top }) as DOMRect;
+    }
+
+    it("brings every other column of the Work to the same page, lined up at the clicked locator's height", () => {
+        openColumns(laud, lis, fran);
+        pane("doc-laud").scrollTop = 100;
+        pane("doc-lis").scrollTop = 250;
+        pane("doc-fran").scrollTop = 400;
+        // The strip is scrolled sideways: FranA4 is out of view to the right.
+        const strip = document.querySelector<HTMLElement>("[data-column-strip]")!;
+        strip.scrollLeft = 640;
+
+        placeAt(locator("doc-lis", "Stokes_p.70"), 300);
+        placeAt(locator("doc-laud", "Stokes_p.70"), 900); // 600px below the click
+        placeAt(locator("doc-fran", "Stokes_p.70"), 200); // 100px above it
+
+        fireEvent.click(locator("doc-lis", "Stokes_p.70"));
+
+        expect(pane("doc-laud").scrollTop).toBe(700);
+        expect(pane("doc-fran").scrollTop).toBe(300);
+        // The clicked column is where the reader already is.
+        expect(pane("doc-lis").scrollTop).toBe(250);
+        // Each column scrolls itself; the strip is not brought round to them.
+        expect(strip.scrollLeft).toBe(640);
+    });
+
+    it("leaves a column of a different Work, an unassigned document and a Local Document where they are", () => {
+        const elsewhere = column("doc-other", otherWork, [{ stokes: "Stokes_p.70" }], 20);
+        // `shakespear.xml` and the serafin samples belong to no Work: having no
+        // Work is not the same Work as another document that has none.
+        const unassigned = column("doc-unassigned", null, [{ stokes: "Stokes_p.70" }], 21);
+        const unassigned2 = column("doc-unassigned-2", null, [{ stokes: "Stokes_p.70" }], 22);
+        openColumns(lis, elsewhere, unassigned, unassigned2, localDoc);
+        for (const id of ["doc-other", "doc-unassigned", "doc-unassigned-2", "doc-local"]) {
+            pane(id).scrollTop = 100;
+        }
+        placeAt(locator("doc-lis", "Stokes_p.70"), 300);
+        placeAt(locator("doc-other", "Stokes_p.70"), 900);
+        placeAt(locator("doc-unassigned", "Stokes_p.70"), 900);
+        placeAt(locator("doc-unassigned-2", "Stokes_p.70"), 900);
+
+        fireEvent.click(locator("doc-lis", "Stokes_p.70"));
+        fireEvent.click(locator("doc-unassigned", "Stokes_p.70"));
+
+        for (const id of ["doc-other", "doc-unassigned", "doc-unassigned-2", "doc-local"]) {
+            expect(pane(id).scrollTop).toBe(100);
+        }
+    });
+
+    it("matches the locator verbatim, and goes to the first occurrence of it", () => {
+        // `Stokes_p.700` and `Stokes_p.7` share a prefix with the clicked page
+        // and are not it; nothing is parsed out of the id to find a "nearest".
+        const nearMisses = column(
+            "doc-near",
+            acallam,
+            [{ stokes: "Stokes_p.700" }, { stokes: "Stokes_p.7" }, { stokes: "stokes_p.70" }],
+            30,
+        );
+        const twice = column(
+            "doc-twice",
+            acallam,
+            [{ stokes: "Stokes_p.69" }, { stokes: "Stokes_p.70" }, { stokes: "Stokes_p.70" }],
+            31,
+        );
+        openColumns(lis, nearMisses, twice);
+        pane("doc-near").scrollTop = 100;
+        pane("doc-twice").scrollTop = 100;
+        placeAt(locator("doc-lis", "Stokes_p.70"), 300);
+        for (const pb of columnEl("doc-near").querySelectorAll('[data-tei-tag="pb"]')) placeAt(pb, 900);
+        const [first, second] = [...columnEl("doc-twice").querySelectorAll<HTMLElement>('[data-tei-tag="pb"]')]
+            .filter((pb) => pb.textContent === "Stokes_p.70");
+        placeAt(first, 500);
+        placeAt(second, 1500);
+
+        fireEvent.click(locator("doc-lis", "Stokes_p.70"));
+
+        expect(pane("doc-near").scrollTop).toBe(100);
+        expect(pane("doc-twice").scrollTop).toBe(300);
+    });
+
+    it("flashes the found locator in each column that jumped, briefly", () => {
+        vi.useFakeTimers();
+        try {
+            openColumns(laud, lis);
+            fireEvent.click(locator("doc-lis", "Stokes_p.70"));
+
+            expect(locator("doc-laud", "Stokes_p.70")).toHaveAttribute("data-page-jump-flash");
+            // Only the found locator: not the clicked one, not another page.
+            expect(locator("doc-lis", "Stokes_p.70")).not.toHaveAttribute("data-page-jump-flash");
+            expect(locator("doc-laud", "Stokes_p.69")).not.toHaveAttribute("data-page-jump-flash");
+
+            act(() => vi.advanceTimersByTime(PAGE_JUMP_FLASH_MS - 100));
+            expect(locator("doc-laud", "Stokes_p.70")).toHaveAttribute("data-page-jump-flash");
+            act(() => vi.advanceTimersByTime(200));
+            expect(locator("doc-laud", "Stokes_p.70")).not.toHaveAttribute("data-page-jump-flash");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("does nothing new for a Manuscript Locator", () => {
+        const laudFolio = column("doc-laud-f", acallam, [{ folio: "fol.124" }], 40);
+        const lisFolio = column("doc-lis-f", acallam, [{ folio: "fol.124" }], 41);
+        openColumns(laudFolio, lisFolio);
+        pane("doc-laud-f").scrollTop = 100;
+        placeAt(locator("doc-lis-f", "[fol.124]"), 300);
+        placeAt(locator("doc-laud-f", "[fol.124]"), 900);
+
+        fireEvent.click(locator("doc-lis-f", "[fol.124]"));
+
+        expect(pane("doc-laud-f").scrollTop).toBe(100);
+        expect(locator("doc-laud-f", "[fol.124]")).not.toHaveAttribute("data-page-jump-flash");
+    });
+
+    it("only moves the columns: each keeps its search result and Tag Filter occurrence", () => {
+        openColumns(laud, lis);
+        useSearchStore.setState({
+            query: "Oisín",
+            resultsByDocument: { "doc-laud": [span(0, 0), span(1, 1), span(0, 1)] },
+            activeResultIndexByDocument: { "doc-laud": 2 },
+        });
+        useWorkspaceStore.setState({ entityIndexByDocument: { "doc-laud": 4, "doc-lis": 1 } });
+        const searchBefore = useSearchStore.getState();
+
+        fireEvent.click(locator("doc-lis", "Stokes_p.70"));
+
+        expect(useSearchStore.getState().activeResultIndexByDocument).toEqual({ "doc-laud": 2 });
+        expect(useSearchStore.getState().query).toBe("Oisín");
+        expect(useWorkspaceStore.getState().entityIndexByDocument).toEqual({ "doc-laud": 4, "doc-lis": 1 });
+        // Not a search: nothing ran, so nothing could reach Search History.
+        expect(mockedSearch).not.toHaveBeenCalled();
+        expect(useSearchStore.getState()).toBe(searchBefore);
+    });
+
+    it("jumps from the keyboard too, since the locator is a button", () => {
+        openColumns(laud, lis);
+        pane("doc-laud").scrollTop = 100;
+        placeAt(locator("doc-lis", "Stokes_p.70"), 300);
+        placeAt(locator("doc-laud", "Stokes_p.70"), 900);
+
+        fireEvent.keyDown(locator("doc-lis", "Stokes_p.70"), { key: "Enter" });
+
+        expect(pane("doc-laud").scrollTop).toBe(700);
     });
 });

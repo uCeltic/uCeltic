@@ -276,13 +276,31 @@ describe("pb", () => {
     expect(pb.textContent).toBe("Stokes_p.69");
     expect(pb.dataset.teiId).toBe("Stokes_p.69");
     expect(pb.querySelector("[data-tei-print-edition-page]")).not.toBeNull();
-    // The tooltip names the coordinate system, not the tag: calling a page of a
-    // modern printed book a "page break" says the manuscript broke there.
-    expect(pb.title).toBe("printed edition, page Stokes_p.69");
     // The box is the tint and the padding; the brackets and the weight belong
     // to the other coordinate system, so neither is here.
     expect(pb.className).toMatch(/\bbg-\w+-\d{2,3}\b/);
     expect(pb.className).not.toContain("font-bold");
+  });
+
+  // #198 (ADR-0018 amendment) — the print-edition locator is the control for a
+  // Page Jump, so its tooltip says what a click does rather than naming its
+  // coordinate system; the box already does that.
+  it("offers a print-edition page as a Page Jump: the tooltip says what a click does", () => {
+    const { container } = renderTEI(el("pb", { id: "Stokes_p.70" }));
+    const pb = tagged(container, "pb");
+
+    expect(pb.title).toBe("Stokes_p.70 — click to jump the other columns here");
+    expect(pb).toHaveAttribute("role", "button");
+    expect(pb.tabIndex).toBe(0);
+  });
+
+  it("leaves a manuscript locator as it was: no jump, and the tooltip unchanged", () => {
+    const { container } = renderTEI(el("pb", { edRef: "Laud610", n: "fol.124" }));
+    const pb = tagged(container, "pb");
+
+    expect(pb.title).toBe("manuscript page fol.124");
+    expect(pb).not.toHaveAttribute("role");
+    expect(pb).not.toHaveAttribute("tabindex");
   });
 
   it("never leaks @xml:id into the document's own id space", () => {
@@ -351,6 +369,20 @@ describe("a page break the next column break already covers", () => {
     );
 
     expect(tagged(container, "pb").className).not.toContain("hidden");
+  });
+
+  it("still renders a print-edition page, which no manuscript column break covers", () => {
+    // The `cb` extends a MANUSCRIPT page; a page of Stokes is a different
+    // coordinate system it says nothing about. Hiding it would also leave a
+    // Page Jump a target with no box to line up and nothing to flash (#198).
+    const { container } = renderTEI(
+      el("pb", { id: "Stokes_p.70" }),
+      el("cb", { edRef: "Laud610", n: "fol.124ra" }),
+      text("uerbum"),
+    );
+
+    expect(tagged(container, "pb").className).not.toContain("hidden");
+    expect(tagged(container, "pb").textContent).toBe("Stokes_p.70");
   });
 });
 
