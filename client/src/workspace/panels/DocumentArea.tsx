@@ -28,7 +28,7 @@ import { useEntityMenu } from "../../tei/useEntityMenu";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
 import { MANUSCRIPTS, type ManuscriptConfig } from "../manuscripts";
 import ManuscriptViewer from "./ManuscriptViewer";
-import { pageJumpFrom } from "../pageJump";
+import { pageJumpFrom, pageJumpNotices, type PageJumpOutcome } from "../pageJump";
 // Drag to arrange the Columns, from @dnd-kit.
 import {
   DndContext, //   All Columns are managed here
@@ -66,7 +66,11 @@ interface SortableDocumentColumnProps {
   activeResult: SearchResult | undefined;
   showDragHint: boolean;
   entityCard: EntityCardState | null;
+  /** What the last Page Jump has to say in this column, if anything (#199). */
+  pageJumpNotice: string | undefined;
   onDismissDragHint: () => void;
+  onPageJump: (outcome: PageJumpOutcome) => void;
+  onDismissPageJumpNotice: () => void;
   onPrev: () => void;
   onNext: () => void;
   onEntityPrev: () => void;
@@ -161,25 +165,49 @@ function ReadingOnlyChip() {
   );
 }
 
-// One-time popover pointing at the grip icon, telling the user the title
-// button is draggable. Rendered as a sibling of the draggable button (not a
-// child) so its own pointer events never reach the button's drag listeners.
-function DragReorderHint({ onDismiss }: { onDismiss: () => void }) {
+// The small paper note a column uses to tell the reader something, with a ✕ to
+// close it: the drag-reorder hint and the Page Jump notices (#199) wear the
+// same one. `className` says where it sits and how high it stacks.
+function ColumnNotice({
+  message,
+  dismissLabel,
+  onDismiss,
+  className,
+}: {
+  message: string;
+  dismissLabel: string;
+  onDismiss: () => void;
+  className: string;
+}) {
   return (
     <div
       role="status"
-      className="absolute left-0 top-full z-50 mt-1.5 flex w-56 items-start gap-2 rounded-md border border-[#D8D4C3] bg-[#F5F1DF] px-3 py-2 text-xs text-[#52524F] shadow-lg"
+      className={`flex w-56 items-start gap-2 rounded-md border border-[#D8D4C3] bg-[#F5F1DF] px-3 py-2 text-xs text-[#52524F] shadow-lg ${className}`}
     >
-      <p className="flex-1">Drag to reorder columns</p>
+      <p className="min-w-0 flex-1 break-words">{message}</p>
       <button
         type="button"
-        aria-label="Dismiss drag-reorder hint"
+        aria-label={dismissLabel}
         onClick={onDismiss}
         className="shrink-0 rounded-md px-1 text-[#6B6B67] cursor-pointer transition-all hover:bg-[#E8E3CE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#52524F]/30"
       >
         ✕
       </button>
     </div>
+  );
+}
+
+// One-time popover pointing at the grip icon, telling the user the title
+// button is draggable. Rendered as a sibling of the draggable button (not a
+// child) so its own pointer events never reach the button's drag listeners.
+function DragReorderHint({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <ColumnNotice
+      message="Drag to reorder columns"
+      dismissLabel="Dismiss drag-reorder hint"
+      onDismiss={onDismiss}
+      className="absolute left-0 top-full z-50 mt-1.5"
+    />
   );
 }
 
@@ -348,7 +376,10 @@ function SortableDocumentColumn({
   activeResult,
   showDragHint,
   entityCard,
+  pageJumpNotice,
   onDismissDragHint,
+  onPageJump,
+  onDismissPageJumpNotice,
   onPrev,
   onNext,
   onEntityPrev,
@@ -373,6 +404,14 @@ function SortableDocumentColumn({
   // Which Work this column is a Version of, for a Page Jump to find the others.
   // A Local Document and a TEI document no one has assigned a Work carry none.
   const workId = doc.format === "tei" ? doc.content.work?.id : undefined;
+  // Page Jump from wherever an event landed, and hand on what it had to say.
+  // Says whether there was a locator there, so a key handler knows the key was
+  // this control's to take.
+  function jumpFrom(target: EventTarget | null): boolean {
+    const outcome = pageJumpFrom(target);
+    if (outcome) onPageJump(outcome);
+    return outcome !== null;
+  }
   return (
     <article
       data-doc-column-id={doc.id}
@@ -391,7 +430,22 @@ function SortableDocumentColumn({
         onClose={onClose}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* `relative`: the Page Jump notice is centred on this, the part of the
+          column below its header. It does not scroll — only the text pane
+          inside it does — so the notice stays put while the reader scrolls.
+          `isolate`: the notice's z-index then only has to beat this column's
+          own text and cards. Left to stack against the whole page, it would
+          paint over the toolbar's open menus, which the toolbar's own
+          `relative z-10` caps at 10 — let alone the modals and the Tour (#199). */}
+      <div className="relative isolate flex min-h-0 flex-1 flex-col">
+        {pageJumpNotice && (
+          <ColumnNotice
+            message={pageJumpNotice}
+            dismissLabel="Dismiss Page Jump notice"
+            onDismiss={onDismissPageJumpNotice}
+            className="absolute left-1/2 top-1/2 z-10 max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2"
+          />
+        )}
         {/* Result card — fixed below the header, and only for a column a search
             can reach. A Local Document is filtered out before the request is
             built, so every branch below would be an answer to a question this
@@ -509,11 +563,11 @@ function SortableDocumentColumn({
               data-tei-content
               className="leading-6 text-gray-800"
               style={{ fontSize }}
-              onClick={(event) => pageJumpFrom(event.target)}
+              onClick={(event) => jumpFrom(event.target)}
               onKeyDown={(event) => {
                 if (event.key !== "Enter" && event.key !== " ") return;
                 // Space would otherwise scroll the pane out from under the jump.
-                if (pageJumpFrom(event.target)) event.preventDefault();
+                if (jumpFrom(event.target)) event.preventDefault();
               }}
             >
               <TEIErrorBoundary>
@@ -766,6 +820,20 @@ export default function DocumentArea() {
     setDragHintDocId(null);
   }
 
+  // What the last Page Jump left to say, by column id (#199). Each jump
+  // replaces the lot; a column's ✕ and closing the column remove its own.
+  const [pageJumpNoticeById, setPageJumpNoticeById] = useState<
+    Record<string, string>
+  >({});
+  function dismissPageJumpNotice(columnId: string) {
+    setPageJumpNoticeById((notices) => {
+      if (!(columnId in notices)) return notices;
+      const rest = { ...notices };
+      delete rest[columnId];
+      return rest;
+    });
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const reordered = computeDragEndReorder(event, visibleDocumentIds);
     if (!reordered) return;
@@ -832,7 +900,10 @@ export default function DocumentArea() {
                 activeResult={activeResult}
                 showDragHint={doc.id === showDragHintFor}
                 entityCard={entityCardFor(doc.id)}
+                pageJumpNotice={pageJumpNoticeById[doc.id]}
                 onDismissDragHint={dismissDragHint}
+                onPageJump={(outcome) => setPageJumpNoticeById(pageJumpNotices(outcome))}
+                onDismissPageJumpNotice={() => dismissPageJumpNotice(doc.id)}
                 onEntityPrev={() => {
                   prevEntityOccurrence(doc.id);
                   scrollToOccurrence(doc.id);
@@ -864,6 +935,8 @@ export default function DocumentArea() {
                     // this column's search state behind would hand the next one
                     // a failure — and a Retry — belonging to a closed column.
                     clearDocumentResults(doc.id);
+                    // Its Page Jump notice goes with it, for the same reason.
+                    dismissPageJumpNotice(doc.id);
                     removeDocument(doc.id);
                   }
                 }}
