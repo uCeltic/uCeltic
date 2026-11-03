@@ -37,3 +37,29 @@ color: #1F2937;
 background-color: #C4B5FD;
 color: #1F2937;
 }
+
+/* #198 — a Page Jump flashes the locator it found in each column that jumped,
+   so the eye can find the line it was brought to. Teal, apart from the search
+   orange, the query blue and the Tag Filter violet: arriving at a page is none
+   of those. It fades back to the locator's own stone tint over the same
+   1.5 s workspace/pageJump.ts holds the attribute for (PAGE_JUMP_FLASH_MS). */
+@keyframes page-jump-flash {
+  from {
+    background-color: #5EEAD4;
+    box-shadow: 0 0 0 3px #14B8A6;
+  }
+  to {
+    background-color: var(--color-stone-200);
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+[data-page-jump-flash] {
+  animation: page-jump-flash 1.5s ease-out;
+}
+/* Without the motion it still has to be findable: hold the colour instead. */
+@media (prefers-reduced-motion: reduce) {
+  [data-page-jump-flash] {
+    animation: none;
+    background-color: #5EEAD4;
+  }
+}

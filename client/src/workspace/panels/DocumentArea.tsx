@@ -28,6 +28,7 @@ import { useEntityMenu } from "../../tei/useEntityMenu";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
 import { MANUSCRIPTS, type ManuscriptConfig } from "../manuscripts";
 import ManuscriptViewer from "./ManuscriptViewer";
+import { pageJump, printEditionLocatorAt } from "../pageJump";
 // Drag to arrange the Columns, from @dnd-kit.
 import {
   DndContext, //   All Columns are managed here
@@ -369,9 +370,13 @@ function SortableDocumentColumn({
   // The same rule the search itself is built from, so this column can only ever
   // report on a search that was actually run against it (#175).
   const searchable = isSearchableDocument(doc);
+  // Which Work this column is a Version of, for a Page Jump to find the others.
+  // A Local Document and a TEI document no one has assigned a Work carry none.
+  const workId = doc.format === "tei" ? doc.content.work?.id : undefined;
   return (
     <article
       data-doc-column-id={doc.id}
+      data-work-id={workId}
       ref={setNodeRef}
       style={style}
       className={`flex flex-1 flex-col bg-[#f5f6ee] ${index < totalCount - 1 ? "border-r border-gray-200" : ""
@@ -486,15 +491,35 @@ function SortableDocumentColumn({
         {/* document text content */}
         {/* data-tour: the tour's "select a passage" step rings this pane, and
             its gate counts a selection only if both ends land inside one (#178). */}
-        <div className="min-h-0 flex-1 overflow-auto p-4" data-tour="column-text">
+        {/* data-column-text-pane: what a Page Jump scrolls (#198). */}
+        <div
+          className="min-h-0 flex-1 overflow-auto p-4"
+          data-tour="column-text"
+          data-column-text-pane
+        >
           {/* if the document is a TEI document, hand it to the TEIRenderer, let it render the tei document. */}
           {doc.format === "tei" ? (
             // data-tei-content marks the searchable rendered text: select-to-search
             // only offers itself for selections landing inside one of these.
+            //
+            // A Print-Edition Locator is the control for a Page Jump. The click
+            // is caught here rather than on the locator, because it is the
+            // column that knows its Work and its neighbours (#198).
             <div
               data-tei-content
               className="leading-6 text-gray-800"
               style={{ fontSize }}
+              onClick={(event) => {
+                const locator = printEditionLocatorAt(event.target);
+                if (locator) pageJump(locator);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                const locator = printEditionLocatorAt(event.target);
+                if (!locator) return;
+                event.preventDefault();
+                pageJump(locator);
+              }}
             >
               <TEIErrorBoundary>
                 <TEIRenderer node={(doc.content as TEIDoc).parsed_json} />
