@@ -46,10 +46,14 @@ export function Pb({ node, anchorId, followedByCb }: TEIElementProps) {
   // and the column locator already says everything the page locator said. It
   // stays in the DOM under `hidden`, because ADR-0016's surviving premise is
   // that the markup must be present — `abbr` and `rdg` are hidden the same way.
-  const className = followedByCb
-    ? "hidden"
-    : xmlId
-      ? PRINT_EDITION_LOCATOR
+  //
+  // Only a manuscript page is covered that way. A page of Stokes is a different
+  // coordinate system the `cb` says nothing about, and it is the control for a
+  // Page Jump, which needs it on screen to line up and flash (#198).
+  const className = xmlId
+    ? PRINT_EDITION_LOCATOR
+    : followedByCb
+      ? "hidden"
       : MANUSCRIPT_LOCATOR;
 
   // The tooltip says what the reader is being handed, not the tag. "Page break"

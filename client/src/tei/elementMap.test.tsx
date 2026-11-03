@@ -370,6 +370,20 @@ describe("a page break the next column break already covers", () => {
 
     expect(tagged(container, "pb").className).not.toContain("hidden");
   });
+
+  it("still renders a print-edition page, which no manuscript column break covers", () => {
+    // The `cb` extends a MANUSCRIPT page; a page of Stokes is a different
+    // coordinate system it says nothing about. Hiding it would also leave a
+    // Page Jump a target with no box to line up and nothing to flash (#198).
+    const { container } = renderTEI(
+      el("pb", { id: "Stokes_p.70" }),
+      el("cb", { edRef: "Laud610", n: "fol.124ra" }),
+      text("uerbum"),
+    );
+
+    expect(tagged(container, "pb").className).not.toContain("hidden");
+    expect(tagged(container, "pb").textContent).toBe("Stokes_p.70");
+  });
 });
 
 describe("addName", () => {

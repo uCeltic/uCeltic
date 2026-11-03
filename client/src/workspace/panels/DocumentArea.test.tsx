@@ -11,6 +11,7 @@ import { manuscriptColumnId, useDocumentStore } from "../../store/documentStore"
 import { useSearchStore } from "../../store/searchStore";
 import { useWorkspaceStore } from "../../store/workspaceStore";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
+import { PAGE_JUMP_FLASH_MS } from "../pageJump";
 import { searchDocument } from "../../api/search";
 import type { SearchResult } from "../../types/search";
 import type { Document } from "../../types/document";
@@ -1140,13 +1141,17 @@ describe("Page Jump (#198)", () => {
     const acallam = { id: 1, name: "Acallam na Senórach", slug: "acallam" };
     const otherWork = { id: 2, name: "Another Work", slug: "another" };
 
+    // A page break as a test document carries one: a page of Stokes's printed
+    // edition (`pb xml:id`) or a page of the manuscript (`pb n`).
+    type PageMark = { stokes: string } | { folio: string };
+
     // A TEI document whose one paragraph carries the given print-edition pages
     // (`pb xml:id`) and manuscript pages (`pb n`), each between two words — the
     // way every `pb` in the corpus sits mid-sentence.
     function pagedTei(
         id: number,
         work: TEIDoc["work"],
-        pages: ({ stokes: string } | { folio: string })[],
+        pages: PageMark[],
     ): TEIDoc {
         const word = (text: string): TEINode => ({
             type: "text",
@@ -1170,7 +1175,7 @@ describe("Page Jump (#198)", () => {
     const column = (
         id: string,
         work: TEIDoc["work"],
-        pages: ({ stokes: string } | { folio: string })[],
+        pages: PageMark[],
         backendId: number,
     ): Document => ({ id, title: id, format: "tei", content: pagedTei(backendId, work, pages) });
 
@@ -1178,7 +1183,7 @@ describe("Page Jump (#198)", () => {
     const lis = column("doc-lis", acallam, [{ stokes: "Stokes_p.69" }, { stokes: "Stokes_p.70" }], 11);
     const fran = column("doc-fran", acallam, [{ stokes: "Stokes_p.70" }], 12);
 
-    function open(...docs: Document[]) {
+    function openColumns(...docs: Document[]) {
         useDocumentStore.setState({
             openDocuments: docs,
             openManuscripts: [],
@@ -1207,7 +1212,7 @@ describe("Page Jump (#198)", () => {
     }
 
     it("brings every other column of the Work to the same page, lined up at the clicked locator's height", () => {
-        open(laud, lis, fran);
+        openColumns(laud, lis, fran);
         pane("doc-laud").scrollTop = 100;
         pane("doc-lis").scrollTop = 250;
         pane("doc-fran").scrollTop = 400;
@@ -1235,7 +1240,7 @@ describe("Page Jump (#198)", () => {
         // Work is not the same Work as another document that has none.
         const unassigned = column("doc-unassigned", null, [{ stokes: "Stokes_p.70" }], 21);
         const unassigned2 = column("doc-unassigned-2", null, [{ stokes: "Stokes_p.70" }], 22);
-        open(lis, elsewhere, unassigned, unassigned2, localDoc);
+        openColumns(lis, elsewhere, unassigned, unassigned2, localDoc);
         for (const id of ["doc-other", "doc-unassigned", "doc-unassigned-2", "doc-local"]) {
             pane(id).scrollTop = 100;
         }
@@ -1267,7 +1272,7 @@ describe("Page Jump (#198)", () => {
             [{ stokes: "Stokes_p.69" }, { stokes: "Stokes_p.70" }, { stokes: "Stokes_p.70" }],
             31,
         );
-        open(lis, nearMisses, twice);
+        openColumns(lis, nearMisses, twice);
         pane("doc-near").scrollTop = 100;
         pane("doc-twice").scrollTop = 100;
         placeAt(locator("doc-lis", "Stokes_p.70"), 300);
@@ -1286,7 +1291,7 @@ describe("Page Jump (#198)", () => {
     it("flashes the found locator in each column that jumped, briefly", () => {
         vi.useFakeTimers();
         try {
-            open(laud, lis);
+            openColumns(laud, lis);
             fireEvent.click(locator("doc-lis", "Stokes_p.70"));
 
             expect(locator("doc-laud", "Stokes_p.70")).toHaveAttribute("data-page-jump-flash");
@@ -1294,7 +1299,7 @@ describe("Page Jump (#198)", () => {
             expect(locator("doc-lis", "Stokes_p.70")).not.toHaveAttribute("data-page-jump-flash");
             expect(locator("doc-laud", "Stokes_p.69")).not.toHaveAttribute("data-page-jump-flash");
 
-            act(() => vi.advanceTimersByTime(1400));
+            act(() => vi.advanceTimersByTime(PAGE_JUMP_FLASH_MS - 100));
             expect(locator("doc-laud", "Stokes_p.70")).toHaveAttribute("data-page-jump-flash");
             act(() => vi.advanceTimersByTime(200));
             expect(locator("doc-laud", "Stokes_p.70")).not.toHaveAttribute("data-page-jump-flash");
@@ -1306,7 +1311,7 @@ describe("Page Jump (#198)", () => {
     it("does nothing new for a Manuscript Locator", () => {
         const laudFolio = column("doc-laud-f", acallam, [{ folio: "fol.124" }], 40);
         const lisFolio = column("doc-lis-f", acallam, [{ folio: "fol.124" }], 41);
-        open(laudFolio, lisFolio);
+        openColumns(laudFolio, lisFolio);
         pane("doc-laud-f").scrollTop = 100;
         placeAt(locator("doc-lis-f", "[fol.124]"), 300);
         placeAt(locator("doc-laud-f", "[fol.124]"), 900);
@@ -1318,7 +1323,7 @@ describe("Page Jump (#198)", () => {
     });
 
     it("only moves the columns: each keeps its search result and Tag Filter occurrence", () => {
-        open(laud, lis);
+        openColumns(laud, lis);
         useSearchStore.setState({
             query: "Oisín",
             resultsByDocument: { "doc-laud": [span(0, 0), span(1, 1), span(0, 1)] },
@@ -1338,7 +1343,7 @@ describe("Page Jump (#198)", () => {
     });
 
     it("jumps from the keyboard too, since the locator is a button", () => {
-        open(laud, lis);
+        openColumns(laud, lis);
         pane("doc-laud").scrollTop = 100;
         placeAt(locator("doc-lis", "Stokes_p.70"), 300);
         placeAt(locator("doc-laud", "Stokes_p.70"), 900);

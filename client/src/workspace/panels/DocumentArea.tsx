@@ -28,7 +28,7 @@ import { useEntityMenu } from "../../tei/useEntityMenu";
 import { COLUMN_MIN_WIDTH_PX } from "../responsive";
 import { MANUSCRIPTS, type ManuscriptConfig } from "../manuscripts";
 import ManuscriptViewer from "./ManuscriptViewer";
-import { pageJump, printEditionLocatorAt } from "../pageJump";
+import { pageJumpFrom } from "../pageJump";
 // Drag to arrange the Columns, from @dnd-kit.
 import {
   DndContext, //   All Columns are managed here
@@ -509,16 +509,11 @@ function SortableDocumentColumn({
               data-tei-content
               className="leading-6 text-gray-800"
               style={{ fontSize }}
-              onClick={(event) => {
-                const locator = printEditionLocatorAt(event.target);
-                if (locator) pageJump(locator);
-              }}
+              onClick={(event) => pageJumpFrom(event.target)}
               onKeyDown={(event) => {
                 if (event.key !== "Enter" && event.key !== " ") return;
-                const locator = printEditionLocatorAt(event.target);
-                if (!locator) return;
-                event.preventDefault();
-                pageJump(locator);
+                // Space would otherwise scroll the pane out from under the jump.
+                if (pageJumpFrom(event.target)) event.preventDefault();
               }}
             >
               <TEIErrorBoundary>

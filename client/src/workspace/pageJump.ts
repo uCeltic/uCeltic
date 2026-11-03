@@ -14,7 +14,7 @@
  */
 
 /** A Print-Edition Locator: a `pb` that carries an `xml:id` (digitizedText.tsx). */
-export const PRINT_EDITION_LOCATOR_SELECTOR = '[data-tei-tag="pb"][data-tei-id]';
+const PRINT_EDITION_LOCATOR_SELECTOR = '[data-tei-tag="pb"][data-tei-id]';
 
 /** How long a found locator stays flashed, so the eye can find it. */
 export const PAGE_JUMP_FLASH_MS = 1500;
@@ -24,10 +24,17 @@ const FLASH_ATTRIBUTE = "data-page-jump-flash";
 
 const flashTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
 
-/** The Print-Edition Locator an event landed on, if it landed on one. */
-export function printEditionLocatorAt(target: EventTarget | null): HTMLElement | null {
-  if (!(target instanceof Element)) return null;
-  return target.closest<HTMLElement>(PRINT_EDITION_LOCATOR_SELECTOR);
+/**
+ * Page Jump from wherever an event landed in a column's text, if it landed on a
+ * Print-Edition Locator. Says whether it did, so a key handler knows whether
+ * the key was this control's to take.
+ */
+export function pageJumpFrom(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  const locator = target.closest<HTMLElement>(PRINT_EDITION_LOCATOR_SELECTOR);
+  if (!locator) return false;
+  pageJump(locator);
+  return true;
 }
 
 /**
