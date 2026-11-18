@@ -17,9 +17,6 @@
 set -eu
 
 APP_DIR="${APP_DIR:-/opt/uceltic}"
-# Caddyfile.prod still names the old sslip.io address (as a redirect), so a box
-# .env without SERVER_IP would hand Caddy an invalid site address. Fail fast here.
-: "${SERVER_IP:?SERVER_IP must be set in the box .env}"
 SMOKE_URL="${SMOKE_URL:-https://uceltic.com}"
 cd "$APP_DIR"
 
