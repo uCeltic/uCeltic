@@ -10,16 +10,14 @@
 #
 # Tunables (env):
 #   APP_DIR    repo checkout on the box (default /opt/uceltic)
-#   SMOKE_URL  base url for the post-deploy smoke (default the sslip.io host,
-#              matching Caddyfile.prod; SERVER_IP comes from the systemd
-#              EnvironmentFile). The Let's Encrypt cert is real, so the smoke
-#              also verifies TLS (no -k).
+#   SMOKE_URL  base url for the post-deploy smoke (default https://uceltic.com,
+#              the canonical site address in Caddyfile.prod, #215). The Let's
+#              Encrypt cert is real, so the smoke also verifies TLS (no -k).
 #   CURL_OPTS  passed through to smoke.sh's curl.
 set -eu
 
 APP_DIR="${APP_DIR:-/opt/uceltic}"
-# Fail fast with a clear message if the box .env lacks SERVER_IP.
-SMOKE_URL="${SMOKE_URL:-https://${SERVER_IP:?SERVER_IP must be set in the box .env}.sslip.io}"
+SMOKE_URL="${SMOKE_URL:-https://uceltic.com}"
 cd "$APP_DIR"
 
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"

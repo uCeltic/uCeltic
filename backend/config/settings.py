@@ -41,7 +41,7 @@ if not DEBUG and not _RUNNING_TESTS and SECRET_KEY == _DEV_SECRET:
 ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 
 # Comma-separated full origins (scheme included), e.g.
-# CSRF_TRUSTED_ORIGINS=https://1.2.3.4.sslip.io (#63)
+# CSRF_TRUSTED_ORIGINS=https://uceltic.com (#215)
 CSRF_TRUSTED_ORIGINS = [
     o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o
 ]
@@ -77,8 +77,8 @@ INSTALLED_APPS = [
 
 # django.contrib.sites is deliberately NOT installed: allauth treats it as optional and
 # then derives the host in its emails from the request, which is what we want — the
-# deployment's address (<ip>.sslip.io) changes with the box, and a Site row would have
-# to be kept in sync by hand.
+# deployment's address has changed before (<ip>.sslip.io, then uceltic.com, #215), and a
+# Site row would have to be kept in sync by hand.
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -188,7 +188,7 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = "[uCeltic] "
 HEADLESS_ONLY = True
 HEADLESS_CLIENTS = ("browser",)
 
-# Where the SPA lives, as seen from a mail client: https://<ip>.sslip.io in prod (#63).
+# Where the SPA lives, as seen from a mail client: https://uceltic.com in prod (#215).
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173")
 
 HEADLESS_FRONTEND_URLS = {

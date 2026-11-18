@@ -4,7 +4,7 @@
 
 **A full-stack research platform for searching and comparing TEI-encoded medieval Irish texts.**
 
-[Live demo](https://82.70.86.16.sslip.io/) · [The Disappearing Text](https://www.ucc.ie/en/disappearing-text/) · [Project updates](https://bsky.app/profile/disappearingtext.bsky.social)
+[Live demo](https://uceltic.com/) · [The Disappearing Text](https://www.ucc.ie/en/disappearing-text/) · [Project updates](https://bsky.app/profile/disappearingtext.bsky.social)
 
 ![uCeltic workspace showing cross-text search results alongside a manuscript image](workspace_screenshot.png)
 
@@ -166,7 +166,7 @@ The public instance runs on a self-managed VPS behind Caddy. A push to `main`
 builds multi-architecture backend and frontend images, tests the assembled
 Compose stack, and publishes a blessed `prod` tag to GitHub Container Registry.
 A systemd timer on the VPS pulls approved images and runs a post-deployment smoke
-check. Caddy serves the application over HTTPS at its `sslip.io` hostname.
+check. Caddy serves the application over HTTPS at `uceltic.com`.
 
 See the [CD pipeline](docs/cd-pipeline.md) for the delivery design and the
 [VPS runbook](docs/cd-runbook.md) for operational procedures, corpus updates and

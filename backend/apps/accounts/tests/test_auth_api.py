@@ -70,7 +70,7 @@ class RegistrationActivationLoginTests(TestCase):
     def test_activation_link_carries_the_frontend_base_url(self):
         self.signup()
 
-        # The link must point at the SPA (sslip.io in prod, #63), not at a Django view:
+        # The link must point at the SPA (uceltic.com in prod, #215), not at a Django view:
         # allauth runs headless-only, so there is no server-rendered confirm page.
         self.assertIn(
             "http://localhost:5173/account/verify-email/", mail.outbox[0].body
