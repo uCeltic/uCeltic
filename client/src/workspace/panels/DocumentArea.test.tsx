@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import DocumentArea from "./DocumentArea";
 import {
     computeDragEndReorder,
@@ -1351,5 +1351,101 @@ describe("Page Jump (#198)", () => {
         fireEvent.keyDown(locator("doc-lis", "Stokes_p.70"), { key: "Enter" });
 
         expect(pane("doc-laud").scrollTop).toBe(700);
+    });
+    describe("notices (#199)", () => {
+        // The three Versions the issue reads from: G126 has no p.73.
+        const laud610 = column("doc-laud", acallam, [{ stokes: "Stokes_p.70" }, { stokes: "Stokes_p.73" }], 10);
+        const franA4 = column("doc-fran", acallam, [{ stokes: "Stokes_p.70" }, { stokes: "Stokes_p.73" }], 12);
+        const g126 = column("doc-g126", acallam, [{ stokes: "Stokes_p.70" }], 13);
+        const inColumn = (id: string) => within(columnEl(id));
+
+        it("a Version without the page stays put and says so; the others jump", () => {
+            openColumns(laud610, franA4, g126);
+            pane("doc-fran").scrollTop = 100;
+            pane("doc-g126").scrollTop = 100;
+            placeAt(locator("doc-laud", "Stokes_p.73"), 0);
+            placeAt(locator("doc-fran", "Stokes_p.73"), 500);
+
+            fireEvent.click(locator("doc-laud", "Stokes_p.73"));
+
+            expect(pane("doc-fran").scrollTop).toBe(600);
+            expect(pane("doc-g126").scrollTop).toBe(100);
+            expect(inColumn("doc-g126").getByRole("status")).toHaveTextContent(
+                "Stokes_p.73 not found in this Version",
+            );
+            expect(inColumn("doc-fran").queryByRole("status")).not.toBeInTheDocument();
+            expect(inColumn("doc-laud").queryByRole("status")).not.toBeInTheDocument();
+        });
+
+        it("the next Page Jump clears a notice where the page is found, and renames it where it misses again", () => {
+            const onlyP74 = column("doc-p74", acallam, [{ stokes: "Stokes_p.74" }], 15);
+            openColumns(laud610, franA4, g126, onlyP74);
+            fireEvent.click(locator("doc-laud", "Stokes_p.73"));
+            expect(inColumn("doc-g126").getByRole("status")).toHaveTextContent("Stokes_p.73 not found");
+            expect(inColumn("doc-p74").getByRole("status")).toHaveTextContent("Stokes_p.73 not found");
+
+            pane("doc-g126").scrollTop = 100;
+            placeAt(locator("doc-laud", "Stokes_p.70"), 0);
+            placeAt(locator("doc-g126", "Stokes_p.70"), 400);
+            fireEvent.click(locator("doc-laud", "Stokes_p.70"));
+
+            expect(pane("doc-g126").scrollTop).toBe(500);
+            expect(inColumn("doc-g126").queryByRole("status")).not.toBeInTheDocument();
+            expect(inColumn("doc-p74").getByRole("status")).toHaveTextContent(
+                "Stokes_p.70 not found in this Version",
+            );
+        });
+
+        it("with no other Version of the Work open, the clicked column says where to go", () => {
+            const elsewhere = column("doc-other", otherWork, [{ stokes: "Stokes_p.70" }], 20);
+            openColumns(lis, elsewhere);
+
+            fireEvent.click(locator("doc-lis", "Stokes_p.70"));
+
+            expect(inColumn("doc-lis").getByRole("status")).toHaveTextContent(
+                "Open another Version of this Work to jump to Stokes_p.70",
+            );
+            expect(inColumn("doc-other").queryByRole("status")).not.toBeInTheDocument();
+        });
+
+        it("an Unassigned document has nowhere to jump either, even beside another Unassigned one", () => {
+            const unassigned = column("doc-unassigned", null, [{ stokes: "Stokes_p.70" }], 21);
+            const unassigned2 = column("doc-unassigned-2", null, [{ stokes: "Stokes_p.70" }], 22);
+            openColumns(unassigned, unassigned2);
+
+            fireEvent.click(locator("doc-unassigned", "Stokes_p.70"));
+
+            expect(inColumn("doc-unassigned").getByRole("status")).toHaveTextContent(
+                "Open another Version of this Work to jump to Stokes_p.70",
+            );
+            expect(inColumn("doc-unassigned-2").queryByRole("status")).not.toBeInTheDocument();
+        });
+
+        it("✕ dismisses a notice", () => {
+            openColumns(laud610, franA4, g126);
+            fireEvent.click(locator("doc-laud", "Stokes_p.73"));
+
+            fireEvent.click(inColumn("doc-g126").getByRole("button", { name: "Dismiss Page Jump notice" }));
+
+            expect(inColumn("doc-g126").queryByRole("status")).not.toBeInTheDocument();
+        });
+
+        it("closing a column takes its notice with it, so reopening the document starts clean", () => {
+            vi.spyOn(window, "confirm").mockReturnValue(true);
+            openColumns(laud610, franA4, g126);
+            fireEvent.click(locator("doc-laud", "Stokes_p.73"));
+
+            const close = columnEl("doc-g126").querySelector("header")!.lastElementChild as HTMLElement;
+            fireEvent.click(close);
+            expect(columnEl("doc-g126")).toBeNull();
+            act(() => {
+                useDocumentStore.setState({
+                    openDocuments: [laud610, franA4, g126],
+                    visibleDocumentIds: ["doc-laud", "doc-fran", "doc-g126"],
+                });
+            });
+
+            expect(inColumn("doc-g126").queryByRole("status")).not.toBeInTheDocument();
+        });
     });
 });
