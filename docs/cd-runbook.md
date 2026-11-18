@@ -7,22 +7,31 @@ timer pulls the blessed `:prod` images every ~2 min and recreates the stack.
 Assumes the repo is checked out at `/opt/uceltic` with a real `.env`
 (from `.env.example`).
 
-## URL scheme (#63)
+## URL scheme (#63, #215)
 
-The site is served at `https://<SERVER_IP>.sslip.io` (e.g.
-`https://1.2.3.4.sslip.io`). [sslip.io](https://sslip.io) is a public DNS
-service that resolves `<ip>.sslip.io` to `<ip>` — no DNS setup on our side.
-Caddy sees a real hostname and auto-issues a Let's Encrypt certificate
-(ACME HTTP-01 on port 80, which is already open in firewalld), so browsers
-get a trusted cert with no warning. Raw-IP URLs (`https://<ip>`) no longer
-serve TLS; use the sslip.io hostname.
+The site is served at `https://uceltic.com` (registrar: Spaceship). Its DNS has
+two `A` records, `@` and `www`, both pointing at the VPS. Caddy auto-issues a
+Let's Encrypt certificate for each site address in `Caddyfile.prod` (ACME
+HTTP-01 on port 80, which is already open in firewalld), so browsers get a
+trusted cert with no warning.
 
-The `.env` on the box must carry the hostname too:
+Two other addresses redirect permanently to `https://uceltic.com`, path and
+query kept:
+
+- `www.uceltic.com`;
+- `https://<SERVER_IP>.sslip.io`, the address the site was first published at.
+  [sslip.io](https://sslip.io) resolves `<ip>.sslip.io` to `<ip>` with no DNS
+  setup, so links sent out before the domain existed keep working.
+
+Raw-IP URLs (`https://<ip>`) do not serve TLS.
+
+The `.env` on the box must carry the domain too. `SERVER_IP` stays: Caddy
+builds the sslip.io redirect from it.
 
 ```sh
 SERVER_IP=<vps-ip>
-ALLOWED_HOSTS=<vps-ip>.sslip.io          # plus any local entries
-CSRF_TRUSTED_ORIGINS=https://<vps-ip>.sslip.io
+ALLOWED_HOSTS=uceltic.com                # plus any local entries
+CSRF_TRUSTED_ORIGINS=https://uceltic.com
 ```
 
 Certs live in the `caddydata` volume; don't wipe it casually or Caddy
@@ -35,7 +44,7 @@ account cannot sign in until it is clicked. The box `.env` therefore needs an SM
 sender and the SPA's public address:
 
 ```sh
-FRONTEND_BASE_URL=https://<vps-ip>.sslip.io   # the activation link is built from this
+FRONTEND_BASE_URL=https://uceltic.com         # the activation link is built from this
 EMAIL_HOST=smtp.gmail.com                     # or smtp-relay.brevo.com
 EMAIL_PORT=587
 EMAIL_HOST_USER=<sender>
@@ -48,10 +57,28 @@ written to the container log instead of being delivered — which looks like a w
 deploy until someone tries to register. After setting these, recreate the stack and
 check delivery with a throwaway registration.
 
-**Swapping to a paid domain later**: point the domain's A record at the VPS,
-replace the site address in `Caddyfile.prod` (one line), and update
-`ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` in the box `.env`. Everything else
-(cert issuance, redirect, CD) stays the same.
+**Changing the site address.** This takes more than CD, because the box runs
+`Caddyfile.prod` and `deploy.sh` from its checkout at `/opt/uceltic`, and the
+timer pulls images only. Do the steps in this order. If Caddy redirects to a
+name that doesn't resolve yet, every visitor on an old link lands on a dead
+address.
+
+1. Point the new name's `A` record(s) at the VPS, and wait until
+   `dig +short <name>` returns the VPS IP.
+2. Merge the change to `Caddyfile.prod` (and `deploy.sh`'s `SMOKE_URL` default).
+3. In the box `.env`, update `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` and
+   `FRONTEND_BASE_URL`.
+4. On the box, pull the checkout and recreate the two services that read the
+   changed files:
+
+   ```sh
+   cd /opt/uceltic && git pull
+   sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+     up -d --force-recreate backend web
+   ```
+
+5. Check the new address, the redirects, and an activation email from a
+   throwaway registration.
 
 ## After a TEI parser change: `reparse_tei` (#151)
 

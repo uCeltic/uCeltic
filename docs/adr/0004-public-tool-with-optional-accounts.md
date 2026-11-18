@@ -127,3 +127,17 @@ longer holds).
 - **Buying a real domain now.** Nicer address, but sslip.io + Let's Encrypt
   delivers the trusted certificate for free today; the swap later is one line
   of Caddy config.
+
+## Amendment — the domain (2026-11-18)
+
+The site is now served at `https://uceltic.com` (#215), bought once the address
+was about to be handed to a seminar of about twenty readers, for whom
+`82.70.86.16.sslip.io` was hard to remember and to pass on. The sslip.io address
+and `www.uceltic.com` redirect permanently to it, path and query kept, so every
+link sent out before the swap still works.
+
+The swap was not the single line of Caddy config the rejected option above
+promised. The box `.env` changes too (`ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`,
+and `FRONTEND_BASE_URL`, which the activation emails are built from). The box
+also has to pull its checkout by hand, because CD ships images, not the
+Caddyfile. `docs/cd-runbook.md` records the order.

@@ -1,12 +1,12 @@
-# Production reverse proxy for the VPS deploy (issues #9, #63; public per ADR-0004).
+# Production reverse proxy for the VPS deploy (issues #9, #63, #215; public per ADR-0004).
 # Mounted over /etc/caddy/Caddyfile by docker-compose.prod.yml.
 # SERVER_IP comes from the VPS .env (env_file on the web service).
 
-# sslip.io resolves <ip>.sslip.io to <ip> with zero DNS setup, giving us a real
-# hostname. Caddy auto-issues a Let's Encrypt certificate for it (ACME HTTP-01
-# on port 80) and redirects :80 -> :443. Swapping to a paid domain later is a
-# one-line change of this site address.
-https://{$SERVER_IP}.sslip.io {
+# uceltic.com is the canonical address (#215). Caddy auto-issues a Let's Encrypt
+# certificate for every site address below (ACME HTTP-01 on port 80) and
+# redirects :80 -> :443. The domain's A records must already point at the box,
+# or issuance fails and the redirects below send visitors to a dead name.
+https://uceltic.com {
     encode gzip
 
     # API, admin, and Django static (WhiteNoise) -> backend.
@@ -22,4 +22,10 @@ https://{$SERVER_IP}.sslip.io {
             try_files {path} /index.html
             file_server
     }
+}
+
+# www, and the sslip.io address the site was first published at, redirect to the
+# canonical one with path and query intact, so links already sent out keep working.
+https://www.uceltic.com, https://{$SERVER_IP}.sslip.io {
+    redir https://uceltic.com{uri} permanent
 }
